@@ -174,14 +174,26 @@ function scoreItem(it, terms) {
   return total;
 }
 
-export function runQuery(book, raw) {
-  const q = parseQuery(raw);
+const GROUPS = ['ev', 'ch', 'cj', 'cost', 'mag', 'val', 'flag'];
+
+/** Merge the inline `证据:A` syntax with the facet sets held in app state. */
+function effective(state) {
+  const q = parseQuery(state.q || '');
+  for (const g of GROUPS) {
+    const inline = q[g].map((v) => String(v));
+    q[g] = [...new Set([...inline, ...(state[g] || [])].map((v) => String(v)))];
+  }
+  return q;
+}
+
+export function runQuery(book, state) {
+  const q = effective(state);
   const terms = q.text.split(/\s+/).filter(Boolean);
   const hasText = terms.length > 0;
   const out = [];
   for (const it of book.items) {
     if (q.ev.length && !q.ev.some((e) => e.toUpperCase().startsWith(it.evidence))) continue;
-    if (q.ch.length && !q.ch.includes(it.ch)) continue;
+    if (q.ch.length && !q.ch.some((c) => it.ch === +c)) continue;
     if (q.cj.length && !q.cj.some((c) => it.cj.some((x) => x.includes(c)))) continue;
     if (q.cost.length && !q.cost.some((c) => it.flags[c])) continue;
     if (q.mag.length && !q.mag.includes(it.mag)) continue;
@@ -197,31 +209,43 @@ export function runQuery(book, raw) {
   return { q, terms, hasText, hits: out };
 }
 
-/** Facet counts for the current result set, ignoring the facet itself. */
-export function countBy(book, q, exclude, hits) {
-  const src = hits.length ? hits.map((h) => h.it) : book.items;
-  const count = (key) => {
-    const m = new Map();
-    for (const it of src) {
-      const v = key(it);
-      for (const x of [].concat(v ?? [])) {
-        if (x == null || x === '') continue;
-        m.set(x, (m.get(x) || 0) + 1);
+/**
+ * Facet counts for the current result set. Each group is counted with its *own*
+ * filter removed, so picking 证据 A still shows how many 证据 B are reachable.
+ */
+export function countBy(book, state) {
+  const counts = {};
+  for (const skip of [null, ...GROUPS]) {
+    const probe = skip
+      ? { ...state, [skip]: new Set() }
+      : state;
+    const hits = runQuery(book, probe).hits.map((h) => h.it);
+    const src = hits.length ? hits : book.items;
+    const tally = (key) => {
+      const m = new Map();
+      for (const it of src) for (const v of [].concat(key(it) ?? [])) {
+        if (v == null || v === '') continue;
+        m.set(v, (m.get(v) || 0) + 1);
       }
+      return m;
+    };
+    const costM = new Map();
+    for (const it of src) {
+      for (const [k, v] of Object.entries(it.flags)) if (v) costM.set(k, (costM.get(k) || 0) + 1);
     }
-    return m;
-  };
-  const costM = new Map();
-  for (const it of src) for (const [k, v] of Object.entries(it.flags)) if (v) costM.set(k, (costM.get(k) || 0) + 1);
-  return {
-    ev: exclude === 'ev' ? null : count((i) => i.evidence),
-    cj: exclude === 'cj' ? null : count((i) => i.cj),
-    cost: exclude === 'cost' ? null : costM,
-    mag: exclude === 'mag' ? null : count((i) => i.mag),
-    val: exclude === 'val' ? null : count((i) => i.value),
-    flag: exclude === 'flag' ? null : count((i) => ['dispute', 'todo'].filter((f) => i[f])),
-    ch: exclude === 'ch' ? null : count((i) => i.ch),
-  };
+    const row = {
+      ev: tally((i) => i.evidence),
+      cj: tally((i) => i.cj),
+      cost: costM,
+      mag: tally((i) => i.mag),
+      val: tally((i) => i.value),
+      flag: tally((i) => ['dispute', 'todo'].filter((f) => i[f])),
+      ch: tally((i) => i.ch),
+    };
+    for (const g of GROUPS) if (g === skip) counts[g] = row[g];
+  }
+  counts.ch = counts.ch ?? new Map();
+  return counts;
 }
 
 export function snippet(it, terms, len = 132) {

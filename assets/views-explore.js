@@ -160,8 +160,9 @@ export function openRefSheet(book, it) {
 
 /* ── explore ────────────────────────────────────────────────────────── */
 export function viewExplore(book, state, rerender) {
-  const res = runQuery(book, state.q);
-  const counts = countBy(book, res.q, null, res.hits);
+  rerenderFn = rerender;
+  const res = runQuery(book, state);
+  const counts = countBy(book, state);
 
   let hits = res.hits;
   if (state.onlyMarks) hits = hits.filter((h) => isMarked(h.it.ref));
@@ -178,9 +179,14 @@ export function viewExplore(book, state, rerender) {
     spellcheck: 'false', placeholder: '搜一件事：安全带、押金、加班费、噪声、离婚…',
     value: state.q, 'aria-label': '搜索 608 条建议',
   });
-  input.addEventListener('input', () => {
+  input.addEventListener('input', async () => {
     state.q = input.value;
     pushUrl();
+    // First keystroke waits for the long-text index so results never shift later.
+    if (!book.hydrated && state.q.trim()) {
+      list.setAttribute('aria-busy', 'true');
+      await book.ensureDetail();
+    }
     scheduleRender();
   });
   const clearBtn = el('button', {
@@ -213,7 +219,7 @@ export function viewExplore(book, state, rerender) {
         chipsRow.append(el('button', {
           class: 'fchip', type: 'button', title: '移除这个条件',
           onclick: () => { set.delete(v); pushUrl(); rerender(); },
-        }, `${label}：${prettyFacet(label, v)}`, el('i', { 'aria-hidden': 'true' }, '×')));
+        }, `${label}：${prettyFacet(label, v, book)}`, el('i', { 'aria-hidden': 'true' }, '×')));
       }
     }
     if (state.onlyMarks) {
@@ -241,7 +247,8 @@ export function viewExplore(book, state, rerender) {
           const on = rail.dataset.open === '1';
           rail.dataset.open = on ? '0' : '1';
           e.currentTarget.setAttribute('aria-expanded', String(!on));
-          e.currentTarget.textContent = on ? '展开' : '收起';
+          rail.querySelector('.rail__toggle').textContent = (on ? '展开' : '收起')
+            + (nActive ? `（${nActive}）` : '');
         },
       }, '展开'),
       el('button', { class: 'rail__reset', type: 'button', onclick: () => resetFacets(state, pushUrl, rerender) }, '重置')),
@@ -257,11 +264,19 @@ export function viewExplore(book, state, rerender) {
         el('p', {}, '收益量级与性价比是本站按书里公布的界线自动套用的估算，不是原书标注。'),
         el('p', {}, el('a', { href: '#/method' }, '看方法论 →')))),
   );
-  if (state.q || ['ev', 'ch', 'cj', 'cost', 'mag', 'val', 'flag'].some((k) => state[k].size)) {
-    rail.dataset.open = '1';
-    rail.querySelector('.rail__toggle').textContent = '收起';
-    rail.querySelector('.rail__toggle').setAttribute('aria-expanded', 'true');
-  }
+  // A search term alone must not push the results below the fold: the panel only
+// starts open when the reader has actually picked facets.
+const nActive = ['ev', 'ch', 'cj', 'cost', 'mag', 'val', 'flag']
+  .reduce((n, k) => n + state[k].size, 0);
+  rail.dataset.open = nActive ? '1' : '0';
+  const toggle = rail.querySelector('.rail__toggle');
+  const label = () => {
+    toggle.textContent = (rail.dataset.open === '1' ? '收起' : '展开')
+      + (nActive ? `（${nActive}）` : '');
+  };
+  label();
+  toggle.setAttribute('aria-expanded', String(nActive > 0));
+  toggle.setAttribute('aria-label', nActive ? `筛选条件，当前 ${nActive} 个` : '筛选条件');
 
   /* ── results */
   const head = el('div', { class: 'res__head' },
@@ -304,7 +319,8 @@ export function viewExplore(book, state, rerender) {
   return root;
 }
 
-function prettyFacet(label, v) {
+function prettyFacet(label, v, book) {
+  if (label === '节') return `${v} ${book?.chTitle.get(+v) ?? ''}`.trim();
   if (label === '成本') return COST_LABEL[v] || v;
   if (label === '换回') return CJ_LABEL[v] || v;
   if (label === '量级') return MAG_LABEL[v] || v;
@@ -327,7 +343,7 @@ function facetGroup(title, set, live, all, label, key) {
           onchange: () => {
             const v = String(k);
             set.has(v) ? set.delete(v) : set.add(v);
-            pushUrl(); rerender();
+            pushUrl(); rerenderFn();
           },
         }),
         el('span', { class: 'facet__box', 'aria-hidden': 'true' }),
@@ -413,6 +429,7 @@ export function pushUrl() {
   history.replaceState(null, '', `#/explore${qs ? '?' + qs : ''}`);
 }
 let state0 = {};
+let rerenderFn = () => {};
 export function bindState(s) { state0 = s; }
 
 let scheduleT;

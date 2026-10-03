@@ -2,7 +2,7 @@
 import { $, $$, el, theme, reveal, revealAll, initTip, toast, store, closeSheet, fmt } from './ui.js';
 import { loadBook } from './data.js';
 import { viewExplore, bindState, pushUrl, marks, resetFacets, initKeyboardNav } from './views-explore.js';
-import { viewHome, viewChapters, viewChapter, viewLong, viewMethod } from './views-pages.js';
+import { viewHome, viewChapters, viewChapter, viewLong, viewMethod, applyJump } from './views-pages.js';
 
 const main = $('#main');
 const state = {
@@ -37,7 +37,7 @@ function route() {
   closeSheet();
   const { parts, q } = parseHash();
   const key = parts.join('/');
-  const rerender = () => { render(key); };
+  const rerender = () => { route(); };
   let view;
 
   switch (parts[0]) {
@@ -73,7 +73,7 @@ function route() {
 function afterRender(parts) {
   document.title = titleFor(parts);
   if (!['ch', 'long'].includes(parts[0])) scrollTo({ top: 0, behavior: 'instant' });
-  requestAnimationFrame(() => { reveal(main); updateProgress(); });
+  requestAnimationFrame(() => { reveal(main); updateProgress(); applyJump(); });
   const jump = document.getElementById(location.hash.split('/').pop());
   if (jump && parts.length > 1) jump.scrollIntoView({ block: 'start' });
 }
@@ -111,10 +111,9 @@ addEventListener('scroll', updateProgress, { passive: true });
 addEventListener('hashchange', route);
 document.addEventListener('app:rerender', () => {
   if (!location.hash.startsWith('#/explore')) return;
-  const { parts, q } = parseHash();
+  const { parts } = parseHash();
   if (parts[0] !== 'explore') return;
-  const view = viewExplore(book, state, () => route());
-  main.replaceChildren(view);
+  main.replaceChildren(viewExplore(book, state, () => route()));
   const input = $('#q');
   if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
 });
@@ -199,12 +198,10 @@ document.documentElement.classList.add('js');
   fillFooter();
   route();
   window.__book = book;
-  // Widen the search index in the background; never block first paint on it.
-  const idle = window.requestIdleCallback || ((f) => setTimeout(f, 400));
-  idle(() => book.ensureDetail().then(() => {
-    if (!location.hash.startsWith('#/explore') || state.q) return;
-    route();
-  }));
+  // Warm the long-text index in the background; the first search awaits it so
+  // results never change underneath the reader.
+  const idle = window.requestIdleCallback || ((f) => setTimeout(f, 200));
+  idle(() => book.ensureDetail());
 })();
 
 function fillFooter() {

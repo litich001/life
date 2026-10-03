@@ -169,7 +169,11 @@ export function viewChapters(book) {
 }
 
 /* ── chapter reader ─────────────────────────────────────────────────── */
+/** Set by viewChapter, consumed by the router once the view is mounted. */
+export const jump = { ref: null };
+
 export function viewChapter(book, no, jumpTo) {
+  jump.ref = jumpTo != null ? `${no}-${jumpTo}` : null;
   const c = book.chapters.find((x) => x.no === no);
   if (!c) return el('div', { class: 'wrap' }, el('p', {}, '没有这一节。'));
   const root = el('div', { class: 'wrap' });
@@ -205,18 +209,18 @@ export function viewChapter(book, no, jumpTo) {
   });
   root.append(cards);
   reveal(root);
-
-  if (jumpTo != null) {
-    requestAnimationFrame(() => {
-      const n = document.getElementById(`i-${c.no}-${jumpTo}`);
-      if (n) {
-        n.scrollIntoView({ block: 'center' });
-        n.classList.add('flash');
-        setTimeout(() => n.classList.remove('flash'), 1600);
-      }
-    });
-  }
   return root;
+}
+
+/** Scroll to and flash the item a deep link points at. Runs after mount. */
+export function applyJump() {
+  if (!jump.ref) return;
+  const n = document.getElementById(`i-${jump.ref}`);
+  jump.ref = null;
+  if (!n) return;
+  n.scrollIntoView({ block: 'center' });
+  n.classList.add('flash');
+  setTimeout(() => n.classList.remove('flash'), 1800);
 }
 
 function navPrevNext(book, no) {
