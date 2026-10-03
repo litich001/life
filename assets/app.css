@@ -587,13 +587,9 @@
     transition: background-color .25s var(--ease);
   }
   .res__cell:hover, .res__cell[aria-pressed="true"] { background: var(--paper-2); }
-  .res__k { font-size: var(--step-1); font-weight: 600; display: flex; align-items: baseline; gap: 8px; }
-  .res__k i {
-    width: 8px; height: 8px; background: var(--accent); display: inline-block; flex: none;
-    transform: translateY(-1px);
-  }
+  .res__k { font-size: var(--step-1); font-weight: 600; }
   .res__d { color: var(--muted); font-size: var(--step--1); line-height: 1.6; }
-  .res__n { font-family: var(--mono); font-size: 11.5px; color: var(--muted); letter-spacing: .06em; }
+  .res__n { font-size: 11.5px; color: var(--muted); margin-top: auto; padding-top: 10px; }
   .res--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
   /* stat band */
@@ -707,56 +703,59 @@
     .band__more { position: static; display: inline-block; margin-top: 4px; }
   }
 
-  /* hero poster: the grid is the design, not a decoration */
-  .poster { position: relative; border-bottom: 1px solid var(--line); overflow: hidden; }
-  .poster__grid {
-    position: absolute; inset: 0; pointer-events: none;
-    background-image: repeating-linear-gradient(90deg,
-      var(--line-3) 0 1px, transparent 1px calc(100% / 12));
-    background-size: calc(100% - 2 * var(--gut)) 100%;
-    background-position: var(--gut) 0;
-    background-repeat: no-repeat;
-    mask-image: linear-gradient(180deg, #000 0 62%, transparent 100%);
-  }
-  .poster__in { position: relative; padding-block: clamp(26px, 4vw, 54px) clamp(30px, 4vw, 56px); }
-  .poster__eyebrow {
-    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-    font-family: var(--mono); font-size: 11.5px; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--muted);
-    padding-bottom: 16px; border-bottom: 1px solid var(--line);
-  }
-  .poster__eyebrow i { width: 18px; height: 1px; background: var(--line); }
-  .poster__eyebrow span:first-child { color: var(--ink); font-weight: 500; }
-
-  .poster__body { display: grid; gap: clamp(26px, 3.4vw, 54px); padding-top: clamp(22px, 3vw, 42px); }
-  @media (min-width: 1000px) {
-    .poster__body { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); align-items: end; }
+  /* Hero: the search field is the headline. No decorative grid, no giant numeral —
+   both read as "poster about a thing" rather than "a site you can use". */
+  .poster { position: relative; border-bottom: 1px solid var(--line); }
+  .poster__in {
+    padding-block: clamp(26px, 4.4vw, 60px) clamp(28px, 4vw, 46px);
+    display: grid; gap: clamp(16px, 2.2vw, 26px);
   }
   .poster__title {
-    font-size: clamp(2.5rem, 6.4vw, 5.7rem); line-height: .98; letter-spacing: -.045em;
-    font-weight: 700;
+    font-size: clamp(1.7rem, 3.6vw, 2.9rem); line-height: 1.16; letter-spacing: -.03em;
+    font-weight: 600; max-width: 22ch; margin: 0;
   }
   .poster__title em { font-style: normal; color: var(--accent-deep); }
 
-  .poster__side { display: grid; gap: 18px; align-content: end; }
-  .poster__stat { display: grid; grid-template-columns: auto 1fr; gap: 0 14px; align-items: baseline; }
-  .poster__stat b {
-    font-family: var(--mono); font-size: clamp(3.2rem, 6.6vw, 5.4rem); line-height: .82;
-    letter-spacing: -.05em; color: var(--accent-deep); font-weight: 500;
+  /* search field */
+  .find {
+    display: flex; align-items: center; gap: 10px;
+    max-width: 640px; padding: 4px 4px 4px 14px;
+    background: var(--paper); border: 1px solid var(--ink);
+    box-shadow: var(--lift);
+    transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
   }
-  .poster__stat span { font-size: var(--step-1); font-weight: 600; }
-  .poster__stat em {
-    grid-column: 1 / -1; font-style: normal; color: var(--muted);
-    font-size: var(--step--1); margin-top: 10px; line-height: 1.55;
+  .find:focus-within { box-shadow: var(--lift-lg); }
+  .find__ico { color: var(--muted); display: grid; place-items: center; flex: none; }
+  .find__input {
+    flex: 1; min-width: 0; border: 0; background: none; padding: 13px 0;
+    font: 400 var(--step-1)/1.35 var(--sans); color: var(--ink);
   }
-  .poster__bar { display: grid; gap: 7px; }
-  .sbar { display: grid; grid-template-columns: 52px minmax(0, 1fr) 34px; gap: 10px; align-items: center; }
-  .sbar__l { font-size: 10.5px; letter-spacing: .06em; color: var(--muted); }
-  .sbar__t { height: 6px; background: var(--paper-3); }
-  .sbar__t i { display: block; height: 100%; background: var(--ink); }
-  .sbar__n { font-size: 11px; color: var(--muted); text-align: right; }
-  .poster__note { font-size: var(--step--1); color: var(--muted); line-height: 1.6; }
-  .poster__note a { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
+  .find__input:focus { outline: none; }
+  .find__input::placeholder { color: var(--muted); }
+  .find__input::-webkit-search-cancel-button { display: none; }
+  .find__go {
+    flex: none; align-self: stretch; padding: 0 18px; border: 0;
+    background: var(--ink); color: var(--paper); font-size: var(--step--1); font-weight: 500;
+    transition: background-color .2s var(--ease);
+  }
+  .find__go:hover { background: var(--accent-deep); }
+  .find__kbd {
+    flex: none; font: 500 11px/1 var(--mono); color: var(--muted);
+    border: 1px solid var(--line); padding: 4px 6px; margin-right: 6px;
+  }
+  .find__count {
+    font-size: var(--step--1); color: var(--muted); min-height: 1.4em;
+    margin-top: -10px; font-variant-numeric: tabular-nums;
+  }
+  .find__count.is-empty { color: var(--accent-deep); }
+
+  .find__eg { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+  .find__egl { font-size: var(--step--1); color: var(--muted); margin-right: 2px; }
+  .find__chip {
+    font-size: var(--step--1); padding: 5px 11px; border: 1px solid var(--line);
+    color: var(--ink-2); transition: border-color .18s var(--ease), color .18s var(--ease), background-color .18s var(--ease);
+  }
+  .find__chip:hover { border-color: var(--ink); color: var(--ink); background: var(--paper-2); }
 
   .poster__cta {
     display: grid; gap: 1px; background: var(--line);
@@ -785,16 +784,13 @@
   /* On a phone the poster must not eat more than a screen — otherwise the first
      actionable thing (the situation tiles) is below the fold. */
   @media (max-width: 640px) {
-    .poster__in { padding-block: 22px 26px; }
-    .poster__eyebrow { gap: 9px; font-size: 10.5px; padding-bottom: 12px; }
-    .poster__eyebrow i { width: 10px; }
-    .poster__body { padding-top: 16px; gap: 20px; }
-    .poster__title { font-size: clamp(1.9rem, 8.4vw, 2.6rem); line-height: 1.04; }
-    .poster__side { gap: 12px; }
-    .poster__stat b { font-size: 2.6rem; }
-    .poster__stat em { margin-top: 4px; font-size: 12px; }
-    .poster__note { display: none; }
-    .poster__cta { margin-top: 20px; grid-template-columns: 1fr; }
+    .poster__in { padding-block: 20px 24px; gap: 14px; }
+    .poster__title { font-size: 1.6rem; line-height: 1.24; }
+    .find { padding-left: 11px; }
+    .find__input { padding: 11px 0; font-size: var(--step-0); }
+    .find__kbd { display: none; }
+    .find__go { padding: 0 14px; }
+    .poster__cta { margin-top: 4px; grid-template-columns: 1fr; }
     .cta { padding: 11px 13px; }
   }
 
@@ -832,15 +828,10 @@
   .sit__no { font-size: 11px; letter-spacing: .12em; color: var(--muted); transition: color .24s var(--ease); }
   .sit__t { font-size: var(--step-1); font-weight: 600; letter-spacing: -.015em; line-height: 1.25; }
   .sit__h { font-size: var(--step--1); color: var(--muted); line-height: 1.5; }
-  .sit__go {
-    position: absolute; right: 14px; bottom: 12px; font-family: var(--mono);
-    color: var(--muted); transition: transform .3s var(--ease-out), opacity .24s; opacity: 0;
-  }
   .sit:hover { background: var(--accent-deep); color: var(--accent-ink); }
   /* ≥86% is the floor: below it the light theme drops under 4.5:1 */
   .sit:hover .sit__no { color: color-mix(in srgb, var(--accent-ink) 88%, var(--accent-deep)); }
   .sit:hover .sit__h { color: color-mix(in srgb, var(--accent-ink) 92%, var(--accent-deep)); }
-  .sit:hover .sit__go { color: var(--accent-ink); opacity: 1; transform: translateX(4px); }
 
   /* the seven: a numbered poster list */
   .seven { list-style: none; border-top: 1px solid var(--ink); }
@@ -916,14 +907,12 @@
   }
   .lg {
     background: var(--paper); padding: clamp(16px, 1.8vw, 24px);
-    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px;
+    display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px;
     align-items: baseline; transition: background-color .2s var(--ease);
   }
   .lg:hover { background: var(--paper-2); }
   .lg__no { font-size: 11px; color: var(--muted); letter-spacing: .1em; }
   .lg__t { font-size: var(--step-0); font-weight: 600; letter-spacing: -.012em; line-height: 1.3; }
-  .lg__go { color: var(--muted); transition: transform .28s var(--ease-out), color .2s; }
-  .lg:hover .lg__go { transform: translateX(4px); color: var(--accent-deep); }
 }
 
 @layer components {

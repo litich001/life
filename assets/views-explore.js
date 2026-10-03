@@ -52,7 +52,7 @@ export function itemCard(book, it, opts = {}) {
     el('span', { class: 'card__cj' }, it.cj.map((c) => CJ_LABEL[c] || c).join(' / ')),
     el('span', {
       class: 'card__val', tabindex: '0',
-      title: '收益量级与性价比由本站按书里公布的界线，从「收益」和「成本」两栏自动套用，属估算',
+      title: '收益量级与性价比由本站按口径页公布的界线，从「收益」和「成本」两栏自动套用，属估算',
     }, it.mag === '大' ? '收益大' : it.mag === '中' ? '收益中' : '收益小', ' · ', it.value),
   );
 
@@ -184,7 +184,7 @@ export function viewExplore(book, state, rerender) {
   else hits = [...hits].sort((a, b) => b.sc - a.sc || a.it.ch - b.it.ch || a.it.no - b.it.no);
 
   const root = el('div', { class: 'wrap explore' });
-  root.append(el('h1', { class: 'sr-only' }, `检索全书 ${book.items.length} 条建议`));
+  root.append(el('h1', { class: 'sr-only' }, `检索 ${book.items.length} 条建议`));
 
   /* ── search bar */
   const input = el('input', {
@@ -274,7 +274,7 @@ export function viewExplore(book, state, rerender) {
       facetGroup('章节', state.ch, counts.ch, book.chapters.map((c) => [c.no, String(c.no)]),
         (v) => `${v}. ${book.chTitle.get(+v)}`, 'ch'),
       el('div', { class: 'rail__note' },
-        el('p', {}, '收益量级与性价比是本站按方法论公布的界线自动套用的估算。'),
+        el('p', {}, '收益量级与性价比是本站按口径页公布的界线自动套用的估算。'),
         el('p', {}, el('a', { href: '#/method' }, '看方法论 →')))),
   );
   // A search term alone must not push the results below the fold: the panel only
