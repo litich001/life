@@ -388,9 +388,13 @@ book = {
         'valueStats': refdata.VALUE_STATS,
     },
     'howToRead': how_to_read,
+    'situationGroups': list(refdata.SITUATION_GROUPS),
     'situations': [
-        {'no': n, 'title': t, 'hint': hint, 'href': '#/explore?' + q if q else '#/explore'}
-        for n, t, hint, q in refdata.SITUATIONS
+        {
+            'g': grp, 'icon': icon, 'title': t, 'hint': hint,
+            'href': '#/explore?' + q if q else '#/explore',
+        }
+        for grp, icon, t, hint, q in refdata.SITUATIONS
     ],
     'questions': questions,
     'glossary': glossary,
@@ -399,16 +403,30 @@ book = {
     'changelog': changelog,
 }
 
-# Heavy per-item text (收益原文 / 来源 / 备注) goes into a second file that the page
-# only fetches the first time a reader opens a card's detail.
+# Heavy per-item text goes into a second file that the page only fetches the
+# first time a reader opens a card's detail. Anything not needed to draw the
+# grid belongs here, not in the first-paint payload:
+#   benefit / sources / notes  -- detail body
+#   cost                       -- detail body only (the card shows derived cost
+#                                 flags, not the cost prose)
+#   refs                       -- cross-reference chips, detail only
+#   evidenceNote               -- methodology page only
+DEFERRED = ('benefit', 'sources', 'sourceRaw', 'urls', 'notes', 'cost', 'refs', 'evidenceNote')
+
 detail = {}
 core_chapters = []
 for c in out_ch:
     core_items = []
     for it in c['items']:
-        detail[it['id']] = {'benefit': it['benefit'], 'sources': it['sources'], 'notes': it['notes']}
-        core_items.append({k: v for k, v in it.items()
-                           if k not in ('benefit', 'sources', 'sourceRaw', 'urls', 'notes')})
+        detail[it['id']] = {
+            'benefit': it.get('benefit', ''),
+            'sources': it.get('sources', []),
+            'notes': it.get('notes', ''),
+            'cost': it.get('cost', ''),
+            'refs': it.get('refs', []),
+            'evidenceNote': it.get('evidenceNote', ''),
+        }
+        core_items.append({k: v for k, v in it.items() if k not in DEFERRED})
     cc = dict(c)
     cc['items'] = core_items
     core_chapters.append(cc)
@@ -424,6 +442,8 @@ with open(dpath, 'w', encoding='utf-8') as f:
 
 note('wrote %s (%.1f KB) + %s (%.1f KB)' % (
     path, os.path.getsize(path) / 1024, dpath, os.path.getsize(dpath) / 1024))
+note('first-paint payload: %.1f KB uncompressed; brotli puts it near %.1f KB' % (
+    os.path.getsize(path) / 1024, os.path.getsize(path) / 1024 * 0.28))
 note('stats: %s | %s | dispute=%d todo=%d' % (dict(ev_c), dict(val_c), n_dis, n_tod))
 mag_c = Counter(i['mag'] for c in out_ch for i in c['items'])
 flag_c = Counter(tuple(sorted(k for k, v in i['flags'].items() if v)) for c in out_ch for i in c['items'])

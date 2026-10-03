@@ -174,6 +174,17 @@ export function openRefSheet(book, it) {
 /* ── explore ────────────────────────────────────────────────────────── */
 export function viewExplore(book, state, rerender) {
   rerenderFn = rerender;
+
+  /* A deep link (#/explore?q=押金) skips the keystroke handler that normally
+     waits for detail.json, so without this the first render searches only the
+     light fields and silently misses matches in 收益 / 成本 / 备注. Wait, then
+     draw once. cost/benefit/notes live in detail.json. */
+  if (state.q && state.q.trim() && !book.hydrated) {
+    book.ensureDetail().then(() => rerender());
+    return el('div', { class: 'wrap' },
+      el('p', { class: 'muted-note', style: 'padding:40px 0' }, '正在载入…'));
+  }
+
   const res = runQuery(book, state);
   const counts = countBy(book, state);
 

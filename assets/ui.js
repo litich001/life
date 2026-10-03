@@ -108,6 +108,63 @@ export function countUp(node, to, dur = 900) {
 }
 export const fmt = (n) => n.toLocaleString('zh-CN');
 
+/* ── icons ──────────────────────────────────────────────────────────────
+ * One 24x24 grid, 1.6 stroke, round caps, no fills. Deliberately plain:
+ * pictograms, not illustration. They inherit currentColor so they work on
+ * paper, on the accent field, and in dark mode without a second set. */
+const P = {
+  pulse: '<path d="M3 12h4l2.5-6 4 12 2.5-6H21"/>',
+  alert: '<path d="M12 3.5 22 20H2z"/><path d="M12 10v4.5M12 17.2v.1"/>',
+  shield: '<path d="M12 3l7.5 3v5.5c0 4.4-3 8.2-7.5 9.5-4.5-1.3-7.5-5.1-7.5-9.5V6z"/>',
+  wallet: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 14.5h2"/>',
+  bank: '<path d="M3 9.5 12 4l9 5.5"/><path d="M5 10v8M10 10v8M14 10v8M19 10v8M3 20h18"/>',
+  gavel: '<path d="m14 4 6 6-3 3-6-6z"/><path d="m11 7-7 7 3 3 7-7"/><path d="M4 21h9"/>',
+  receipt: '<path d="M6 3h12v18l-3-1.5L12 21l-3-1.5L6 21z"/><path d="M9.5 8h5M9.5 12h5"/>',
+  door: '<path d="M14 3H6v18h8"/><path d="M14 12h7v9h-7"/><circle cx="11.5" cy="12" r=".9" fill="currentColor"/>',
+  briefcase: '<rect x="3" y="7.5" width="18" height="12" rx="2"/><path d="M9 7.5V5h6v2.5M3 12.5h18"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  stethoscope: '<path d="M6 3v5a4 4 0 0 0 8 0V3"/><path d="M6 3H4.5M14 3h1.5"/><path d="M10 12v3a5 5 0 0 0 10 0v-1"/><circle cx="20" cy="11" r="1.6"/>',
+  baby: '<circle cx="12" cy="9" r="5.5"/><path d="M9.5 8.5v.1M14.5 8.5v.1M10 11.5c1.2 1 2.8 1 4 0"/><path d="M6 21a6 6 0 0 1 12 0"/>',
+  elder: '<circle cx="12" cy="6" r="3"/><path d="M9 21v-5a4 4 0 0 1 4-4h2M17 21v-4"/><path d="M6 12h3"/>',
+  passport: '<rect x="4.5" y="3" width="15" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M9 17h6"/>',
+  moon: '<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5"/>',
+  grief: '<path d="M12 3.5c-1.5 2-3 3-3 5.5a3 3 0 0 0 6 0c0-2.5-1.5-3.5-3-5.5"/><path d="M4.5 20.5h15"/>',
+  heart: '<path d="M12 20s-7.5-4.4-7.5-9.4A4.1 4.1 0 0 1 12 8a4.1 4.1 0 0 1 7.5 2.6c0 5-7.5 9.4-7.5 9.4"/>',
+  rings: '<circle cx="9" cy="14" r="5"/><circle cx="15" cy="14" r="5"/>',
+  laugh: '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5v.1M15 9.5v.1"/>',
+  search: '<circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/>',
+  filter: '<path d="M3 5h18M6 12h12M10 19h4"/>',
+  book: '<path d="M4 4.5A2 2 0 0 1 6 3h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 17.5V21h15v-2"/>',
+  tag: '<path d="M3 12.5V4h8.5L21 13.5 13.5 21z"/><circle cx="7.5" cy="8.5" r="1.2"/>',
+  scale: '<path d="M12 4v16M6 8h12M4 20h16"/><path d="m6 8-2.5 6h5zM18 8l-2.5 6h5z"/>',
+  layers: '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7"/>',
+  clockSmall: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  spark: '<path d="M12 3v5M12 16v5M3 12h5M16 12h5M6.4 6.4l3.5 3.5M14.1 14.1l3.5 3.5M17.6 6.4l-3.5 3.5M9.9 14.1l-3.5 3.5"/>',
+};
+
+/** Inline SVG icon. `size` in px, `cls` for styling hooks. */
+export function icon(name, size = 20, cls = '') {
+  const d = P[name] || P.spark;
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('viewBox', '0 0 24 24');
+  s.setAttribute('width', size);
+  s.setAttribute('height', size);
+  s.setAttribute('fill', 'none');
+  s.setAttribute('stroke', 'currentColor');
+  s.setAttribute('stroke-width', '1.6');
+  s.setAttribute('stroke-linecap', 'round');
+  s.setAttribute('stroke-linejoin', 'round');
+  s.setAttribute('aria-hidden', 'true');
+  s.setAttribute('focusable', 'false');
+  if (cls) s.setAttribute('class', cls);
+  s.innerHTML = d;
+  return s;
+}
+
+export const hasIcon = (n) => Boolean(P[n]);
+
 /* ── toast ──────────────────────────────────────────────────────────── */
 let toastT;
 export function toast(msg) {

@@ -77,9 +77,14 @@ function shape(book) {
       for (const it of items) {
         const x = d && d[it.ref];
         if (!x) continue;
+        // cost / refs / evidenceNote are deferred out of book.json too, because
+        // nothing on the first paint reads them — see DEFERRED in build_data.py
         it.benefit = x.benefit || '';
         it.sources = x.sources || [];
         it.notes = x.notes || '';
+        it.cost = x.cost || '';
+        it.refs = x.refs || [];
+        it.evidenceNote = x.evidenceNote || '';
         it.hay = [it.title, it.plain, it.benefit, it.cost, it.notes, it.chTitle]
           .join('\n').toLowerCase();
       }
@@ -204,11 +209,14 @@ function scan(book, q, terms, mode) {
 
 const FIELD_W = { title: 7, plain: 5, benefit: 2.6, cost: 2.2, notes: 1.5, ch: 3.4 };
 
+/* cost / benefit / notes are deferred into detail.json, so they are legitimately
+   undefined until that loads. A deep link like #/explore?q=押金 renders before
+   the fetch resolves, so every field has to tolerate being absent. */
 function scoreParts(it) {
+  const s = (v) => (v || '').toLowerCase();
   return {
-    title: it.title.toLowerCase(), plain: it.plain.toLowerCase(),
-    benefit: (it.benefit || '').toLowerCase(), cost: it.cost.toLowerCase(),
-    notes: (it.notes || '').toLowerCase(), ch: it.chTitle.toLowerCase(),
+    title: s(it.title), plain: s(it.plain), benefit: s(it.benefit),
+    cost: s(it.cost), notes: s(it.notes), ch: s(it.chTitle),
   };
 }
 

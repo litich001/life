@@ -398,6 +398,54 @@
   }
 }
 
+/* quick filters — three ways in besides free text */
+  .quick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+  .quick__l {
+    font-size: var(--step--1); color: var(--muted); margin-right: 2px;
+  }
+  .quick__sep { width: 1px; height: 16px; background: var(--line); margin-inline: 6px; }
+  .quick__c {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 5px 11px; border: 1px solid var(--line); color: var(--ink-2);
+    font-size: var(--step--1);
+    transition: border-color .18s var(--ease), color .18s var(--ease), background-color .18s var(--ease);
+  }
+  .quick__c b { font-weight: 600; color: var(--ink); }
+  .quick__c span { color: var(--muted); font-size: 11px; }
+  .quick__c:hover { border-color: var(--ink); background: var(--paper-2); }
+  /* A is the grade worth filtering by, so it carries the accent */
+  .quick__c:first-of-type b { color: var(--accent-deep); }
+
+  /* These duplicate the filter rail on the explore page, which a phone gets
+     anyway — dropping the row keeps the hero inside one screen. Must come after
+     the base rule above, or the later declaration wins on equal specificity. */
+  @media (max-width: 640px) { .quick { display: none; } }
+
+  .cta__ico { color: var(--muted); display: block; margin-bottom: 8px; }
+  .cta:hover .cta__ico { color: var(--ink); }
+  .cta--fire .cta__ico { color: color-mix(in srgb, var(--accent-ink) 88%, var(--accent-deep)); }
+  .cta--fire:hover .cta__ico { color: var(--accent-ink); }
+
+  .res__ico { color: var(--accent-deep); display: block; margin-bottom: 10px; }
+  .lg__ico { color: var(--muted); }
+
+  /* content-author credit table */
+  .credit { border-top: 1px solid var(--line); }
+  .credit__row {
+    display: grid; gap: 2px clamp(16px, 3vw, 40px);
+    grid-template-columns: 84px minmax(0, 1fr); align-items: baseline;
+    padding: 13px 2px; border-bottom: 1px solid var(--line-2);
+  }
+  @media (min-width: 720px) { .credit__row { grid-template-columns: 110px minmax(0, 1fr); } }
+  .credit__k { font-size: var(--step--1); color: var(--muted); }
+  .credit__v { font-size: var(--step-0); overflow-wrap: anywhere; }
+  .credit__v em {
+    display: block; font-style: normal; color: var(--muted);
+    font-size: var(--step--1); margin-top: 3px;
+  }
+  .credit__v--link { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
+  .about__role2 { color: var(--muted); font-size: var(--step--1); margin-top: 6px; }
+
 /* ── base ──────────────────────────────────────────────────────────── */
 @layer components {
 
@@ -739,7 +787,10 @@
   }
   .ledger__b + .ledger__b { margin-top: 7px; }
   .ledger__n { margin-top: 14px; font-size: var(--step--1); }
-  .ledger__n a { color: var(--muted); border-bottom: 1px solid var(--line); }
+  .ledger__n a {
+    color: var(--muted); border-bottom: 1px solid var(--line);
+    display: inline-block; padding: 5px 0;   /* standalone action, not inline in prose */
+  }
   .ledger__n a:hover { color: var(--ink); border-bottom-color: var(--accent); }
 
   .sbar { display: grid; grid-template-columns: 1.4em minmax(0, 1fr) 2.6em; gap: 10px; align-items: center; }
@@ -826,40 +877,53 @@
     .find__go { padding: 0 14px; }
     /* the ledger is a desktop anchor; on a phone it is just three more rows */
     .poster__side { display: none; }
-    .poster__cta { margin-top: 2px; grid-template-columns: 1fr; }
-    .cta { padding: 11px 13px; }
+    /* three stacked blocks cost 311px; lay them out as rows instead */
+    .poster__cta { margin-top: 2px; grid-template-columns: 1fr; gap: 1px; }
+    .cta {
+      padding: 12px 14px;
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-areas: "ico b" "ico d";
+      align-items: center; column-gap: 12px; row-gap: 1px;
+    }
+    .cta__ico { grid-area: ico; margin: 0; }
+    .cta b { grid-area: b; }
+    .cta > span:last-child { grid-area: d; }
+    .sitgroup { margin-top: 20px; }
+    .sitgroup__t { padding-bottom: 7px; margin-bottom: 10px; font-size: var(--step-0); }
   }
 
-  /* situation tiles — 9 items, so lock it to 3 columns rather than auto-fill.
-     auto-fill gave 5 or 6 across and left a ragged 4- or 3-item last row. */
+  /* situation groups — five kinds of problem, each with its own grid */
+  .sitgroup { margin-top: clamp(22px, 2.8vw, 38px); }
+  .sitgroup:first-of-type { margin-top: 0; }
+  .sitgroup__t {
+    display: flex; align-items: center; gap: 10px;
+    font-size: var(--step-1); font-weight: 600; letter-spacing: -.01em;
+    padding-bottom: 9px; margin-bottom: 12px; border-bottom: 1px solid var(--ink);
+  }
+  .sitgroup__dot { width: 9px; height: 9px; background: var(--accent-deep); flex: none; }
+  .sitgroup__n { margin-inline-start: auto; font-size: 11.5px; color: var(--muted); font-weight: 400; }
+
   .situations {
     display: grid; gap: 1px; background: var(--line);
     border: 1px solid var(--line);
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   @media (max-width: 900px) { .situations { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  /* below this, two columns squeeze the label and hint onto 3-4 lines each */
   @media (max-width: 400px) { .situations { grid-template-columns: minmax(0, 1fr); } }
 
   .sit {
-    background: var(--paper); padding: clamp(16px, 1.8vw, 24px) clamp(14px, 1.6vw, 20px);
-    display: grid; gap: 6px; align-content: start; position: relative; overflow: hidden;
-    min-height: 128px; transition: background-color .24s var(--ease), color .24s var(--ease);
+    background: var(--paper); padding: clamp(14px, 1.6vw, 20px) clamp(13px, 1.5vw, 18px);
+    display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px;
+    align-items: start; position: relative; overflow: hidden; min-height: 96px;
+    transition: background-color .24s var(--ease), color .24s var(--ease);
   }
+  .sit__ico { color: var(--accent-deep); display: grid; place-items: center; padding-top: 1px; }
+  .sit__b { display: grid; gap: 3px; min-width: 0; }
+  .sit:hover .sit__ico { color: var(--accent-ink); }
+  .sit:hover .sit__no { color: color-mix(in srgb, var(--accent-ink) 88%, var(--accent-deep)); }
 
-  /* On a phone a 128px block per tile is 9 blocks of scrolling for what is really
-     a list of labels. Lay them out as compact rows instead. */
   @media (max-width: 640px) {
-    .sit {
-      min-height: 0;
-      grid-template-columns: auto minmax(0, 1fr);
-      grid-template-areas: "no t" "no h";
-      align-items: baseline; column-gap: 12px; row-gap: 2px;
-      padding: 13px 40px 13px 14px;
-    }
-    .sit__no { grid-area: no; align-self: center; }
-    .sit__t { grid-area: t; }
-    .sit__h { grid-area: h; }
+    .sit { min-height: 0; padding: 12px 14px; align-items: baseline; }
   }
   .sit__no { font-size: 11px; letter-spacing: .12em; color: var(--muted); transition: color .24s var(--ease); }
   .sit__t { font-size: var(--step-1); font-weight: 600; letter-spacing: -.015em; line-height: 1.25; }
@@ -991,6 +1055,11 @@
     display: flex; gap: 8px; align-items: center; padding-top: clamp(18px, 3vw, 34px);
     font-family: var(--mono); font-size: 11.5px; letter-spacing: .05em; color: var(--muted);
     text-transform: uppercase;
+  }
+  .crumbs a {
+    /* breadcrumbs are tappable targets, not inline prose — pad the hit area
+       without changing the visual position */
+    padding: 7px 4px; margin: -7px -4px;
   }
   .crumbs a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
   .crumbs i { opacity: .5; font-style: normal; }

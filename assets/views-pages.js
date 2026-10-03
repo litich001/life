@@ -1,5 +1,5 @@
 /* Home, chapter index, chapter reader, long-form reader, methodology. */
-import { el, frag, linkify, reveal, fmt, openSheet, closeSheet, toast } from './ui.js';
+import { el, frag, linkify, reveal, fmt, openSheet, closeSheet, toast, icon } from './ui.js';
 import { itemCard, openRefSheet, isMarked, toggleMark, marks, badge, CJ_LABEL } from './views-explore.js';
 import { runQuery } from './data.js';
 
@@ -30,7 +30,11 @@ export function viewHome(book, state) {
 
   const go = (q) => { location.hash = `#/explore?q=${encodeURIComponent(q)}`; };
 
-  input.addEventListener('input', () => {
+  /* The count has to match what the explore page will show. Search also matches
+     cost / benefit / notes, and those now live in detail.json, so the count is
+     only trustworthy once that has loaded -- otherwise it under-reports. Recount
+     when it lands rather than showing a number we know is too low. */
+  const paint = () => {
     const q = input.value.trim();
     if (!q) { counter.textContent = ''; counter.className = 'find__count'; return; }
     const n = runQuery(book, {
@@ -38,6 +42,15 @@ export function viewHome(book, state) {
     }).hits.length;
     counter.textContent = n ? `找到 ${n} 条，按回车看全部` : '没有匹配，换个词试试';
     counter.className = n ? 'find__count' : 'find__count is-empty';
+  };
+
+  let recount = null;
+  input.addEventListener('input', () => {
+    paint();
+    if (book.hydrated) return;
+    if (!recount) {
+      recount = book.ensureDetail().then(() => { recount = null; paint(); });
+    }
   });
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); if (input.value.trim()) go(input.value.trim()); }
@@ -46,6 +59,20 @@ export function viewHome(book, state) {
   const examples = el('div', { class: 'find__eg' },
     el('span', { class: 'find__egl' }, '试试'),
     ...EXAMPLES.map((w) => el('a', { class: 'find__chip', href: `#/explore?q=${encodeURIComponent(w)}` }, w)));
+
+  /* Three ways in besides free text. Each one is a real query, not a label. */
+  const quick = el('div', { class: 'quick' },
+    el('span', { class: 'quick__l' }, '按证据'),
+    ...[['A', m.evidence.A], ['B', m.evidence.B], ['C', m.evidence.C]].map(([k, n]) =>
+      el('a', { class: 'quick__c', href: `#/explore?ev=${k}` },
+        el('b', { class: 'num' }, k), el('span', { class: 'num' }, `${n} 条`))),
+    el('span', { class: 'quick__sep', 'aria-hidden': 'true' }),
+    el('span', { class: 'quick__l' }, '按成本'),
+    ...[['money', '不花钱'], ['time', '不占时间'], ['will', '不需要毅力']].map(([k, label]) =>
+      el('a', {
+        class: 'quick__c', href: `#/explore?cost=${k}`,
+        title: `${label}的条目`,
+      }, label)));
 
   const hero = el('section', { class: 'poster' },
     el('div', { class: 'wrap poster__in' },
@@ -67,7 +94,8 @@ export function viewHome(book, state) {
           el('kbd', { class: 'find__kbd', 'aria-hidden': 'true' }, '/')),
 
         counter,
-        examples),
+        examples,
+        quick),
 
       el('aside', { class: 'poster__side' },
         el('div', { class: 'ledger__t' }, '证据分级'),
@@ -79,30 +107,51 @@ export function viewHome(book, state) {
 
     el('div', { class: 'poster__cta' },
         el('a', { class: 'cta cta--fire', href: '#/explore?ch=13' },
+          el('span', { class: 'cta__ico' }, icon('pulse', 18)),
           el('b', {}, '情况紧急'),
           el('span', {}, '有人倒地、受伤、突然不舒服')),
         el('a', { class: 'cta', href: '#/explore' },
+          el('span', { class: 'cta__ico' }, icon('filter', 18)),
           el('b', {}, '按条件筛'),
           el('span', {}, `${m.items} 条，按成本、证据、口径筛`)),
         el('a', { class: 'cta', href: '#/chapters' },
+          el('span', { class: 'cta__ico' }, icon('book', 18)),
           el('b', {}, '按章节看'),
           el('span', {}, `${m.chapters} 节，每节内按性价比排`)))));
 
   root.append(hero);
 
-  /* ── situations: the real front door ──────────────────────────────── */
+  /* ── situations, grouped by what kind of problem it is ───────────── */
   const sitWrap = el('section', { class: 'wrap' });
   sitWrap.append(el('div', { class: 'band' },
-    el('h2', {}, '你现在是什么情况？'),
-    el('p', { class: 'band__d' }, '找到最接近的一条，点进去看剩下的。')));
-  const sit = el('div', { class: 'situations' });
+    el('h2', {}, '你想了解什么情况'),
+    el('p', { class: 'band__d' }, '按遇到的事情分了几类，点进去就是筛好的条目。')));
+
+  const groups = book.situationGroups || [];
+  const byGroup = new Map(groups.map((g) => [g, []]));
   for (const s of book.situations) {
-    sit.append(el('a', { class: 'sit', href: s.href },
-      el('span', { class: 'sit__no num' }, s.no),
-      el('span', { class: 'sit__t' }, s.title),
-      el('span', { class: 'sit__h' }, s.hint)));
+    if (!byGroup.has(s.g)) byGroup.set(s.g, []);
+    byGroup.get(s.g).push(s);
   }
-  sitWrap.append(sit);
+
+  for (const [name, list] of byGroup) {
+    if (!list.length) continue;
+    const block = el('div', { class: 'sitgroup' },
+      el('div', { class: 'sitgroup__t' },
+        el('span', { class: 'sitgroup__dot', 'aria-hidden': 'true' }),
+        name,
+        el('span', { class: 'sitgroup__n num' }, `${list.length} 类`)));
+    const grid = el('div', { class: 'situations' });
+    for (const s of list) {
+      grid.append(el('a', { class: 'sit', href: s.href },
+        el('span', { class: 'sit__ico' }, icon(s.icon, 19)),
+        el('span', { class: 'sit__b' },
+          el('span', { class: 'sit__t' }, s.title),
+          el('span', { class: 'sit__h' }, s.hint))));
+    }
+    block.append(grid);
+    sitWrap.append(block);
+  }
   root.append(sitWrap);
 
   /* ── free and high-value ───────────────────────────────────────────── */
@@ -132,12 +181,14 @@ export function viewHome(book, state) {
     el('h2', {}, '每条建议算的是哪一种回报'),
     el('p', { class: 'band__d' }, '四类之间不换算，也不能直接比大小。')));
   const resGrid = el('div', { class: 'res res--4' });
+  const RES_ICON = { '寿命': 'heart', '时间与精力': 'clock', '金钱': 'wallet', '人身自由': 'shield' };
   for (const r of book.method.resources) {
     const key = r.k === '时间与精力' ? '时间精力' : r.k;
     const n = book.items.filter((i) => i.cj.includes(key)).length;
     resGrid.append(el('a', {
       class: 'res__cell reveal', href: '#/explore?cj=' + encodeURIComponent(key),
     },
+      el('span', { class: 'res__ico' }, icon(RES_ICON[r.k] || 'tag', 18)),
       el('div', { class: 'res__k' }, r.k),
       el('div', { class: 'res__d' }, r.d),
       el('div', { class: 'res__n num' }, `${fmt(n)} 条`)));
@@ -170,7 +221,7 @@ export function viewHome(book, state) {
   const lg = el('div', { class: 'longgrid' });
   book.appendices.forEach((a, i) => {
     lg.append(el('a', { class: 'lg reveal', data: { d: i }, href: `#/long/${a.id}` },
-      el('span', { class: 'lg__no num' }, String(i + 1).padStart(2, '0')),
+      el('span', { class: 'lg__ico' }, icon('book', 17)),
       el('span', { class: 'lg__t' }, a.title)));
   });
   lWrap.append(lg);
@@ -435,12 +486,13 @@ export function viewAbout(book) {
   const root = el('div', { class: 'wrap about' });
 
   root.append(el('nav', { class: 'crumbs', 'aria-label': '面包屑' },
-    el('a', { href: '#/' }, '概览'), el('i', {}, '/'), el('span', {}, '关于')));
+    el('a', { href: '#/' }, '概览'), el('i', {}, '/'), el('span', {}, '关于作者')));
 
   root.append(el('header', { class: 'about__hero' },
     el('div', { class: 'about__id' },
       el('span', { class: 'about__mark', 'aria-hidden': 'true' }, 'LZ'),
       el('h1', {}, AUTHOR.name, el('em', {}, AUTHOR.en))),
+    el('p', { class: 'about__role2' }, '本站整理与维护者'),
     el('p', { class: 'about__role' }, AUTHOR.role),
     el('p', { class: 'about__tag' }, AUTHOR.tagline),
     el('p', { class: 'about__bio' }, AUTHOR.bio),
@@ -481,17 +533,30 @@ export function viewAbout(book) {
     el('p', { class: 'about__mail' },
       el('a', { href: 'mailto:jaylee1993@foxmail.com' }, 'jaylee1993@foxmail.com'))));
 
-  /* licensing — deliberately quiet, but CC BY 4.0 requires the credit */
-  root.append(el('section', { class: 'about__sec about__sec--legal' },
-    sectionHead('五', '内容与授权'),
-    el('p', {}, `站内 ${book.items.length} 条建议与 ${book.chapters.length} 个章节的内容由 eternity4719 创作，`
-      + '依 CC BY 4.0 授权。本站只做检索、筛选与排版，不改写任何一条建议的结论。'),
-    el('p', {},
-      el('a', { href: 'https://creativecommons.org/licenses/by/4.0/deed.zh', target: '_blank', rel: 'noopener nofollow' },
-        'CC BY 4.0 授权全文'),
-      el('i', {}, ' · '),
-      el('a', { href: 'https://github.com/eternity4719/HowToLiveBetter', target: '_blank', rel: 'noopener' },
-        '内容原始仓库'))));
+  /* who wrote the content, and where it lives. CC BY 4.0 requires the credit. */
+  root.append(el('section', { class: 'about__sec' },
+    sectionHead('五', '内容作者'),
+    el('div', { class: 'credit' },
+      el('div', { class: 'credit__row' },
+        el('span', { class: 'credit__k' }, '作者'),
+        el('span', { class: 'credit__v' }, 'eternity4719')),
+      el('div', { class: 'credit__row' },
+        el('span', { class: 'credit__k' }, '项目地址'),
+        el('a', { class: 'credit__v credit__v--link', href: 'https://github.com/eternity4719/HowToLiveBetter', target: '_blank', rel: 'noopener' },
+          'github.com/eternity4719/HowToLiveBetter')),
+      el('div', { class: 'credit__row' },
+        el('span', { class: 'credit__k' }, '在线阅读'),
+        el('a', { class: 'credit__v credit__v--link', href: 'https://eternity4719.github.io/HowToLiveBetter/', target: '_blank', rel: 'noopener' },
+          'eternity4719.github.io/HowToLiveBetter')),
+      el('div', { class: 'credit__row' },
+        el('span', { class: 'credit__k' }, '授权'),
+        el('a', { class: 'credit__v credit__v--link', href: 'https://creativecommons.org/licenses/by/4.0/deed.zh', target: '_blank', rel: 'noopener nofollow' },
+          'CC BY 4.0')),
+      el('div', { class: 'credit__row' },
+        el('span', { class: 'credit__k' }, '本站'),
+        el('span', { class: 'credit__v' },
+          `${book.items.length} 条建议、${book.chapters.length} 个章节、${book.appendices.length} 篇长文`,
+          el('em', {}, '由李哲整理成可检索的站点。只做检索、筛选与排版，不改写结论。'))))));
 
   reveal(root);
   return root;
