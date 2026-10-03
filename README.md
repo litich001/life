@@ -63,8 +63,17 @@ OAI-SearchBot、PerplexityBot、Google-Extended、Bytespider、CCBot……），
 
 它只记录、不拦截，也不会改动响应内容。Analytics Engine 有几分钟延迟。
 
+两点说明：
+
+- `-Group path` 会一直显示 `/`，因为这是个 hash 路由的单页应用，
+  `#/about` 和 `#/ch/13` 对服务器来说是同一个 URL。想看哪个页面被抓得多，
+  暂时得靠 Referer。
+- 每命中一次会写**两个**数据点：一个记厂商/地区/路径，一个记爬虫名和用途。
+  所以 `-Group vendor` 的总数会等于 `-Group token` 的两倍，`-Group day` 是总数，
+  其余都是真实命中数。
+
 要看**人类**流量，另外在 Cloudflare 后台给 `life` 项目开一下 Web Analytics
-（Pages → `life` → Metrics and logs → Web Analytics），这个只能在网页后台点，
+（Pages → `life` → Metrics and logs → Web Analytics）——这个只能在网页后台点，
 API 和 wrangler 都改不了。
 
 ## 数据来源

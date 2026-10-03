@@ -77,8 +77,11 @@ export const onRequest = async (context) => {
 
       if (hit && env.AI_TRAFFIC) {
         const country = request.cf?.country || '??';
-        // Two writes so the two questions people actually ask are each one
-        // GROUP BY: "which vendor is reading this" and "is it training or search".
+        /* Two points per hit so each question is a single GROUP BY:
+             A  double1=1  blob1=vendor blob2=country blob3=path
+             B  double1=2  blob1=token  blob2=kind
+           Analytics Engine has exactly one index (index1), so double1 is what
+           tells the two layouts apart when querying. */
         env.AI_TRAFFIC.writeDataPoint({
           blobs: [hit.vendor, country, new URL(request.url).pathname],
           doubles: [1],
@@ -86,7 +89,8 @@ export const onRequest = async (context) => {
         });
         env.AI_TRAFFIC.writeDataPoint({
           blobs: [hit.token, hit.kind],
-          indexes: [hit.vendor, hit.kind],
+          doubles: [2],
+          indexes: [hit.vendor],
         });
       }
     }

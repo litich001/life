@@ -19,6 +19,20 @@ param(
   [int]$Limit = 25
 )
 
+# The middleware writes TWO points per hit into the one dataset, and they reuse
+# the same blob columns. Analytics Engine has exactly one index (index1), so
+# double1 carries the layout: 1 = vendor/country/path, 2 = token/kind.
+# Without this filter every group double-counts or mixes the two layouts.
+$layouts = @{
+  vendor  = @{ col = 'index1';            other = 'double1 = 1' }
+  country = @{ col = 'blob2';             other = 'double1 = 1' }
+  path    = @{ col = 'blob3';             other = 'double1 = 1' }
+  token   = @{ col = 'blob1';             other = 'double1 = 2' }
+  kind    = @{ col = 'blob2';             other = 'double1 = 2' }
+  day     = @{ col = 'toDate(timestamp)'; other = '' }
+}
+$layout = $layouts[$Group]
+
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch { }
 
 $cfg = "$env:APPDATA\xdg.config\.wrangler\config\default.toml"
@@ -27,21 +41,10 @@ if (-not (Test-Path $cfg)) { throw "找不到 wrangler 凭据：$cfg（先跑 np
 $token = ([regex]::Match((Get-Content $cfg -Raw), 'oauth_token\s*=\s*"([^"]+)"')).Groups[1].Value
 if (-not $token) { throw "凭据里没有 oauth_token" }
 
-# 两次写入对应两套列：vendor/country/path 与 token/kind。
-$col = switch ($Group) {
-  'vendor'  { 'blob1' }
-  'token'   { 'blob2' }
-  'kind'    { 'blob2' }
-  'country' { 'blob2' }
-  'path'    { 'blob3' }
-  'day'     { 'toDate(timestamp)' }
-}
-$dataset = if ($Group -eq 'kind') { 'WHERE index2 != ""' } else { '' }
-
 $sql = @"
-SELECT $col AS k, count() AS hits
+SELECT $($layout.col) AS k, count() AS hits
 FROM life_ai_traffic
-WHERE timestamp >= now() - INTERVAL '$Days' DAY $dataset
+WHERE timestamp >= now() - INTERVAL '$Days' DAY $(if ($layout.other) { "AND $($layout.other)" })
 GROUP BY k
 ORDER BY hits DESC
 LIMIT $Limit
