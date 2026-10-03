@@ -91,23 +91,35 @@ const MARK_PATH = '<path d="M5.5 2.8h9v14.4l-4.5-3.2-4.5 3.2Z" fill="none" strok
 const MARKED_PATH = '<path d="M5.5 2.8h9v14.4l-4.5-3.2-4.5 3.2Z" fill="currentColor"/>';
 
 function toggleDetail(btn, book, it, terms) {
+  const card = btn.closest('.card');
+  const box = card.querySelector('.card__detail');
   const open = btn.getAttribute('aria-expanded') === 'true';
-  const box = btn.closest('.card').querySelector('.card__detail');
   btn.setAttribute('aria-expanded', String(!open));
   btn.querySelector('.btn-ghost__i').textContent = open ? '＋' : '－';
-  box.hidden = open;
-  if (open) return;
+
+  if (open) {
+    // Collapse, then restore [hidden] once the height transition is done so the
+    // collapsed panel leaves the accessibility tree again.
+    card.classList.remove('is-open');
+    const done = () => { if (!card.classList.contains('is-open')) box.hidden = true; };
+    box.addEventListener('transitionend', done, { once: true });
+    setTimeout(done, 420);
+    return;
+  }
 
   if (book.hydrated) {
     box.replaceChildren(detailBody(book, it, terms));
   } else {
     box.replaceChildren(el('p', { class: 'muted-note' }, '正在取原文…'));
     book.ensureDetail().then(() => {
-      if (!box.hidden) box.replaceChildren(detailBody(book, it, terms));
+      if (card.classList.contains('is-open')) box.replaceChildren(detailBody(book, it, terms));
     });
   }
-  box.animate?.([{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'none' }],
-    { duration: 240, easing: 'cubic-bezier(.16,1,.3,1)' });
+
+  /* Unhide first, force layout so the transition has a start value, then open. */
+  box.hidden = false;
+  void box.offsetHeight;
+  card.classList.add('is-open');
 }
 
 function detailBody(book, it, terms) {
@@ -262,7 +274,7 @@ export function viewExplore(book, state, rerender) {
       facetGroup('章节', state.ch, counts.ch, book.chapters.map((c) => [c.no, String(c.no)]),
         (v) => `${v}. ${book.chTitle.get(+v)}`, 'ch'),
       el('div', { class: 'rail__note' },
-        el('p', {}, '收益量级与性价比是本站按书里公布的界线自动套用的估算，不是原书标注。'),
+        el('p', {}, '收益量级与性价比是本站按方法论公布的界线自动套用的估算。'),
         el('p', {}, el('a', { href: '#/method' }, '看方法论 →')))),
   );
   // A search term alone must not push the results below the fold: the panel only

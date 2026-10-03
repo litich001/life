@@ -27,7 +27,9 @@ export function viewHome(book, state) {
         el('i'),
         el('span', {}, `${m.chapters} 节`),
         el('i'),
-        el('span', {}, `正文 ${m.sourcePages} 页`)),
+        el('span', {}, '四种资源'),
+        el('i'),
+        el('span', {}, '证据可查')),
       el('div', { class: 'poster__body' },
         el('h1', { class: 'poster__title' },
           '用最少的钱、', el('br'), '时间和精力，', el('br'),
@@ -43,7 +45,7 @@ export function viewHome(book, state) {
             statBar('C', m.evidence.C, m.items)),
           el('p', { class: 'poster__note' },
             '来源只引期刊论文和官方文件。', el('br'),
-            el('a', { href: '#/method' }, '这本书怎么算账 →')))),
+            el('a', { href: '#/method' }, '这些条目怎么算账 →')))),
       el('div', { class: 'poster__cta' },
         el('a', { class: 'cta cta--fire', href: '#/explore?ch=13' },
           el('b', {}, '现在很急'),
@@ -103,7 +105,7 @@ export function viewHome(book, state) {
   const resWrap = el('section', { class: 'wrap' });
   resWrap.append(el('div', { class: 'band' },
     el('span', { class: 'u-label' }, '四 样 东 西'),
-    el('h2', {}, '这本书想帮你多留住四样')));
+    el('h2', {}, '这里想帮你多留住四样')));
   const resGrid = el('div', { class: 'res res--4' });
   for (const r of book.method.resources) {
     const key = r.k === '时间与精力' ? '时间精力' : r.k;
@@ -321,8 +323,8 @@ export function viewMethod(book) {
   root.append(el('nav', { class: 'crumbs', 'aria-label': '面包屑' },
     el('a', { href: '#/' }, '概览'), el('i', {}, '/'), el('span', {}, '方法论')));
   root.append(el('div', { class: 'pagehead' },
-    el('span', { class: 'u-label' }, '怎么读这本书'),
-    el('h1', {}, '这本书是怎么算账的'),
+    el('span', { class: 'u-label' }, '怎么读'),
+    el('h1', {}, '这些条目是怎么算账的'),
     el('p', {}, '每一条建议都回答两个问题：要花掉什么（钱 / 时间 / 精力 / 毅力），能换回什么（总死亡率变化 / 特定死因下降 / 时间与精力节省 / 金钱节省 / 保障与人身自由）。条目按性价比排，不按类别排。')));
 
   /* resources */
@@ -353,8 +355,8 @@ export function viewMethod(book) {
         el('tr', {}, el('td', { class: 'rowh' }, v.dim), el('td', {}, v.values), el('td', {}, v.how)))))),
     el('p', { class: 'note' }, M.valueStats),
     el('p', { class: 'note note--warn' },
-      '本站的「收益量级」和「性价比」两栏，是按上面这张表公布的界线，从每条的「收益」和「成本」原文自动套用出来的估算。'
-      + '它们用来帮你排序，不是原书逐条标注的结论，也替代不了自己读一遍原文。')));
+      '本站的「收益量级」和「性价比」两栏，是按上面这张表公布的界线，从每条的「收益」和「成本」自动套用出来的估算。'
+      + '它们用来帮你排序，不是逐条标注的结论，也替代不了自己读一遍原文。')));
 
   /* how to read */
   root.append(el('section', {}, sectionHead('五', '怎么读'),
@@ -371,6 +373,103 @@ export function viewMethod(book) {
     root.append(el('section', {}, sectionHead('七', '版本说明'),
       el('ul', { class: 'bullets' }, ...book.changelog.map((t) => el('li', {}, t)))));
   }
+  reveal(root);
+  return root;
+}
+
+/* ── about ──────────────────────────────────────────────────────────── */
+
+/** 李哲的个人信息，取自 https://www.lizhe.work/ */
+const AUTHOR = {
+  name: '李哲',
+  en: 'Li Zhe',
+  role: 'AI × Marketing',
+  tagline: '把 AI 的聪明，变成品牌的影响力。',
+  bio: '在市场一线待了 11 年。做过品牌、产品、内容和活动，现在一头扎进 AI：'
+    + '亲手搭工具、做产品、跑客户，也把新发现带到课堂和现场。懂一点 AI，懂不少 Marketing。',
+  now: '现在在杉数科技做市场，也参与 AI 产品从想法到落地。'
+    + '最近在研究 AI 怎么真正进入市场工作——把 GEO、智能体和工作流放进真实业务里，'
+    + '看它们能解决什么，也看清它们暂时做不到什么。',
+  focus: ['AI 营销咨询', 'GEO', '品牌增长', '课程与分享'],
+  skills: ['品牌战略', '品牌定位', '产品 GTM', 'B2B 营销', '整合传播', '内容策略',
+    '市场活动', 'AI 产品', 'AI 工作流', 'GEO', '智能体', '课程与演讲'],
+  jobs: [
+    ['2024.06 — 现在', '杉数科技', '决策式 AI', '市场与 AI 产品'],
+    ['2021.04 — 2024.06', '嘉诚信息', '数字政府、AI 与网络安全', '品牌升级与官网重构'],
+    ['2017.02 — 2021.03', '亚控科技', '工业自动化软件', '发布会、展会与渠道'],
+  ],
+  numbers: [['11', '年在市场一线'], ['40+', '年度活动峰值'], ['30%', '活动转化提升'], ['2', '持续更新的产品']],
+  honors: ['GMTS 2025 杰出 B2B 营销人物', '人工智能训练师（高级）',
+    '数英奖专家评委', '虎啸奖评审团评委', 'DMAA 国际数字营销奖终审评委'],
+  links: [
+    ['李哲的个人站', 'https://www.lizhe.work/', 'AI × Marketing'],
+    ['天行 GEO', 'https://aigeo.games/', '帮品牌进入 AI 的答案'],
+    ['Creator OS', 'https://creatoros.com.cn/', '把内容运营接成一条工作流'],
+  ],
+};
+
+export function viewAbout(book) {
+  const root = el('div', { class: 'wrap about' });
+
+  root.append(el('nav', { class: 'crumbs', 'aria-label': '面包屑' },
+    el('a', { href: '#/' }, '概览'), el('i', {}, '/'), el('span', {}, '关于')));
+
+  root.append(el('header', { class: 'about__hero' },
+    el('div', { class: 'about__id' },
+      el('span', { class: 'about__mark', 'aria-hidden': 'true' }, 'LZ'),
+      el('h1', {}, AUTHOR.name, el('em', {}, AUTHOR.en))),
+    el('p', { class: 'about__role' }, AUTHOR.role),
+    el('p', { class: 'about__tag' }, AUTHOR.tagline),
+    el('p', { class: 'about__bio' }, AUTHOR.bio),
+    el('ul', { class: 'about__focus' }, ...AUTHOR.focus.map((f) => el('li', {}, f)))));
+
+  root.append(el('section', { class: 'about__stats' },
+    ...AUTHOR.numbers.map(([v, k], i) =>
+      el('div', { class: 'about__stat reveal', data: { d: i } },
+        el('b', { class: 'num' }, v), el('span', {}, k)))));
+
+  root.append(el('section', { class: 'about__sec' },
+    sectionHead('一', '经历'),
+    el('ol', { class: 'about__jobs' }, ...AUTHOR.jobs.map(([when, org, what, role], i) =>
+      el('li', { class: 'reveal', data: { d: i } },
+        el('span', { class: 'about__when num' }, when),
+        el('div', { class: 'about__job' },
+          el('b', {}, org, el('i', {}, what)),
+          el('span', {}, role)))))));
+
+  root.append(el('section', { class: 'about__sec' },
+    sectionHead('二', '在做什么'),
+    el('p', { class: 'about__now' }, AUTHOR.now),
+    el('ul', { class: 'about__skills' }, ...AUTHOR.skills.map((s, i) =>
+      el('li', { class: 'reveal', data: { d: i % 8 } }, s)))));
+
+  root.append(el('section', { class: 'about__sec' },
+    sectionHead('三', '一些记录'),
+    el('ul', { class: 'about__honors' }, ...AUTHOR.honors.map((h, i) =>
+      el('li', { class: 'reveal', data: { d: i } }, h)))));
+
+  root.append(el('section', { class: 'about__sec' },
+    sectionHead('四', '联系与友链'),
+    el('div', { class: 'about__cards' }, ...AUTHOR.links.map(([t, href, d], i) =>
+      el('a', { class: 'about__card reveal', data: { d: i }, href, target: '_blank', rel: 'noopener' },
+        el('span', { class: 'about__cardt' }, t),
+        el('span', { class: 'about__cardd' }, d),
+        el('span', { class: 'about__cardgo', 'aria-hidden': 'true' }, '↗')))),
+    el('p', { class: 'about__mail' },
+      el('a', { href: 'mailto:jaylee1993@foxmail.com' }, 'jaylee1993@foxmail.com'))));
+
+  /* licensing — deliberately quiet, but CC BY 4.0 requires the credit */
+  root.append(el('section', { class: 'about__sec about__sec--legal' },
+    sectionHead('五', '内容与授权'),
+    el('p', {}, `站内 ${book.items.length} 条建议与 ${book.chapters.length} 个章节的内容由 eternity4719 创作，`
+      + '依 CC BY 4.0 授权。本站只做检索、筛选与排版，不改写任何一条建议的结论。'),
+    el('p', {},
+      el('a', { href: 'https://creativecommons.org/licenses/by/4.0/deed.zh', target: '_blank', rel: 'noopener nofollow' },
+        'CC BY 4.0 授权全文'),
+      el('i', {}, ' · '),
+      el('a', { href: 'https://github.com/eternity4719/HowToLiveBetter', target: '_blank', rel: 'noopener' },
+        '内容原始仓库'))));
+
   reveal(root);
   return root;
 }

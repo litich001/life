@@ -1,0 +1,10 @@
+name = "life"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "_deploy"
+
+# AI crawler traffic. Cloudflare Web Analytics intentionally excludes bots, so AI
+# crawlers are invisible there; this dataset records them separately.
+# Query it with the Analytics Engine SQL API (see README).
+[[analytics_engine_datasets]]
+binding = "AI_TRAFFIC"
+dataset = "life_ai_traffic"

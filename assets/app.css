@@ -88,7 +88,314 @@
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   ABOUT — 李哲. Identity, history, friend links. Quiet, editorial.
+   ═══════════════════════════════════════════════════════════════════ */
+@layer components {
+
+  .about { padding-block: clamp(20px, 3vw, 40px) clamp(50px, 7vw, 110px); }
+  .about__hero { padding-block: clamp(18px, 3vw, 44px) clamp(34px, 5vw, 70px); max-width: 780px; }
+  .about__id { display: flex; align-items: center; gap: 18px; margin-bottom: 20px; }
+  .about__mark {
+    display: grid; place-items: center; width: 58px; height: 58px; flex: none;
+    background: var(--ink); color: var(--paper);
+    font-family: var(--mono); font-size: 17px; font-weight: 500; letter-spacing: .04em;
+  }
+  .about__id h1 {
+    font-size: var(--step-4); letter-spacing: -.04em; line-height: 1;
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  }
+  .about__id em {
+    font-style: normal; font-family: var(--mono); font-weight: 400;
+    font-size: var(--step-0); letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+  }
+  .about__role {
+    font-family: var(--mono); font-size: var(--step--1); letter-spacing: .14em;
+    text-transform: uppercase; color: var(--accent-deep); margin-bottom: 12px;
+  }
+  .about__tag {
+    font-size: var(--step-2); line-height: 1.35; letter-spacing: -.022em;
+    font-weight: 500; margin-bottom: 14px; max-width: 24ch;
+  }
+  .about__bio { color: var(--ink-2); line-height: 1.72; max-width: 58ch; }
+  .about__focus {
+    list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px;
+  }
+  .about__focus li {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .04em;
+    padding: 6px 12px; border: 1px solid var(--line); color: var(--ink-2);
+  }
+
+  .about__stats {
+    display: grid; gap: 1px; background: var(--line); border-block: 1px solid var(--line);
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: clamp(40px, 6vw, 80px);
+  }
+  .about__stat { background: var(--paper); padding: clamp(18px, 2.4vw, 30px) clamp(14px, 2vw, 24px); }
+  .about__stat b {
+    display: block; font-size: clamp(1.9rem, 3.6vw, 3rem); line-height: 1;
+    letter-spacing: -.045em; font-weight: 500; margin-bottom: 8px;
+  }
+  .about__stat span { font-size: var(--step--1); color: var(--muted); }
+
+  .about__sec { margin-bottom: clamp(34px, 5vw, 66px); }
+  .about__now { color: var(--ink-2); line-height: 1.72; max-width: 62ch; margin-bottom: 20px; }
+
+  .about__jobs { list-style: none; display: grid; gap: 0; border-top: 1px solid var(--line); }
+  .about__jobs li {
+    display: grid; gap: 4px clamp(20px, 4vw, 56px);
+    grid-template-columns: auto minmax(0, 1fr); align-items: baseline;
+    padding: clamp(16px, 2.2vw, 26px) 2px; border-bottom: 1px solid var(--line-2);
+  }
+  @media (min-width: 720px) { .about__jobs li { grid-template-columns: 168px minmax(0, 1fr); } }
+  .about__when { font-size: 11.5px; letter-spacing: .04em; color: var(--muted); white-space: nowrap; }
+  .about__job b { font-size: var(--step-1); font-weight: 600; letter-spacing: -.015em; display: flex; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+  .about__job b i {
+    font-style: normal; font-size: var(--step--1); font-weight: 400; color: var(--muted);
+  }
+  .about__job > span { display: block; font-size: var(--step--1); color: var(--muted); margin-top: 4px; }
+
+  .about__skills { list-style: none; display: flex; flex-wrap: wrap; gap: 7px; }
+  .about__skills li {
+    font-size: var(--step--1); padding: 7px 13px; background: var(--paper-2);
+    color: var(--ink-2); transition: color .2s var(--ease), background-color .2s var(--ease);
+  }
+  .about__skills li:hover { background: var(--accent-deep); color: var(--accent-ink); }
+
+  .about__honors { list-style: none; display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .about__honors li {
+    background: var(--paper); padding: 13px 16px; font-size: var(--step--1);
+    transition: background-color .2s var(--ease), padding-inline .2s var(--ease);
+  }
+  .about__honors li:hover { background: var(--paper-2); padding-inline: 22px; }
+
+  .about__cards { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+  .about__card {
+    background: var(--paper); padding: clamp(18px, 2.4vw, 28px);
+    display: grid; gap: 5px; align-content: start; position: relative;
+    transition: background-color .24s var(--ease), color .24s var(--ease);
+  }
+  .about__cardt { font-size: var(--step-1); font-weight: 600; letter-spacing: -.015em; }
+  .about__cardd { font-size: var(--step--1); color: var(--muted); line-height: 1.55; }
+  .about__cardgo {
+    position: absolute; top: clamp(18px, 2.4vw, 28px); right: clamp(18px, 2.4vw, 28px);
+    font-family: var(--mono); color: var(--muted);
+    transition: transform .3s var(--ease-out), color .2s var(--ease);
+  }
+  .about__card:hover { background: var(--ink); color: var(--paper); }
+  .about__card:hover .about__cardd,
+  .about__card:hover .about__cardgo { color: var(--paper-2); }
+  .about__card:hover .about__cardgo { transform: translate(3px, -3px); }
+
+  .about__mail { margin-top: 20px; font-family: var(--mono); font-size: var(--step--1); }
+  /* standalone action, not inline in a sentence — so it needs a real target */
+  .about__mail a { letter-spacing: .03em; display: inline-block; padding: 8px 0; border-bottom: 1px solid var(--accent); }
+
+  /* legal credit — present but deliberately understated */
+  .about__sec--legal { border-top: 1px solid var(--line); padding-top: clamp(26px, 3.6vw, 44px); }
+  .about__sec--legal p { font-size: var(--step--1); color: var(--muted); line-height: 1.7; max-width: 68ch; }
+  .about__sec--legal i { font-style: normal; opacity: .5; padding-inline: 4px; }
+
+  /* friend links in the footer */
+  .foot__links { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 16px; }
+  .foot__links a {
+    font-size: var(--step--1); color: var(--muted);
+    padding: 3px 0; border-bottom: 1px solid transparent;
+    transition: color .2s var(--ease), border-color .2s var(--ease);
+  }
+  .foot__links a:hover { color: var(--ink); border-bottom-color: var(--accent); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   REFINEMENT — what makes it read as "expensive" rather than "grey text
+   on cream". Mostly restraint: fewer borders, more air, one real shadow
+   reserved for things that float, and motion that only ever touches
+   transform/opacity so it stays on the compositor.
+   ═══════════════════════════════════════════════════════════════════ */
+@layer components {
+
+  /* a single elevation, used only where something genuinely floats */
+  :root {
+    --lift: 0 1px 2px rgba(11, 11, 12, .04), 0 12px 34px -14px rgba(11, 11, 12, .18);
+    --lift-lg: 0 2px 4px rgba(11, 11, 12, .05), 0 34px 70px -28px rgba(11, 11, 12, .3);
+    --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  }
+  html[data-theme="dark"] {
+    --lift: 0 1px 2px rgba(0, 0, 0, .5), 0 14px 40px -16px rgba(0, 0, 0, .8);
+    --lift-lg: 0 2px 6px rgba(0, 0, 0, .55), 0 40px 80px -30px rgba(0, 0, 0, .9);
+  }
+
+  /* Section rhythm: the single biggest lever on "expensive" vs "crowded". */
+  .wrap > section + section,
+  .home > section + section { margin-top: clamp(52px, 7.5vw, 118px); }
+
+  /* Sections announce themselves with a hairline that draws in, once. */
+  .band { border-top: 1px solid var(--line); padding-top: clamp(18px, 2.4vw, 30px); }
+  .band h2 { max-width: 20ch; }
+
+  /* Cards lift. The shadow is the payoff for the hover, not decoration. */
+  .card {
+    position: relative;
+    transition:
+      border-color .28s var(--ease),
+      transform .28s var(--ease-out),
+      box-shadow .28s var(--ease),
+      background-color .28s var(--ease);
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    border-color: var(--ink);
+    box-shadow: var(--lift);
+  }
+  /* the accent bar wipes in from the left instead of blinking on */
+  .card::before {
+    content: ""; position: absolute; left: -1px; top: 14px; bottom: 14px; width: 2px;
+    background: var(--accent); transform: scaleY(0); transform-origin: 50% 0;
+    transition: transform .34s var(--ease-out);
+  }
+  .card:hover::before { transform: scaleY(1); }
+
+  /* Tiles share one language: the accent field arrives as a wipe from the left. */
+  .sit, .idx33, .lg, .cta, .about__card, .about__honors li, .about__skills li {
+    will-change: background-color, color;
+  }
+
+  /* Nav: the underline grows from the centre rather than the left edge. */
+  .nav a::after { transform: scaleX(0); transform-origin: 50% 50%; }
+  .nav a:hover::after { transform: scaleX(1); }
+  .nav a[aria-current="page"]::after { transform: scaleX(1); }
+
+  /* Buttons get a fill that wipes up from the baseline. */
+  .btn { isolation: isolate; }
+  .btn::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background: var(--ink); transform: scaleY(0); transform-origin: 50% 100%;
+    transition: transform .34s var(--ease-out);
+  }
+  .btn:hover::before { transform: scaleY(1); }
+  .btn--primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .btn--primary::before { background: var(--accent-deep); }
+  .btn--ghost:hover { color: var(--paper); }
+
+  /* Icon buttons acknowledge the press. */
+  .iconbtn { transition: background-color .2s var(--ease), transform .2s var(--ease-spring), color .2s; }
+  .iconbtn:hover { transform: translateY(-1px); }
+  .iconbtn:active { transform: scale(.9); }
+
+  /* Detail panels open by measuring, so text reflows instead of popping. */
+  /* Animate by measuring, but keep [hidden] doing its accessibility job:
+     JS removes it, forces a reflow, then adds .is-open. Never override
+     [hidden] to display:grid — that puts collapsed content back in the
+     accessibility tree. */
+  .card__detail {
+    display: grid; grid-template-rows: 0fr;
+    transition: grid-template-rows .38s var(--ease-out), opacity .28s var(--ease);
+    opacity: 0;
+  }
+  .card__detail > * { overflow: hidden; }
+  .card.is-open .card__detail { grid-template-rows: 1fr; opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   COMMAND PALETTE — the fastest path to anything on the site.
+   ═══════════════════════════════════════════════════════════════════ */
+@layer components {
+
+  .pal { position: fixed; inset: 0; z-index: 300; }
+  .pal[hidden] { display: none; }
+  .pal__scrim {
+    position: absolute; inset: 0; background: color-mix(in srgb, var(--ink) 42%, transparent);
+    opacity: 0; transition: opacity .24s var(--ease);
+    backdrop-filter: blur(3px);
+  }
+  .pal.is-on .pal__scrim { opacity: 1; }
+
+  .pal__panel {
+    position: relative; margin: clamp(60px, 12vh, 130px) auto 0; width: min(660px, calc(100vw - 2 * var(--gut)));
+    max-height: min(70vh, 620px); display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+    background: var(--paper); border: 1px solid var(--ink);
+    box-shadow: var(--lift-lg);
+    opacity: 0; transform: translateY(-10px) scale(.985);
+    transition: opacity .26s var(--ease), transform .34s var(--ease-out);
+  }
+  .pal.is-on .pal__panel { opacity: 1; transform: none; }
+
+  .pal__head { display: flex; align-items: center; gap: 12px; padding: 4px 4px 4px 16px; border-bottom: 1px solid var(--line); }
+  .pal__ico { font-family: var(--mono); font-size: 14px; color: var(--muted); }
+  .pal__input {
+    flex: 1; min-width: 0; border: 0; background: none; padding: 18px 0;
+    font: 400 var(--step-1)/1.3 var(--sans); color: var(--ink);
+  }
+  .pal__input:focus { outline: none; }
+  .pal__input::placeholder { color: var(--muted); }
+  .pal__input::-webkit-search-cancel-button { display: none; }
+  .pal__esc {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted); border: 1px solid var(--line); padding: 5px 9px; flex: none;
+    transition: color .2s, border-color .2s;
+  }
+  .pal__esc:hover { color: var(--ink); border-color: var(--ink); }
+
+  .pal__list { overflow-y: auto; overscroll-behavior: contain; padding: 6px 0; scrollbar-width: thin; }
+  .pal__g {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); padding: 12px 16px 6px;
+  }
+  .pal__row {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: baseline;
+    padding: 9px 16px; border-left: 2px solid transparent;
+    transition: background-color .12s var(--ease), border-color .12s var(--ease);
+  }
+  .pal__no { font-size: 11.5px; color: var(--muted); min-width: 2.2em; }
+  .pal__b { display: grid; gap: 2px; min-width: 0; }
+  .pal__t { font-size: var(--step-0); line-height: 1.35; }
+  .pal__t mark { background: var(--mark); color: inherit; padding: 0 1px; }
+  .pal__d {
+    font-size: 12.5px; color: var(--muted); line-height: 1.45;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pal__row.is-on { background: var(--paper-2); border-left-color: var(--accent); }
+  .pal__row.is-on .pal__t { font-weight: 600; }
+  .pal__none { padding: 26px 16px; color: var(--muted); font-size: var(--step--1); }
+
+  .pal__foot {
+    display: flex; gap: 16px; flex-wrap: wrap; padding: 10px 16px;
+    border-top: 1px solid var(--line); background: var(--paper-2);
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; color: var(--muted);
+  }
+  .pal__foot kbd {
+    font: 500 10px/1 var(--mono); border: 1px solid var(--line); padding: 2px 4px;
+    margin-right: 4px; color: var(--ink-2);
+  }
+}
+
 /* ── base ──────────────────────────────────────────────────────────── */
+@layer components {
+
+  /* topbar search affordance — looks like an input, opens a palette */
+  .palbtn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 8px 6px 11px; border: 1px solid var(--line); color: var(--muted);
+    font-size: var(--step--1); transition: color .2s var(--ease), border-color .2s var(--ease);
+  }
+  .palbtn span { min-width: 2.4em; text-align: left; }
+  .palbtn kbd {
+    font: 500 10px/1 var(--mono); border: 1px solid var(--line); padding: 3px 5px;
+    color: var(--muted);
+  }
+  .palbtn:hover { color: var(--ink); border-color: var(--ink); }
+  @media (max-width: 640px) {
+    .palbtn span, .palbtn kbd { display: none; }
+    .palbtn { padding: 8px; }
+  }
+
+  /* route transition: a short, quiet settle rather than a slide-in */
+  main > * { animation: settle .42s var(--ease-out) both; }
+  @keyframes settle {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+  html.has-pal { overflow: hidden; }
+}
 @layer base {
   html { scroll-behavior: smooth; scroll-padding-top: 88px; }
   body {

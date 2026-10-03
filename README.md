@@ -1,12 +1,10 @@
-# 高性价比人生指南 · 检索站
+# 高性价比人生指南
 
 用最少的钱、时间和精力，换回寿命、金钱和自由。
 
-这本《高性价比人生指南》有 **608 条建议、33 节、正文 342 页**。每一条都写明四件事：
+站内 **608 条建议、33 节**。每一条都写明四件事：
 **花掉什么**（成本）、**换回什么**（说人话 + 收益原文）、**证据有多硬**（A / B / C 级）、
 **来源是什么**（只引期刊论文与官方文件）。
-
-这个站点把全书做成一个可以按条件筛选、按关键词即时检索的查询工具。
 
 ## 在线地址
 
@@ -15,6 +13,10 @@
 
 两个地址内容相同。想更短的网址，可以在 Cloudflare 上给 `life` 项目挂自定义域名，
 或加一层短链服务。
+
+## 快捷键
+
+`⌘K` 或 `/` 打开全站检索面板——能搜条目，也能直接跳到章节、长文和页面。
 
 ## 能做什么
 
@@ -31,16 +33,39 @@
 - **长文**：五篇把一件事讲到底的长文（含对照表、决策表）。
 - **方法论**：四种资源、受益人分档、证据分级、性价比怎么算、术语表（正文里带虚线的词都能点开看解释）。
 - **标记**：右上角书签图标可以标记「我打算做」的条目，存在本地浏览器里。
+- **关于**：整理者李哲的介绍、经历、联系方式与友链。
 
 ## 键盘
 
 | 键 | 作用 |
 | --- | --- |
-| `/` | 聚焦检索框 |
+| `⌘K` / `Ctrl+K` / `/` | 打开全站检索面板 |
 | `↑` `↓` / `j` `k` | 在结果里上下移动 |
 | `Enter` / `Space` | 展开当前这一条的原文与来源 |
-| `h` `e` `c` `l` `m` | 概览 / 检索 / 章节 / 长文 / 方法论 |
+| `h` `e` `c` `l` `m` `a` | 概览 / 检索 / 章节 / 长文 / 方法论 / 关于 |
 | `?` | 快捷键提示 |
+
+## AI 爬虫流量
+
+Cloudflare Web Analytics 会主动排除机器人，所以 AI 爬虫在那里看不到。
+`functions/_middleware.js` 单独识别了 28 个已知的 AI 爬虫（GPTBot、ClaudeBot、
+OAI-SearchBot、PerplexityBot、Google-Extended、Bytespider、CCBot……），
+把它们写进 Analytics Engine 的 `life_ai_traffic` 数据集，并区分「训练」和「搜索」两类用途。
+
+```powershell
+.\tools\ai_traffic.ps1                 # 近 7 天，按厂商汇总
+.\tools\ai_traffic.ps1 -Days 30         # 近 30 天
+.\tools\ai_traffic.ps1 -Group country   # 按国家/地区
+.\tools\ai_traffic.ps1 -Group path      # 哪些页面被抓得最多
+.\tools\ai_traffic.ps1 -Group kind      # 训练 vs 搜索
+.\tools\ai_traffic.ps1 -Group day       # 按天看趋势
+```
+
+它只记录、不拦截，也不会改动响应内容。Analytics Engine 有几分钟延迟。
+
+要看**人类**流量，另外在 Cloudflare 后台给 `life` 项目开一下 Web Analytics
+（Pages → `life` → Metrics and logs → Web Analytics），这个只能在网页后台点，
+API 和 wrangler 都改不了。
 
 ## 数据来源
 
@@ -53,7 +78,7 @@
 
 ## 技术
 
-纯静态，无框架、无构建步骤、无追踪、无后端。
+纯静态，无框架、无构建步骤、无追踪、无后端（AI 爬虫统计只记录 User-Agent，不做用户画像）。
 
 ```
 index.html
@@ -63,11 +88,15 @@ assets/
   data.js          数据加载、检索、facet 计数
   ui.js            DOM 助手、术语提示、面板、主题、滚动揭示
   views-explore.js 条目卡片与检索页
-  views-pages.js   概览 / 章节 / 长文 / 方法论
+  views-pages.js   概览 / 章节 / 长文 / 方法论 / 关于
+  palette.js       全站检索面板（⌘K）
 data/
   book.json        标题、说人话、成本、口径、标记等（首屏只需要它，约 560 KB）
   detail.json      收益原文、来源、备注（展开某一条时才按需取，约 1 MB）
-tools/             从 PDF 重建 data/ 的脚本，以及对比度审计用的 audit_contrast.js
+functions/
+  _middleware.js   AI 爬虫识别与流量记录（Cloudflare Pages Function）
+tools/             重建 data/ 的脚本、对比度审计、AI 流量查询
+wrangler.toml      Analytics Engine 数据集绑定
 ```
 
 数据由 `tools/build_data.py` 从原始 PDF 解析生成，可复现：

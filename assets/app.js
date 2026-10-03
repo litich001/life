@@ -2,7 +2,8 @@
 import { $, $$, el, theme, reveal, revealAll, initTip, toast, store, closeSheet, fmt } from './ui.js';
 import { loadBook } from './data.js';
 import { viewExplore, bindState, pushUrl, marks, resetFacets, initKeyboardNav } from './views-explore.js';
-import { viewHome, viewChapters, viewChapter, viewLong, viewMethod, applyJump } from './views-pages.js';
+import { viewHome, viewChapters, viewChapter, viewLong, viewMethod, viewAbout, applyJump } from './views-pages.js';
+import { openPalette, closePalette, paletteOpen } from './palette.js';
 
 const main = $('#main');
 const state = {
@@ -59,6 +60,8 @@ function route() {
       view = viewLong(book, parts[1]); break;
     case 'method':
       view = viewMethod(book); break;
+    case 'about':
+      view = viewAbout(book); break;
     default:
       location.replace('#/');
       return;
@@ -91,7 +94,8 @@ function titleFor(parts) {
   if (parts[0] === 'explore') return state.q ? `${state.q} · 检索 · ${base}` : `检索 608 条 · ${base}`;
   if (parts[0] === 'chapters') return `33 节 · ${base}`;
   if (parts[0] === 'method') return `方法论 · ${base}`;
-  return `${base} · 608 条可查询的建议`;
+  if (parts[0] === 'about') return `关于 · ${base}`;
+  return base;
 }
 
 function syncNav(name) {
@@ -132,19 +136,37 @@ document.addEventListener('marks:change', syncMarks);
 addEventListener('keydown', (e) => {
   const tag = document.activeElement?.tagName;
   const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
+  /* The palette owns its own keys while it is up. */
+  if (paletteOpen()) {
+    if (e.key === 'Escape') { e.preventDefault(); closePalette(); }
+    return;
+  }
+
+  /* Cmd/Ctrl-K from anywhere, including inside a field. */
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+    e.preventDefault();
+    openPalette(book);
+    return;
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+    e.preventDefault();
+    openPalette(book);
+    return;
+  }
+
   if (e.key === '/' && !typing) {
     e.preventDefault();
-    location.hash = '#/explore';
-    setTimeout(() => { const i = $('#q'); i?.focus(); i?.setSelectionRange(i.value.length, i.value.length); }, 60);
+    openPalette(book);
     return;
   }
   if (typing) {
     if (e.key === 'Escape') document.activeElement.blur();
     return;
   }
-  const map = { h: '#/', e: '#/explore', c: '#/chapters', l: '#/long', m: '#/method' };
+  const map = { h: '#/', e: '#/explore', c: '#/chapters', l: '#/long', m: '#/method', a: '#/about' };
   if (map[e.key]) { location.hash = map[e.key]; }
-  if (e.key === '?') toast('快捷键：/ 检索 · h 概览 · e 检索 · c 章节 · l 长文 · m 方法论');
+  if (e.key === '?') toast('快捷键：⌘K 或 / 检索 · h 概览 · e 检索 · c 章节 · l 长文 · m 方法论 · a 关于');
 });
 
 /* ── theme ──────────────────────────────────────────────────────────── */
@@ -154,6 +176,8 @@ function applyTheme() {
   document.querySelector('meta[name="theme-color"]:not([media])')
     ?.setAttribute('content', dark ? '#0A0A0B' : '#F7F6F2');
 }
+$('#palBtn').addEventListener('click', () => openPalette(book));
+
 $('#themeBtn').addEventListener('click', () => {
   const order = ['auto', 'light', 'dark'];
   theme.set(order[(order.indexOf(theme.get()) + 1) % 3]);
@@ -208,8 +232,8 @@ function fillFooter() {
   const m = book.meta;
   $('#footNote').textContent = m.subtitle + ' ' + m.tagline;
   $('#footStats').innerHTML =
-    `${m.chapters} 节 · ${fmt(m.items)} 条 · A ${m.evidence.A} / B ${m.evidence.B} / C ${m.evidence.C}`
-    + `<br>正文 ${m.sourcePages} 页，生成于 ${m.bookGenerated}`;
+    `${m.chapters} 节 · ${fmt(m.items)} 条<br>`
+    + `A ${m.evidence.A} / B ${m.evidence.B} / C ${m.evidence.C}`;
   $('#footRepo').href = m.sourceRepo;
   $('#footHash').textContent = location.host || 'localhost';
 }
