@@ -48,14 +48,14 @@ export function viewHome(book, state) {
             el('a', { href: '#/method' }, '这些条目怎么算账 →')))),
       el('div', { class: 'poster__cta' },
         el('a', { class: 'cta cta--fire', href: '#/explore?ch=13' },
-          el('b', {}, '现在很急'),
-          el('span', {}, '有人倒地、受伤、突发不舒服 · 先做什么')),
+          el('b', {}, '情况紧急'),
+          el('span', {}, '有人倒地、受伤、突然不舒服')),
         el('a', { class: 'cta', href: '#/explore' },
-          el('b', {}, '全部 608 条'),
+          el('b', {}, `全部 ${m.items} 条`),
           el('span', {}, '按关键词和条件筛', el('kbd', {}, '/'))),
         el('a', { class: 'cta', href: '#/chapters' },
-          el('b', {}, '按 33 节读'),
-          el('span', {}, '每节按性价比从高到低')))));
+          el('b', {}, `按 ${m.chapters} 节读`),
+          el('span', {}, '每节内按性价比排序')))));
   root.append(hero);
 
   /* ── situations: the real front door ──────────────────────────────── */
@@ -63,7 +63,7 @@ export function viewHome(book, state) {
   sitWrap.append(el('div', { class: 'band' },
     el('span', { class: 'u-label' }, '前 门'),
     el('h2', {}, '你现在是什么情况？'),
-    el('p', { class: 'band__d' }, '不用通读全书。挑一个最像的，进去就是能直接做的事。')));
+    el('p', { class: 'band__d' }, '找到最接近的一条，点进去看剩下的。')));
   const sit = el('div', { class: 'situations' });
   for (const s of book.situations) {
     sit.append(el('a', { class: 'sit', href: s.href },
@@ -79,12 +79,13 @@ export function viewHome(book, state) {
   const seven = book.items.filter((i) => i.value === '极高').slice(0, 7);
   const sevenWrap = el('section', { class: 'wrap' });
   sevenWrap.append(el('div', { class: 'band' },
-    el('span', { class: 'u-label' }, '起 手'),
-    el('h2', {}, '从这七条开始'),
+    el('span', { class: 'u-label' }, '先 看 这 些'),
+    el('h2', {}, '不花钱、不占时间、不费毅力'),
     el('p', { class: 'band__d' },
-      '不花钱、不占时间、不需要毅力，收益又落在最大一档。挑走一条就算数。'),
+      `下面 ${seven.length} 条同时满足这三个条件，收益也落在最大一档。`
+      + `符合条件的共 ${book.items.filter((i) => i.value === '极高').length} 条。`),
     el('a', { class: 'band__more', href: '#/explore?val=' + encodeURIComponent('极高') },
-      `全部 ${book.items.filter((i) => i.value === '极高').length} 条 →`)));
+      '查看全部 →')));
   const poster = el('ol', { class: 'seven' });
   seven.forEach((it, i) => {
     poster.append(el('li', { class: 'seven__i reveal', data: { d: i % 4 } },
@@ -104,8 +105,10 @@ export function viewHome(book, state) {
   /* ── four resources ────────────────────────────────────────────────── */
   const resWrap = el('section', { class: 'wrap' });
   resWrap.append(el('div', { class: 'band' },
-    el('span', { class: 'u-label' }, '四 样 东 西'),
-    el('h2', {}, '这里想帮你多留住四样')));
+    el('span', { class: 'u-label' }, '统 计 口 径'),
+    el('h2', {}, '每条建议算的是哪一种回报'),
+    el('p', { class: 'band__d' },
+      '下面四类之间不换算，也不能直接比大小。点进去是按该口径筛过的条目。')));
   const resGrid = el('div', { class: 'res res--4' });
   for (const r of book.method.resources) {
     const key = r.k === '时间与精力' ? '时间精力' : r.k;
@@ -123,9 +126,10 @@ export function viewHome(book, state) {
   /* ── chapter index, dense ─────────────────────────────────────────── */
   const chWrap = el('section', { class: 'wrap' });
   chWrap.append(el('div', { class: 'band' },
-    el('span', { class: 'u-label' }, '33 节'),
-    el('h2', {}, '全部章节'),
-    el('p', { class: 'band__d' }, '节标题说的是这一节想防住的结果，做还是别做以条目标题为准。')));
+    el('span', { class: 'u-label' }, `全 部 ${book.chapters.length} 节`),
+    el('h2', {}, '按章节浏览'),
+    el('p', { class: 'band__d' },
+      '节标题说的是这一节要防的结果。具体做不做，看条目标题——标题都是动词开头的。')));
   const idx = el('div', { class: 'index33' });
   book.chapters.forEach((c, i) => {
     idx.append(el('a', { class: 'idx33 reveal', data: { d: i % 6 }, href: `#/ch/${c.no}` },
@@ -141,7 +145,9 @@ export function viewHome(book, state) {
   const lWrap = el('section', { class: 'wrap' });
   lWrap.append(el('div', { class: 'band' },
     el('span', { class: 'u-label' }, '长 文'),
-    el('h2', {}, '五篇把一件事讲到底')));
+    el('h2', {}, '五篇长文'),
+    el('p', { class: 'band__d' },
+      '每个话题单独写一篇，比条目本身长，含对照表和决策表。')));
   const lg = el('div', { class: 'longgrid' });
   book.appendices.forEach((a, i) => {
     lg.append(el('a', { class: 'lg reveal', data: { d: i }, href: `#/long/${a.id}` },
@@ -384,12 +390,11 @@ const AUTHOR = {
   name: '李哲',
   en: 'Li Zhe',
   role: 'AI × Marketing',
-  tagline: '把 AI 的聪明，变成品牌的影响力。',
-  bio: '在市场一线待了 11 年。做过品牌、产品、内容和活动，现在一头扎进 AI：'
-    + '亲手搭工具、做产品、跑客户，也把新发现带到课堂和现场。懂一点 AI，懂不少 Marketing。',
-  now: '现在在杉数科技做市场，也参与 AI 产品从想法到落地。'
-    + '最近在研究 AI 怎么真正进入市场工作——把 GEO、智能体和工作流放进真实业务里，'
-    + '看它们能解决什么，也看清它们暂时做不到什么。',
+  tagline: '把 AI 用到真实的活儿里',
+  bio: '做市场 11 年，做过品牌、产品、内容和活动。这几年在搭自己的 AI 工具，'
+    + '也接客户的活儿，偶尔去讲课。工作内容写在下面。',
+  now: '2024 年 6 月起在杉数科技做市场，参与决策式 AI 产品的落地。'
+    + '日常工作是把 GEO、智能体和内容工作流接进市场团队，看看哪些真能省时间，哪些目前还不行。',
   focus: ['AI 营销咨询', 'GEO', '品牌增长', '课程与分享'],
   skills: ['品牌战略', '品牌定位', '产品 GTM', 'B2B 营销', '整合传播', '内容策略',
     '市场活动', 'AI 产品', 'AI 工作流', 'GEO', '智能体', '课程与演讲'],
@@ -402,9 +407,9 @@ const AUTHOR = {
   honors: ['GMTS 2025 杰出 B2B 营销人物', '人工智能训练师（高级）',
     '数英奖专家评委', '虎啸奖评审团评委', 'DMAA 国际数字营销奖终审评委'],
   links: [
-    ['李哲的个人站', 'https://www.lizhe.work/', 'AI × Marketing'],
-    ['天行 GEO', 'https://aigeo.games/', '帮品牌进入 AI 的答案'],
-    ['Creator OS', 'https://creatoros.com.cn/', '把内容运营接成一条工作流'],
+    ['李哲的个人站', 'https://www.lizhe.work/', '完整履历和近况'],
+    ['天行 GEO', 'https://aigeo.games/', '研究 AI 怎么理解和引用一个品牌'],
+    ['Creator OS', 'https://creatoros.com.cn/', '选题到发布的内容工作流工具'],
   ],
 };
 
@@ -429,7 +434,7 @@ export function viewAbout(book) {
         el('b', { class: 'num' }, v), el('span', {}, k)))));
 
   root.append(el('section', { class: 'about__sec' },
-    sectionHead('一', '经历'),
+    sectionHead('一', '工作经历'),
     el('ol', { class: 'about__jobs' }, ...AUTHOR.jobs.map(([when, org, what, role], i) =>
       el('li', { class: 'reveal', data: { d: i } },
         el('span', { class: 'about__when num' }, when),
@@ -438,13 +443,13 @@ export function viewAbout(book) {
           el('span', {}, role)))))));
 
   root.append(el('section', { class: 'about__sec' },
-    sectionHead('二', '在做什么'),
+    sectionHead('二', '现在在做什么'),
     el('p', { class: 'about__now' }, AUTHOR.now),
     el('ul', { class: 'about__skills' }, ...AUTHOR.skills.map((s, i) =>
       el('li', { class: 'reveal', data: { d: i % 8 } }, s)))));
 
   root.append(el('section', { class: 'about__sec' },
-    sectionHead('三', '一些记录'),
+    sectionHead('三', '行业里的记录'),
     el('ul', { class: 'about__honors' }, ...AUTHOR.honors.map((h, i) =>
       el('li', { class: 'reveal', data: { d: i } }, h)))));
 

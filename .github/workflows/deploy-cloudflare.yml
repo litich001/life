@@ -1,0 +1,58 @@
+# Deploy to Cloudflare Pages on every push to main.
+#
+# The site is a direct-upload Pages project, which means Cloudflare does NOT
+# watch GitHub for changes the way a Git-integrated project does — without this
+# workflow the Cloudflare copy silently goes stale while GitHub Pages updates.
+#
+# One-time setup (the only manual step):
+#   1. Cloudflare dashboard -> My Profile -> API Tokens -> Create Token
+#      Template "Edit Cloudflare Workers". Then narrow the permissions:
+#        Account > Pages > Edit
+#      (Account > Workers Scripts > Edit is also needed if you later add
+#       Workers routes outside this project.)
+#   2. Copy the token.
+#   3. github.com/litich001/life -> Settings -> Secrets and variables ->
+#      Actions -> New repository secret
+#        name: CLOUDFLARE_API_TOKEN
+#        value: <the token>
+#   4. Add the account id as a variable:
+#        name: CLOUDFLARE_ACCOUNT_ID
+#        value: 1f7db8889923eb171722453103a61e65
+#
+# Nothing else is needed — no wrangler login, no OAuth.
+
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # The build output is assembled by tools/build_deploy.py so CI and local
+      # deploys stay byte-identical. It copies only what needs serving.
+      - name: Assemble deploy directory
+        run: python tools/build_deploy.py
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy _deploy --project-name life --branch main --commit-dirty=true

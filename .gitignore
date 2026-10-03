@@ -11,3 +11,6 @@ _build.log
 /_deploy/
 
 .wrangler/
+_audit.html
+_deploy
+

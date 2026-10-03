@@ -264,6 +264,36 @@
   .nav a:hover::after { transform: scaleX(1); }
   .nav a[aria-current="page"]::after { transform: scaleX(1); }
 
+  /* Section headings get a rule that draws itself as they scroll in. Driven by a
+     scroll-timeline where supported; the reveal fallback covers the rest. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .band { animation: drawRule linear both; animation-timeline: view(); animation-range: entry 0% entry 60%; }
+      @keyframes drawRule { from { border-top-color: transparent; } to { border-top-color: var(--line); } }
+    }
+  }
+
+  /* Cards in a grid stagger in horizontally as well as vertically, so a row
+     reads as one object arriving rather than seven separate ones. */
+  @media (prefers-reduced-motion: no-preference) {
+    .cards > .card:nth-child(6n+2) { transition-delay: .03s; }
+    .cards > .card:nth-child(6n+3) { transition-delay: .06s; }
+    .cards > .card:nth-child(6n+4) { transition-delay: .09s; }
+    .cards > .card:nth-child(6n+5) { transition-delay: .12s; }
+    .cards > .card:nth-child(6n+6) { transition-delay: .15s; }
+  }
+
+  /* Press feedback: everything clickable acknowledges the touch. */
+  .sit:active, .idx33:active, .lg:active, .about__card:active, .about__skills li:active,
+  .seven__i a:active, .cta:active { transform: scale(.988); }
+  .sit, .idx33, .lg, .about__card, .cta { transition-property: background-color, color, transform; }
+  .sit, .idx33, .lg, .about__card, .cta { transition-duration: .24s; }
+
+  /* Focus is visible on the keyboard path and never on mouse clicks. */
+  :where(a, button, input, select, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent-deep); outline-offset: 2px; border-radius: 1px;
+  }
+
   /* Buttons get a fill that wipes up from the baseline. */
   .btn { isolation: isolate; }
   .btn::before {
@@ -752,16 +782,52 @@
   .cta--fire:hover { background: color-mix(in srgb, var(--accent-deep) 84%, #000); }
   .cta--fire:hover span { color: var(--accent-ink); }
 
-  /* situation tiles */
+  /* On a phone the poster must not eat more than a screen — otherwise the first
+     actionable thing (the situation tiles) is below the fold. */
+  @media (max-width: 640px) {
+    .poster__in { padding-block: 22px 26px; }
+    .poster__eyebrow { gap: 9px; font-size: 10.5px; padding-bottom: 12px; }
+    .poster__eyebrow i { width: 10px; }
+    .poster__body { padding-top: 16px; gap: 20px; }
+    .poster__title { font-size: clamp(1.9rem, 8.4vw, 2.6rem); line-height: 1.04; }
+    .poster__side { gap: 12px; }
+    .poster__stat b { font-size: 2.6rem; }
+    .poster__stat em { margin-top: 4px; font-size: 12px; }
+    .poster__note { display: none; }
+    .poster__cta { margin-top: 20px; grid-template-columns: 1fr; }
+    .cta { padding: 11px 13px; }
+  }
+
+  /* situation tiles — 9 items, so lock it to 3 columns rather than auto-fill.
+     auto-fill gave 5 or 6 across and left a ragged 4- or 3-item last row. */
   .situations {
     display: grid; gap: 1px; background: var(--line);
     border: 1px solid var(--line);
-    grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+  @media (max-width: 900px) { .situations { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  /* below this, two columns squeeze the label and hint onto 3-4 lines each */
+  @media (max-width: 400px) { .situations { grid-template-columns: minmax(0, 1fr); } }
+
   .sit {
     background: var(--paper); padding: clamp(16px, 1.8vw, 24px) clamp(14px, 1.6vw, 20px);
     display: grid; gap: 6px; align-content: start; position: relative; overflow: hidden;
-    min-height: 132px; transition: background-color .24s var(--ease), color .24s var(--ease);
+    min-height: 128px; transition: background-color .24s var(--ease), color .24s var(--ease);
+  }
+
+  /* On a phone a 128px block per tile is 9 blocks of scrolling for what is really
+     a list of labels. Lay them out as compact rows instead. */
+  @media (max-width: 640px) {
+    .sit {
+      min-height: 0;
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-areas: "no t" "no h";
+      align-items: baseline; column-gap: 12px; row-gap: 2px;
+      padding: 13px 40px 13px 14px;
+    }
+    .sit__no { grid-area: no; align-self: center; }
+    .sit__t { grid-area: t; }
+    .sit__h { grid-area: h; }
   }
   .sit__no { font-size: 11px; letter-spacing: .12em; color: var(--muted); transition: color .24s var(--ease); }
   .sit__t { font-size: var(--step-1); font-weight: 600; letter-spacing: -.015em; line-height: 1.25; }
@@ -794,10 +860,23 @@
   .seven__p { color: var(--muted); font-size: var(--step--1); line-height: 1.6; max-width: 64ch; }
   .seven__i a:hover .seven__no { color: var(--ink); }
 
-  /* 33-section index, dense */
+  @media (max-width: 640px) {
+    .seven__i a { gap: 10px 12px; padding: 13px 2px; }
+    .seven__no { font-size: 1.5rem; }
+    .seven__t { font-size: var(--step-1); }
+    .seven__p {
+      /* three lines is enough to tell you what the entry is about */
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  }
+
+  /* 33-section index. Two columns from tablet down, and the blurb is dropped on a
+     phone — at one column it was 2,159px, two and a half screens of scrolling
+     for a table of contents. */
   .index33 {
     display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line);
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   }
   .idx33 {
     background: var(--paper); padding: 11px 14px;
@@ -813,6 +892,22 @@
   }
   .idx33__n { font-size: 11px; color: var(--muted); }
   .idx33:hover .idx33__n { color: var(--ink); }
+
+  /* 33 rows: 3 columns divides evenly at 11, 4 columns leaves one orphan on the
+     last row. Pin the wide case to 3 so the grid ends square. */
+  @media (min-width: 1100px) {
+    .index33 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @media (max-width: 900px) {
+    .index33 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 640px) {
+    .index33 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .idx33 { padding: 9px 10px; gap: 2px 8px; }
+    .idx33__b { display: none; }
+    .idx33__no { font-size: 11px; min-width: 1.6em; }
+    .idx33__t { font-size: 13px; }
+  }
 
   /* long-form strip */
   .longgrid {
@@ -975,6 +1070,21 @@
   .card__cj { color: var(--ink-2); }
   .card__val { margin-inline-start: auto; cursor: help; border-bottom: 1px dotted var(--line); }
   .card__tail { display: flex; justify-content: flex-end; margin-top: 8px; }
+
+  /* On a phone the result list ran to ~345px per card — 24 screens for one page of
+     results. Three lines of plain-language summary is enough to scan; the rest is
+     one tap away behind 原文与来源. */
+  @media (max-width: 640px) {
+    .card { padding: 13px 14px 11px; }
+    .card__title { font-size: var(--step-0); margin-top: 7px; }
+    .card__plain {
+      margin-top: 5px; line-height: 1.6;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .card__meta { margin-top: 9px; padding-top: 8px; gap: 4px 12px; font-size: 10.5px; }
+    .card__tail { margin-top: 4px; }
+    .card:hover { transform: none; box-shadow: none; }
+  }
   .btn-ghost {
     display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px;
     font-size: var(--step--1); color: var(--muted); border: 1px solid transparent;
