@@ -10,7 +10,11 @@
 
 ## 在线地址
 
-- <https://litich001.github.io/life/>
+- **GitHub Pages（主）**：<https://litich001.github.io/life/>
+- Cloudflare Pages（镜像）：<https://life-28v.pages.dev/>
+
+两个地址内容相同。想更短的网址，可以在 Cloudflare 上给 `life` 项目挂自定义域名，
+或加一层短链服务。
 
 ## 能做什么
 

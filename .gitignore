@@ -6,3 +6,8 @@ _build.log
 # unrelated work that happens to live in this folder
 /写作台/
 /游本昌推文/
+
+# cloudflare deploy staging
+/_deploy/
+
+.wrangler/
