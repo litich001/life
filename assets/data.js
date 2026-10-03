@@ -59,6 +59,7 @@ function shape(book) {
     meta: book.meta,
     method: book.method,
     howToRead: book.howToRead,
+    situations: book.situations || [],
     questions: book.questions,
     glossary: book.glossary,
     chapters: book.chapters,
@@ -148,32 +149,6 @@ export function parseQuery(raw) {
   return q;
 }
 
-const FIELD_W = { title: 7, plain: 5, benefit: 2.6, cost: 2.2, notes: 1.5, ch: 3.4 };
-
-function scoreItem(it, terms) {
-  let total = 0;
-  const parts = {
-    title: it.title.toLowerCase(), plain: it.plain.toLowerCase(),
-    benefit: it.benefit.toLowerCase(), cost: it.cost.toLowerCase(),
-    notes: it.notes.toLowerCase(), ch: it.chTitle.toLowerCase(),
-  };
-  for (const t of terms) {
-    let best = 0;
-    for (const [f, text] of Object.entries(parts)) {
-      const idx = text.indexOf(t);
-      if (idx >= 0) {
-        // reward word-start matches and short-field matches
-        const atStart = idx === 0;
-        const s = FIELD_W[f] * (atStart ? 1.35 : 1) * (1 + t.length / 40);
-        if (s > best) best = s;
-      }
-    }
-    if (!best) return 0;
-    total += best;
-  }
-  return total;
-}
-
 const GROUPS = ['ev', 'ch', 'cj', 'cost', 'mag', 'val', 'flag'];
 
 /** Merge the inline `证据:A` syntax with the facet sets held in app state. */
@@ -189,7 +164,18 @@ function effective(state) {
 export function runQuery(book, state) {
   const q = effective(state);
   const terms = q.text.split(/\s+/).filter(Boolean);
-  const hasText = terms.length > 0;
+  const hits = scan(book, q, terms, terms.length > 0 ? 'all' : null);
+  // A multi-word query is AND by default. If nothing matches every term, fall back
+  // to "any term" rather than showing a dead end.
+  let relaxed = false;
+  if (!hits.length && terms.length > 1) {
+    relaxed = scan(book, q, terms, 'any').length > 0;
+    return { q, terms, hasText: true, hits: relaxed ? scan(book, q, terms, 'any') : [], relaxed };
+  }
+  return { q, terms, hasText: terms.length > 0, hits, relaxed };
+}
+
+function scan(book, q, terms, mode) {
   const out = [];
   for (const it of book.items) {
     if (q.ev.length && !q.ev.some((e) => e.toUpperCase().startsWith(it.evidence))) continue;
@@ -200,13 +186,43 @@ export function runQuery(book, state) {
     if (q.val.length && !q.val.includes(it.value)) continue;
     if (q.flag.length && !q.flag.some((f) => it[f])) continue;
     let sc = 0;
-    if (hasText) {
-      sc = scoreItem(it, terms);
-      if (!sc) continue;
+    if (mode) {
+      const parts = scoreParts(it);
+      let matched = 0, sum = 0;
+      for (const t of terms) {
+        const s = scoreOne(parts, t);
+        if (s) { matched += 1; sum += s; }
+      }
+      if (!matched) continue;
+      if (mode === 'all' && matched < terms.length) continue;
+      sc = sum + matched * 3;
     }
     out.push({ it, sc });
   }
-  return { q, terms, hasText, hits: out };
+  return out;
+}
+
+const FIELD_W = { title: 7, plain: 5, benefit: 2.6, cost: 2.2, notes: 1.5, ch: 3.4 };
+
+function scoreParts(it) {
+  return {
+    title: it.title.toLowerCase(), plain: it.plain.toLowerCase(),
+    benefit: (it.benefit || '').toLowerCase(), cost: it.cost.toLowerCase(),
+    notes: (it.notes || '').toLowerCase(), ch: it.chTitle.toLowerCase(),
+  };
+}
+
+function scoreOne(parts, t) {
+  let best = 0;
+  for (const [f, text] of Object.entries(parts)) {
+    const idx = text.indexOf(t);
+    if (idx >= 0) {
+      const atStart = idx === 0;
+      const s = FIELD_W[f] * (atStart ? 1.35 : 1) * (1 + t.length / 40);
+      if (s > best) best = s;
+    }
+  }
+  return best;
 }
 
 /**

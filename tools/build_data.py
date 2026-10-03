@@ -388,6 +388,10 @@ book = {
         'valueStats': refdata.VALUE_STATS,
     },
     'howToRead': how_to_read,
+    'situations': [
+        {'no': n, 'title': t, 'hint': hint, 'href': '#/explore?' + q if q else '#/explore'}
+        for n, t, hint, q in refdata.SITUATIONS
+    ],
     'questions': questions,
     'glossary': glossary,
     'chapters': out_ch,

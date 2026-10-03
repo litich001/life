@@ -18,7 +18,7 @@ export function toggleMark(ref) {
 }
 
 /* ── evidence badge ─────────────────────────────────────────────────── */
-function badge(ev) {
+export function badge(ev) {
   return el('span', {
     class: 'badge', data: { ev }, title: `证据等级 ${ev}`,
     'aria-label': `证据等级 ${ev}`,
@@ -29,11 +29,11 @@ function badge(ev) {
 export function itemCard(book, it, opts = {}) {
   const terms = opts.terms || [];
   const marked = isMarked(it.ref);
+  const free = Object.entries(it.flags).filter(([, v]) => v).map(([k]) => COST_LABEL[k]);
 
   const head = el('div', { class: 'card__head' },
-    el('span', { class: 'card__where' },
-      el('span', { class: 'card__chn' }, `${String(it.ch).padStart(2, '0')} ${it.chTitle}`),
-      el('i', { 'aria-hidden': 'true' }, '·'),
+    el('span', { class: 'card__no num' }, String(it.ch).padStart(2, '0')),
+    el('span', { class: 'card__where' }, it.chTitle, el('i', { 'aria-hidden': 'true' }, '·'),
       el('span', { class: 'card__non' }, `第 ${it.no} 条`)),
     el('div', { class: 'card__tags' },
       it.dispute ? el('span', { class: 'tag tag--warn', title: '这条有争议，正文里列了反方证据' }, '争议') : null,
@@ -46,14 +46,15 @@ export function itemCard(book, it, opts = {}) {
 
   const plain = el('p', { class: 'card__plain' }, linkify(it.plain, book));
 
-  const chips = el('div', { class: 'card__chips' });
-  for (const [k, v] of Object.entries(it.flags)) {
-    if (v) chips.append(el('span', { class: 'chip chip--free' }, COST_LABEL[k]));
-  }
-  for (const c of it.cj) chips.append(el('span', { class: 'chip chip--cj' }, CJ_LABEL[c] || c));
-  chips.append(el('span', {
-    class: 'chip chip--est', title: '收益量级与性价比由本站按书里公布的界线，从「收益」和「成本」两栏自动套用，属估算',
-  }, MAG_LABEL[it.mag], ' · ', it.value, ' 估'));
+  /* One quiet metadata line instead of a wall of chips. */
+  const meta = el('div', { class: 'card__meta' },
+    el('span', { class: 'card__cost' }, free.length ? free.join(' · ') : '要花钱或花时间'),
+    el('span', { class: 'card__cj' }, it.cj.map((c) => CJ_LABEL[c] || c).join(' / ')),
+    el('span', {
+      class: 'card__val', tabindex: '0',
+      title: '收益量级与性价比由本站按书里公布的界线，从「收益」和「成本」两栏自动套用，属估算',
+    }, it.mag === '大' ? '收益大' : it.mag === '中' ? '收益中' : '收益小', ' · ', it.value),
+  );
 
   const actions = el('div', { class: 'card__actions' },
     el('button', {
@@ -67,14 +68,14 @@ export function itemCard(book, it, opts = {}) {
         const on = toggleMark(it.ref);
         e.currentTarget.setAttribute('aria-pressed', String(on));
         e.currentTarget.classList.toggle('on', on);
-        e.currentTarget.querySelector('svg').innerHTML = on ? MARKED_PATH : MARK_PATH;
+        e.currentTarget.querySelector('.markicon').innerHTML = on ? MARKED_PATH : MARK_PATH;
       },
     }, el('span', { class: 'markicon', html: marked ? MARKED_PATH : MARK_PATH })),
   );
 
   const card = el('article', {
     class: 'card reveal', id: `i-${it.ref}`, data: { ref: it.ref },
-  }, head, title, plain, el('div', { class: 'card__foot' }, chips, actions),
+  }, head, title, plain, meta, el('div', { class: 'card__tail' }, actions),
      el('div', { class: 'card__detail', hidden: true }));
 
   if (marked) card.classList.add('is-marked');
@@ -284,6 +285,8 @@ const nActive = ['ev', 'ch', 'cj', 'cost', 'mag', 'val', 'flag']
       el('b', { class: 'num' }, fmt(hits.length)),
       el('span', {}, hits.length === 1 ? ' 条' : ' 条'),
       el('span', { class: 'res__of' }, ` / ${fmt(book.items.length)}`)),
+    res.relaxed ? el('div', { class: 'res__relaxed' },
+      '没有同时命中全部词的条目，已改为「命中任意一个词」') : null,
     el('div', { class: 'res__tools' },
       sortSel(state, rerender),
       el('button', {

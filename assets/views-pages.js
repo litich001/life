@@ -1,6 +1,6 @@
 /* Home, chapter index, chapter reader, long-form reader, methodology. */
-import { el, frag, linkify, reveal, countUp, fmt, openSheet, closeSheet, toast } from './ui.js';
-import { itemCard, openRefSheet, isMarked, toggleMark, marks, COST_LABEL, CJ_LABEL, MAG_LABEL } from './views-explore.js';
+import { el, frag, linkify, reveal, fmt, openSheet, closeSheet, toast } from './ui.js';
+import { itemCard, openRefSheet, isMarked, toggleMark, marks, badge, CJ_LABEL } from './views-explore.js';
 
 const CN = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 const cn = (n) => (n <= 10 ? CN[n] : n < 20 ? '十' + CN[n - 10] : CN[Math.floor(n / 10)] + '十' + (n % 10 ? CN[n % 10] : ''));
@@ -11,131 +11,154 @@ function sectionHead(label, title, extra) {
     extra ? el('span', { class: 'sec-head__x' }, extra) : null);
 }
 
-/** Right-hand index in the hero — the four ways into the book. */
-function heroRail(book, m) {
-  const rows = [
-    ['#/explore', '检索 608 条', '关键词 · 章节 · 证据 · 成本', `${m.items} 条`],
-    ['#/chapters', '按章节读', '每节按性价比从高到低排列', `${m.chapters} 节`],
-    ['#/long', '五篇长文', '把一件事从头讲到底', `${book.appendices.length} 篇`],
-    ['#/method', '这本书怎么算账', '四种资源 · 证据分级 · 术语表', '方法论'],
-  ];
-  return el('nav', { class: 'hero__rail reveal', data: { d: '3' }, 'aria-label': '入口' },
-    el('div', { class: 'u-label' }, '从哪儿进'),
-    ...rows.map(([href, t, d, n], i) => el('a', { class: 'railrow', href },
-      el('span', { class: 'railrow__i' }, String(i + 1).padStart(2, '0')),
-      el('span', { class: 'railrow__b' },
-        el('span', { class: 'railrow__t' }, t),
-        el('span', { class: 'railrow__d' }, d)),
-      el('span', { class: 'railrow__n' }, n),
-      el('span', { class: 'railrow__a', 'aria-hidden': 'true' }, '→'))));
-}
-
 /* ── home ───────────────────────────────────────────────────────────── */
-export function viewHome(book, state, go) {
+export function viewHome(book, state) {
   const m = book.meta;
-  const root = el('div', {});
+  const root = el('div', { class: 'home' });
 
-  /* hero */
-  const hero = el('section', { class: 'wrap hero' },
-    el('div', { class: 'hero__meta' },
-      el('span', {}, '版本 ', el('b', {}, m.bookGenerated.slice(0, 10))),
-      el('span', {}, '正文 ', el('b', {}, String(m.sourcePages)), ' 页'),
-      el('span', {}, el('b', {}, String(m.chapters)), ' 节'),
-      el('span', {}, el('b', {}, String(m.items)), ' 条'),
-      el('span', {}, 'A 级 ', el('b', {}, String(m.evidence.A)))),
-    el('div', { class: 'hero__body' },
-      el('div', { class: 'hero__main' },
-        el('h1', { class: 'reveal' }, '高性价比', el('br'), '人生', el('em', {}, '指南')),
-        el('p', { class: 'hero__lede reveal', data: { d: '1' } },
-          '用最少的钱、时间和精力，换回寿命、金钱和自由。',
-          el('br'),
-          '每一条都写明：花掉什么、换回什么、证据有多硬。'),
-        el('div', { class: 'hero__cta reveal', data: { d: '2' } },
-          el('a', { class: 'btn btn--primary', href: '#/explore' }, '开始检索', el('kbd', {}, '/')),
-          el('a', { class: 'btn btn--ghost', href: '#/method' }, '这本书怎么算账'),
-          el('a', { class: 'btn btn--ghost', href: '#/ch/13' }, '紧急情况先做什么'))),
-      heroRail(book, m)),
-  );
+  /* ── poster hero ──────────────────────────────────────────────────── */
+  const hero = el('section', { class: 'poster' },
+    el('div', { class: 'poster__grid' }),
+    el('div', { class: 'wrap poster__in' },
+      el('div', { class: 'poster__eyebrow' },
+        el('span', {}, '高性价比人生指南'),
+        el('i'),
+        el('span', {}, `${m.items} 条建议`),
+        el('i'),
+        el('span', {}, `${m.chapters} 节`),
+        el('i'),
+        el('span', {}, `正文 ${m.sourcePages} 页`)),
+      el('div', { class: 'poster__body' },
+        el('h1', { class: 'poster__title' },
+          '用最少的钱、', el('br'), '时间和精力，', el('br'),
+          el('em', {}, '换回寿命'), '、金钱', el('br'), '和自由'),
+        el('div', { class: 'poster__side' },
+          el('div', { class: 'poster__stat' },
+            el('b', { class: 'num' }, String(m.items)),
+            el('span', {}, '条建议'),
+            el('em', {}, `每条都写明：花掉什么、换回什么、证据有多硬`)),
+          el('div', { class: 'poster__bar' },
+            statBar('证据 A', m.evidence.A, m.items),
+            statBar('B', m.evidence.B, m.items),
+            statBar('C', m.evidence.C, m.items)),
+          el('p', { class: 'poster__note' },
+            '来源只引期刊论文和官方文件。', el('br'),
+            el('a', { href: '#/method' }, '这本书怎么算账 →')))),
+      el('div', { class: 'poster__cta' },
+        el('a', { class: 'cta cta--fire', href: '#/explore?ch=13' },
+          el('b', {}, '现在很急'),
+          el('span', {}, '有人倒地、受伤、突发不舒服 · 先做什么')),
+        el('a', { class: 'cta', href: '#/explore' },
+          el('b', {}, '全部 608 条'),
+          el('span', {}, '按关键词和条件筛', el('kbd', {}, '/'))),
+        el('a', { class: 'cta', href: '#/chapters' },
+          el('b', {}, '按 33 节读'),
+          el('span', {}, '每节按性价比从高到低')))));
   root.append(hero);
 
-  /* four resources */
+  /* ── situations: the real front door ──────────────────────────────── */
+  const sitWrap = el('section', { class: 'wrap' });
+  sitWrap.append(el('div', { class: 'band' },
+    el('span', { class: 'u-label' }, '前 门'),
+    el('h2', {}, '你现在是什么情况？'),
+    el('p', { class: 'band__d' }, '不用通读全书。挑一个最像的，进去就是能直接做的事。')));
+  const sit = el('div', { class: 'situations' });
+  for (const s of book.situations) {
+    sit.append(el('a', { class: 'sit', href: s.href },
+      el('span', { class: 'sit__no num' }, s.no),
+      el('span', { class: 'sit__t' }, s.title),
+      el('span', { class: 'sit__h' }, s.hint),
+      el('span', { class: 'sit__go', 'aria-hidden': 'true' }, '→')));
+  }
+  sitWrap.append(sit);
+  root.append(sitWrap);
+
+  /* ── the seven to start with (a poster list, not cards) ───────────── */
+  const seven = book.items.filter((i) => i.value === '极高').slice(0, 7);
+  const sevenWrap = el('section', { class: 'wrap' });
+  sevenWrap.append(el('div', { class: 'band' },
+    el('span', { class: 'u-label' }, '起 手'),
+    el('h2', {}, '从这七条开始'),
+    el('p', { class: 'band__d' },
+      '不花钱、不占时间、不需要毅力，收益又落在最大一档。挑走一条就算数。'),
+    el('a', { class: 'band__more', href: '#/explore?val=' + encodeURIComponent('极高') },
+      `全部 ${book.items.filter((i) => i.value === '极高').length} 条 →`)));
+  const poster = el('ol', { class: 'seven' });
+  seven.forEach((it, i) => {
+    poster.append(el('li', { class: 'seven__i reveal', data: { d: i % 4 } },
+      el('a', { href: it.href },
+        el('span', { class: 'seven__no num' }, String(i + 1).padStart(2, '0')),
+        el('span', { class: 'seven__b' },
+          el('span', { class: 'seven__t' }, it.title),
+          el('span', { class: 'seven__p' }, it.plain.length > 96 ? it.plain.slice(0, 96) + '…' : it.plain)),
+        badge(it.evidence))));
+  });
+  sevenWrap.append(poster);
+  sevenWrap.append(el('p', { class: 'caveat' },
+    '「收益」和「性价比」由本站按书里公布的界线从原文自动套用，用来排序，属估算。',
+    el('a', { href: '#/method' }, ' 方法论 →')));
+  root.append(sevenWrap);
+
+  /* ── four resources ────────────────────────────────────────────────── */
   const resWrap = el('section', { class: 'wrap' });
-  resWrap.append(sectionHead('四 样 东 西', '这本书想帮你多留住四样'));
+  resWrap.append(el('div', { class: 'band' },
+    el('span', { class: 'u-label' }, '四 样 东 西'),
+    el('h2', {}, '这本书想帮你多留住四样')));
   const resGrid = el('div', { class: 'res res--4' });
   for (const r of book.method.resources) {
-    const n = book.items.filter((i) => i.cj.includes(r.k === '时间与精力' ? '时间精力' : r.k)).length;
-    resGrid.append(el('button', {
-      class: 'res__cell reveal', type: 'button',
-      onclick: () => { location.hash = `#/explore?cj=${encodeURIComponent(r.k === '时间与精力' ? '时间精力' : r.k)}`; },
+    const key = r.k === '时间与精力' ? '时间精力' : r.k;
+    const n = book.items.filter((i) => i.cj.includes(key)).length;
+    resGrid.append(el('a', {
+      class: 'res__cell reveal', href: '#/explore?cj=' + encodeURIComponent(key),
     },
       el('div', { class: 'res__k' }, el('i', { 'aria-hidden': 'true' }), r.k),
       el('div', { class: 'res__d' }, r.d),
-      el('div', { class: 'res__n' }, `${fmt(n)} 条按这个口径算`)));
+      el('div', { class: 'res__n' }, `${fmt(n)} 条按这个口径算 →`)));
   }
   resWrap.append(resGrid);
   root.append(resWrap);
 
-  /* stats band */
-  const band = el('section', { class: 'wrap' });
-  band.append(sectionHead('数 字', '全书 608 条的分布'));
-  const stats = el('div', { class: 'stats' });
-  const cells = [
-    [m.items, '条建议'], [m.chapters, '节'],
-    [m.evidence.A, '条 A 级证据'], [m.evidence.B, '条 B 级'],
-    [m.evidence.C, '条 C 级'], [m.dispute, '条标了争议'], [m.todo, '处待核实'],
-  ];
-  for (const [v, k] of cells) {
-    const num = el('div', { class: 'stats__v num' }, '0');
-    stats.append(el('div', { class: 'stats__c reveal' }, num, el('div', { class: 'stats__k' }, k)));
-    countUp(num, v);
-  }
-  band.append(stats);
-  root.append(band);
-
-  /* pick-by-question */
-  const qSec = el('section', { class: 'wrap' });
-  qSec.append(sectionHead('从 问 题 入 口', '你遇到的是哪一件？'));
-  const ql = el('div', { class: 'qlist' });
-  book.questions.forEach((q, i) => {
-    ql.append(el('a', { class: 'reveal', data: { d: i % 6 }, href: `#/ch/${q.ch}` },
-      el('span', { class: 'qlist__q' }, q.q),
-      el('span', { class: 'qlist__go' }, `${String(q.ch).padStart(2, '0')}`, el('i', {}, '→'))));
+  /* ── chapter index, dense ─────────────────────────────────────────── */
+  const chWrap = el('section', { class: 'wrap' });
+  chWrap.append(el('div', { class: 'band' },
+    el('span', { class: 'u-label' }, '33 节'),
+    el('h2', {}, '全部章节'),
+    el('p', { class: 'band__d' }, '节标题说的是这一节想防住的结果，做还是别做以条目标题为准。')));
+  const idx = el('div', { class: 'index33' });
+  book.chapters.forEach((c, i) => {
+    idx.append(el('a', { class: 'idx33 reveal', data: { d: i % 6 }, href: `#/ch/${c.no}` },
+      el('span', { class: 'idx33__no num' }, String(c.no).padStart(2, '0')),
+      el('span', { class: 'idx33__t' }, c.title),
+      el('span', { class: 'idx33__b' }, c.blurb.slice(0, 34) + (c.blurb.length > 34 ? '…' : '')),
+      el('span', { class: 'idx33__n num' }, c.stats.n)));
   });
-  qSec.append(ql);
-  root.append(qSec);
+  chWrap.append(idx);
+  root.append(chWrap);
 
-  /* best value first */
-  const best = book.items.filter((i) => i.value === '极高').slice(0, 12);
-  const bSec = el('section', { class: 'wrap' });
-  bSec.append(sectionHead('先 看 这 些', '不花钱、不占时间、不需要毅力，收益落在最大一档',
-    el('a', { class: 'sec-head__x', href: '#/explore?val=' + encodeURIComponent('极高') }, `全部 ${book.items.filter((i) => i.value === '极高').length} 条 →`)));
-  const cards = el('div', { class: 'cards cards--2' });
-  best.forEach((it, i) => cards.append(itemCard(book, it, { d: i % 4 })));
-  bSec.append(cards);
-  bSec.append(el('p', { class: 'caveat' },
-    '性价比这一档是本站按书里公布的界线（收益 ≥20% 为大、三项成本全零为极高）从「收益」和「成本」两栏自动套用的估算，用来排序，不是原书逐条标注的结论。'));
-  root.append(bSec);
-
-  /* long-form */
-  const lSec = el('section', { class: 'wrap' });
-  lSec.append(sectionHead('长 文', '五篇把一件事讲到底'));
-  const lg = el('div', { class: 'chgrid chgrid--long' });
+  /* ── long-form ─────────────────────────────────────────────────────── */
+  const lWrap = el('section', { class: 'wrap' });
+  lWrap.append(el('div', { class: 'band' },
+    el('span', { class: 'u-label' }, '长 文'),
+    el('h2', {}, '五篇把一件事讲到底')));
+  const lg = el('div', { class: 'longgrid' });
   book.appendices.forEach((a, i) => {
-    const tbl = a.blocks.filter((b) => b.t === 'table').length;
-    lg.append(el('a', {
-      class: 'chcard reveal', data: { d: i }, href: `#/long/${a.id}`,
-    },
-      el('div', { class: 'chcard__top' },
-        el('span', { class: 'chcard__no u-mono' }, String(i + 1).padStart(2, '0')),
-        el('span', { class: 'chcard__n' }, tbl ? `${tbl} 张表` : '')),
-      el('div', { class: 'chcard__t' }, a.title),
-      el('div', { class: 'chcard__b' }, a.lead.slice(0, 92) + (a.lead.length > 92 ? '…' : ''))));
+    lg.append(el('a', { class: 'lg reveal', data: { d: i }, href: `#/long/${a.id}` },
+      el('span', { class: 'lg__no num' }, String(i + 1).padStart(2, '0')),
+      el('span', { class: 'lg__t' }, a.title),
+      el('span', { class: 'lg__go', 'aria-hidden': 'true' }, '→')));
   });
-  lSec.append(lg);
-  root.append(lSec);
+  lWrap.append(lg);
+  root.append(lWrap);
 
   reveal(root);
   return root;
+}
+
+function statBar(label, n, total) {
+  return el('div', { class: 'sbar' },
+    el('span', { class: 'sbar__l num' }, label),
+    el('span', { class: 'sbar__t' }, el('i', { style: `width:${(n / total * 100).toFixed(1)}%` })),
+    el('span', { class: 'sbar__n num' }, String(n)));
 }
 
 /* ── chapter index ──────────────────────────────────────────────────── */
