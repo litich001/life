@@ -49,23 +49,35 @@ export function viewHome(book, state) {
 
   const hero = el('section', { class: 'poster' },
     el('div', { class: 'wrap poster__in' },
-      el('h1', { class: 'poster__title' },
-        '用最少的钱、时间和精力，', el('br'),
-        '换回', el('em', {}, '寿命'), '、金钱和自由'),
-      el('form', {
-        class: 'find', role: 'search',
-        onsubmit: (e) => { e.preventDefault(); if (input.value.trim()) go(input.value.trim()); },
-      },
-        el('span', { class: 'find__ico', 'aria-hidden': 'true' },
-          el('svg', { viewBox: '0 0 20 20', width: 17, height: 17 },
-            el('circle', { cx: '8.5', cy: '8.5', r: '5.6', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7' }),
-            el('path', { d: 'M12.8 12.8 17 17', stroke: 'currentColor', 'stroke-width': '1.7', fill: 'none', 'stroke-linecap': 'round' }))),
-        input,
-        el('button', { class: 'find__go', type: 'submit' }, '搜索'),
-        el('kbd', { class: 'find__kbd', 'aria-hidden': 'true' }, '/')),
-      counter,
-      examples,
-      el('div', { class: 'poster__cta' },
+      el('div', { class: 'poster__main' },
+        el('h1', { class: 'poster__title' },
+          '用最少的钱、时间和精力，', el('br'),
+          '换回', el('em', {}, '寿命'), '、金钱和自由'),
+
+        el('form', {
+          class: 'find', role: 'search',
+          onsubmit: (e) => { e.preventDefault(); if (input.value.trim()) go(input.value.trim()); },
+        },
+          el('span', { class: 'find__ico', 'aria-hidden': 'true' },
+            el('svg', { viewBox: '0 0 20 20', width: 17, height: 17 },
+              el('circle', { cx: '8.5', cy: '8.5', r: '5.6', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7' }),
+              el('path', { d: 'M12.8 12.8 17 17', stroke: 'currentColor', 'stroke-width': '1.7', fill: 'none', 'stroke-linecap': 'round' }))),
+          input,
+          el('button', { class: 'find__go', type: 'submit' }, '搜索'),
+          el('kbd', { class: 'find__kbd', 'aria-hidden': 'true' }, '/')),
+
+        counter,
+        examples),
+
+      el('aside', { class: 'poster__side' },
+        el('div', { class: 'ledger__t' }, '证据分级'),
+        el('div', { class: 'ledger__b' }, statBar('A', m.evidence.A, m.items)),
+        el('div', { class: 'ledger__b' }, statBar('B', m.evidence.B, m.items)),
+        el('div', { class: 'ledger__b' }, statBar('C', m.evidence.C, m.items)),
+        el('p', { class: 'ledger__n' },
+          el('a', { href: '#/method' }, '分级标准与算法'))),
+
+    el('div', { class: 'poster__cta' },
         el('a', { class: 'cta cta--fire', href: '#/explore?ch=13' },
           el('b', {}, '情况紧急'),
           el('span', {}, '有人倒地、受伤、突然不舒服')),
@@ -75,6 +87,7 @@ export function viewHome(book, state) {
         el('a', { class: 'cta', href: '#/chapters' },
           el('b', {}, '按章节看'),
           el('span', {}, `${m.chapters} 节，每节内按性价比排`)))));
+
   root.append(hero);
 
   /* ── situations: the real front door ──────────────────────────────── */
@@ -165,6 +178,13 @@ export function viewHome(book, state) {
 
   reveal(root);
   return root;
+}
+
+function statBar(label, n, total) {
+  return el('div', { class: 'sbar' },
+    el('span', { class: 'sbar__l num' }, label),
+    el('span', { class: 'sbar__t' }, el('i', { style: `width:${(n / total * 100).toFixed(1)}%` })),
+    el('span', { class: 'sbar__n num' }, String(n)));
 }
 
 /* ── chapter index ──────────────────────────────────────────────────── */
