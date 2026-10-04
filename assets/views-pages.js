@@ -15,6 +15,20 @@ function sectionHead(label, title, extra) {
 /* Words people actually type into this, offered as one-tap starting points. */
 const EXAMPLES = ['押金', '加班费', '噪声', '离婚', '租房', '体检', '失眠', '裁员', '低保', '疫苗'];
 
+/* Longer prompts that cycle through the hero field when it is empty. A single
+   static placeholder only ever advertises one thing; cycling shows the range.
+   The animation is on a wrapper so it only stops when the field has content. */
+const PROMPTS = [
+  '押金被扣了怎么办',
+  '刚被裁，先做什么',
+  '睡不着，白天没精神',
+  '房子租的时候要留意什么',
+  '去医院前该准备什么',
+  '父母老了要提前安排什么',
+  '账号被盗了先做哪一步',
+  '孩子上学要注意什么',
+];
+
 /* ── home ───────────────────────────────────────────────────────────── */
 export function viewHome(book, state) {
   const m = book.meta;
@@ -23,7 +37,7 @@ export function viewHome(book, state) {
   /* ── hero: the search box is the headline ────────────────────────── */
   const input = el('input', {
     class: 'find__input', type: 'search', autocomplete: 'off', spellcheck: 'false',
-    placeholder: '押金没退、睡不着、刚被裁……',
+    placeholder: '搜一件事',
     'aria-label': '搜索建议', enterkeyhint: 'search',
   });
   const counter = el('p', { class: 'find__count', 'aria-live': 'polite' });
@@ -52,9 +66,54 @@ export function viewHome(book, state) {
       recount = book.ensureDetail().then(() => { recount = null; paint(); });
     }
   });
+
+  /* Rotating placeholder. Real placeholder text cannot be animated, so the field
+     goes transparent and a sibling element does the typing instead -- which also
+     means the moment you click it looks like focus, not like nothing happening. */
+  const ghost = el('span', { class: 'find__ghost', 'aria-hidden': 'true' });
+  const stop = () => {
+    clearInterval(typer);
+    typer = null;
+    ghost.classList.remove('is-on');
+  };
+  let typer = null;
+  let pi = 0;
+  const typeNext = () => {
+    const text = PROMPTS[pi % PROMPTS.length];
+    pi += 1;
+    ghost.textContent = '';
+    ghost.classList.add('is-on');
+    let n = 0;
+    typer = setInterval(() => {
+      n += 1;
+      ghost.textContent = text.slice(0, n);
+      if (n >= text.length) {
+        clearInterval(typer);
+        typer = setInterval(() => {
+          if (!ghost.textContent.length) { clearInterval(typer); typer = null; typeNext(); return; }
+          ghost.textContent = ghost.textContent.slice(0, -1);
+        }, 34);
+      }
+    }, 72);
+  };
+  input.addEventListener('focus', () => { if (!input.value) { stop(); typeNext(); } });
+  input.addEventListener('blur', stop);
+  /* Start on a timer as well as on intersection. IntersectionObserver does not
+     fire in an unfocused or background tab, which left the field looking broken
+     rather than idle; the observer is now only used to pause when the field has
+     genuinely scrolled away. */
+  const io = new IntersectionObserver(([e]) => {
+    if (!e.isIntersecting) stop();
+    else if (!input.value && !typer) typeNext();
+  }, { threshold: 0.4 });
+  io.observe(input);
+  setTimeout(() => { if (!input.value && !typer) typeNext(); }, 700);
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) stop();
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); if (input.value.trim()) go(input.value.trim()); }
   });
+
+  input.addEventListener('input', stop);
 
   const examples = el('div', { class: 'find__eg' },
     el('span', { class: 'find__egl' }, '试试'),
@@ -90,6 +149,7 @@ export function viewHome(book, state) {
               el('circle', { cx: '8.5', cy: '8.5', r: '5.6', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7' }),
               el('path', { d: 'M12.8 12.8 17 17', stroke: 'currentColor', 'stroke-width': '1.7', fill: 'none', 'stroke-linecap': 'round' }))),
           input,
+          ghost,
           el('button', { class: 'find__go', type: 'submit' }, '搜索'),
           el('kbd', { class: 'find__kbd', 'aria-hidden': 'true' }, '/')),
 
@@ -239,31 +299,124 @@ function statBar(label, n, total) {
 }
 
 /* ── chapter index ──────────────────────────────────────────────────── */
+/* The chapter index used to be 33 cards and nothing else -- no way to search,
+   filter or sort it, so finding "the chapter about my deposit" meant scrolling
+   and reading every blurb. These controls make it a tool. */
 export function viewChapters(book) {
-  const root = el('div', { class: 'wrap' });
-  root.append(el('div', { class: 'pagehead' },
-    el('span', { class: 'u-label' }, `33 节 · ${fmt(book.items.length)} 条`),
-    el('h1', {}, '章节'),
-    el('p', {}, '每节内的条目按性价比从高到低排列。节标题说的是这一节要防的结果，具体做不做以条目标题为准。')));
+  const root = el('div', { class: 'wrap chindex' });
 
+  const SORTS = [
+    ['no', '按编号'],
+    ['n', '按条目数'],
+    ['a', '按 A 级占比'],
+    ['mark', '按我标记的'],
+  ];
+  let sort = 'no';
+  let q = '';
+  const cjSel = new Set();
+  const markedOnly = { on: false };
+
+  const search = el('input', {
+    class: 'search__input', type: 'search', autocomplete: 'off', spellcheck: 'false',
+    placeholder: '搜章节标题或内容，比如「押金」「夜班」', 'aria-label': '搜索章节',
+  });
+  const count = el('p', { class: 'chindex__count', 'aria-live': 'polite' });
   const grid = el('div', { class: 'chgrid' });
-  book.chapters.forEach((c, i) => {
+
+  /* every distinct 口径 present on a chapter, so the filter only offers real ones */
+  const allCj = [...new Set(book.chapters.flatMap((c) => c.cj))];
+  const cjBar = el('div', { class: 'chfilter' },
+    el('span', { class: 'chfilter__l' }, '口径'),
+    ...allCj.map((k) => el('button', {
+      class: 'chfilter__c', type: 'button', 'aria-pressed': 'false',
+      onclick: (e) => {
+        const b = e.currentTarget;
+        const on = b.getAttribute('aria-pressed') !== 'true';
+        b.setAttribute('aria-pressed', String(on));
+        if (on) cjSel.add(k); else cjSel.delete(k);
+        draw();
+      },
+    }, CJ_LABEL[k] || k)));
+
+  const sortSel = el('select', {
+    class: 'select', 'aria-label': '章节排序方式',
+    onchange: (e) => { sort = e.target.value; draw(); },
+  }, ...SORTS.map(([v, t]) => el('option', { value: v }, t)));
+
+  const markBtn = el('button', {
+    class: 'ghostbtn', type: 'button', 'aria-pressed': 'false',
+    onclick: (e) => {
+      markedOnly.on = !markedOnly.on;
+      e.currentTarget.setAttribute('aria-pressed', String(markedOnly.on));
+      e.currentTarget.classList.toggle('on', markedOnly.on);
+      draw();
+    },
+  }, '只看有标记的');
+
+  function current() {
+    const term = q.trim().toLowerCase();
+    let list = book.chapters.filter((c) => {
+      if (term && !`${c.title}${c.blurb}`.toLowerCase().includes(term)) return false;
+      if (cjSel.size && ![...cjSel].every((k) => c.cj.includes(k))) return false;
+      if (markedOnly.on && !c.items.some((it) => isMarked(it.ref))) return false;
+      return true;
+    });
+    if (sort === 'n') list = [...list].sort((a, b) => b.stats.n - a.stats.n);
+    else if (sort === 'a') list = [...list].sort((a, b) =>
+      (b.stats.A / (b.stats.n || 1)) - (a.stats.A / (a.stats.n || 1)));
+    else if (sort === 'mark') list = [...list].sort((a, b) =>
+      b.items.filter((i) => isMarked(i.ref)).length - a.items.filter((i) => isMarked(i.ref)).length);
+    else list = [...list].sort((a, b) => a.no - b.no);
+    return list;
+  }
+
+  function card(c, i) {
     const bar = el('div', { class: 'chcard__bar' });
     for (const e of ['A', 'B', 'C']) {
       if (c.stats[e]) bar.append(el('i', { data: { e }, style: `flex:${c.stats[e]}` }));
     }
-    grid.append(el('a', {
+    const marks = c.items.filter((it) => isMarked(it.ref)).length;
+    return el('a', {
       class: 'chcard reveal', data: { d: i % 8 }, href: `#/ch/${c.no}`,
     },
       el('div', { class: 'chcard__top' },
         el('span', { class: 'chcard__no' }, String(c.no).padStart(2, '0')),
+        marks ? el('span', { class: 'chcard__marked num', title: `${marks} 条已标记` }, `◆ ${marks}`) : null,
         el('span', { class: 'chcard__n' }, `${c.stats.n} 条`)),
       el('div', { class: 'chcard__t' }, c.title),
       el('div', { class: 'chcard__b' }, c.blurb),
       bar,
-      el('div', { class: 'chcard__cj' }, ...c.cj.map((k) => el('span', { class: 'chip chip--cj' }, CJ_LABEL[k] || k)))));
+      el('div', { class: 'chcard__cj' }, ...c.cj.map((k) => el('span', { class: 'chip chip--cj' }, CJ_LABEL[k] || k))));
+  }
+
+  function draw() {
+    const list = current();
+    count.textContent = list.length === book.chapters.length
+      ? `${book.chapters.length} 节`
+      : `${list.length} / ${book.chapters.length} 节`;
+    grid.replaceChildren(...(list.length ? list.map(card) : [
+      el('p', { class: 'empty__t' }, '没有符合条件的章节。')]));
+  }
+
+  let timer;
+  search.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { q = search.value; draw(); }, 110);
   });
+
+  root.append(el('div', { class: 'pagehead' },
+    el('span', { class: 'u-label' }, `${book.chapters.length} 节 · ${fmt(book.items.length)} 条`),
+    el('h1', {}, '章节'),
+    el('p', {}, '每节内的条目按性价比从高到低排列。节标题说的是这一节要防的结果，具体做不做以条目标题为准。')));
+
+  root.append(el('div', { class: 'chindex__bar' },
+    el('div', { class: 'search' }, search),
+    count,
+    sortSel,
+    markBtn));
+  root.append(cjBar);
   root.append(grid);
+  draw();
   reveal(root);
   return root;
 }
@@ -301,6 +454,21 @@ export function viewChapter(book, no, jumpTo) {
         el('a', { class: 'btn btn--ghost', href: `#/explore?ch=${c.no}` }, `在检索里只看这一节`),
         navPrevNext(book, c.no)))));
 
+  /* A chapter is 18-21 screens tall. Without a way in and a sense of position you
+   are just scrolling. Add an in-section index and a mark counter. */
+  const list = el('details', { class: 'chjump' },
+    el('summary', { class: 'chjump__sum' },
+      el('span', {}, '本节目录'),
+      el('span', { class: 'chjump__n num' }, `${c.items.length} 条`)),
+    el('ol', { class: 'chjump__l' }, ...c.items.map((raw) => {
+      const href = `#/ch/${c.no}/${raw.no}`;
+      return el('li', {},
+        el('a', { href },
+          el('span', { class: 'chjump__no num' }, String(raw.no).padStart(2, '0')),
+          el('span', { class: 'chjump__t' }, raw.title)));
+    })));
+  root.append(list);
+
   const cards = el('div', { class: 'cards' });
   root.append(el('h2', { class: 'sr-only' }, `本节 ${c.stats.n} 条`));
   c.items.forEach((raw, i) => {
@@ -308,6 +476,22 @@ export function viewChapter(book, no, jumpTo) {
     cards.append(itemCard(book, it, { d: i % 8 }));
   });
   root.append(cards);
+
+  /* Marked-count bar, kept in sync by the marks:change event in app.js. */
+  const markedBar = el('div', { class: 'chmarked', hidden: true },
+    el('span', { class: 'chmarked__t' }, '本节已标记'),
+    el('b', { class: 'num' }, '0'),
+    el('span', {}, '条'),
+    el('a', { class: 'chmarked__go', href: `#/explore?ch=${c.no}&marks=1` }, '只看这些'));
+  const syncMarked = () => {
+    const n = c.items.filter((raw) => isMarked((book.byId.get(raw.id) || raw).ref)).length;
+    markedBar.querySelector('b').textContent = String(n);
+    markedBar.hidden = n === 0;
+  };
+  document.addEventListener('marks:change', syncMarked);
+  root.append(markedBar);
+  syncMarked();
+
   reveal(root);
   return root;
 }

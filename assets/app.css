@@ -489,6 +489,101 @@
     .find__chip:active, .quick__c:active { background: var(--paper-2); border-color: var(--ink); }
   }
 
+/* rotating placeholder — a real placeholder can't animate, so the field goes
+     transparent and this sibling does the typing */
+  .find__ghost {
+    position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    padding: 13px 0; pointer-events: none; color: var(--muted);
+    font: 400 var(--step-1)/1.35 var(--sans); max-width: 100%;
+    white-space: nowrap; overflow: hidden; opacity: 0;
+  }
+  .find__ghost::after {
+    content: ""; display: inline-block; width: 1.5px; height: 1.05em;
+    margin-left: 3px; background: var(--accent-deep); vertical-align: -.16em;
+    animation: caret 1.05s steps(2, start) infinite;
+  }
+  .find__ghost.is-on { opacity: 1; }
+  @keyframes caret { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+  /* the real placeholder only exists for no-JS and for the empty unfocused state */
+  .find__input:focus::placeholder { color: transparent; }
+  @media (prefers-reduced-motion: reduce) {
+    .find__ghost { display: none; }
+    .find__input::placeholder { color: var(--muted); }
+  }
+  @media (max-width: 640px) {
+    .find__ghost { padding: 11px 0; font-size: var(--step-0); }
+  }
+
+  /* chapter index: search, filter, sort */
+  .chindex__bar {
+    display: grid; gap: 10px; align-items: center; margin: 6px 0 12px;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+  }
+  @media (max-width: 860px) {
+    .chindex__bar { grid-template-columns: minmax(0, 1fr) auto; }
+    .chindex__bar .ghostbtn { grid-column: 2; }
+  }
+  .chindex__count {
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+    white-space: nowrap; font-variant-numeric: tabular-nums;
+  }
+  .chfilter {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    padding-bottom: 16px; margin-bottom: 4px; border-bottom: 1px solid var(--line);
+  }
+  .chfilter__l { font-size: var(--step--1); color: var(--muted); margin-right: 2px; }
+  .chfilter__c {
+    font-size: var(--step--1); padding: 5px 11px; border: 1px solid var(--line);
+    color: var(--muted);
+    transition: border-color .18s var(--ease), color .18s var(--ease), background-color .18s var(--ease);
+  }
+  .chfilter__c:hover { color: var(--ink); border-color: var(--ink); }
+  .chfilter__c[aria-pressed="true"] {
+    background: var(--ink); color: var(--paper); border-color: var(--ink);
+  }
+  .chcard__marked { font-size: 11px; color: var(--accent-deep); }
+
+  /* chapter reader: in-section index and mark counter */
+  .chjump {
+    border: 1px solid var(--line); margin: 4px 0 22px; background: var(--paper);
+  }
+  .chjump__sum {
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+    padding: 11px 14px; font-size: var(--step--1); color: var(--muted);
+    list-style: none;
+  }
+  .chjump__sum::-webkit-details-marker { display: none; }
+  .chjump__sum::after {
+    content: "▾"; margin-left: auto; font-size: 11px; transition: transform .2s var(--ease);
+  }
+  .chjump[open] .chjump__sum::after { transform: rotate(180deg); }
+  .chjump__sum:hover { color: var(--ink); }
+  .chjump__n { font-size: 11px; }
+  .chjump__l {
+    list-style: none; margin: 0; padding: 0 0 6px;
+    max-height: 320px; overflow-y: auto; scrollbar-width: thin;
+    border-top: 1px solid var(--line);
+  }
+  .chjump__l a {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px;
+    align-items: baseline; padding: 7px 14px;
+    transition: background-color .15s var(--ease);
+  }
+  .chjump__l a:hover { background: var(--paper-2); }
+  .chjump__no { font-size: 11px; color: var(--muted); }
+  .chjump__t { font-size: var(--step--1); line-height: 1.4; }
+  @media (max-width: 640px) { .chjump__l { max-height: 240px; } }
+
+  .chmarked {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px;
+    margin-top: 26px; padding: 13px 15px;
+    background: var(--paper-2); border-left: 2px solid var(--accent-deep);
+    font-size: var(--step--1); color: var(--muted);
+  }
+  .chmarked b { font-size: var(--step-1); color: var(--ink); }
+  .chmarked__go { margin-left: auto; color: var(--ink); border-bottom: 1px solid var(--line); }
+  .chmarked__go:hover { border-bottom-color: var(--accent); }
+
 /* ── base ──────────────────────────────────────────────────────────── */
 @layer components {
 
@@ -846,6 +941,7 @@
 
   /* search field */
   .find {
+    position: relative;              /* anchor for the rotating ghost text */
     display: flex; align-items: center; gap: 10px;
     max-width: 640px; padding: 4px 4px 4px 14px;
     background: var(--paper); border: 1px solid var(--ink);
@@ -855,6 +951,7 @@
   .find:focus-within { box-shadow: var(--lift-lg); }
   .find__ico { color: var(--muted); display: grid; place-items: center; flex: none; }
   .find__input {
+    position: relative; z-index: 1;   /* typed text sits above the ghost */
     flex: 1; min-width: 0; border: 0; background: none; padding: 13px 0;
     font: 400 var(--step-1)/1.35 var(--sans); color: var(--ink);
   }
