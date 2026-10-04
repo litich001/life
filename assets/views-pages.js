@@ -33,69 +33,6 @@ const PROMPTS = [
   '孩子上学要注意什么',
 ];
 
-/* ── the corpus map ─────────────────────────────────────────────────────
- * The hero's right column: one micro-bar per chapter, height of the whole book
- * made visible -- length is how many entries a chapter has, and the blue portion
- * is how much of that chapter is grade A.
- *
- * Every field here is one I can defend. Evidence is the only axis the book
- * publishes a tally for, and it matches evidenceStats exactly (410/149/49);
- * chapters partition the 608 cleanly. I deliberately did NOT plot cost or
- * value: those contradict the book in this extraction (see the note below),
- * and a confident-looking chart of a wrong number is worse than no chart.
- *
- * Two numbers argued against a scatterplot of value against cost: value is
- * almost perfectly collinear with cost here (all 78 "极高" sit in the costs=3
- * column), which would render as a neat diagonal staircase and imply a
- * relationship that is really just a sort order.
- */
-function corpusMap(book) {
-  const chs = book.chapters;
-  const max = Math.max(...chs.map((c) => c.stats.n));
-
-  /* One readout, not 33 tooltips. Hovering or focusing a row writes here, so no
-     floating layer can collide with the hero. Deliberately NOT aria-live: it is
-     driven by pointerenter, and a live region that fires on every mouse move
-     would talk over a screen-reader user. Each row's own aria-label is the
-     accessible channel, and it carries the same facts.
-
-     The rows also carry no text of their own. At 33 rows a number in every row
-     is noise, and text sets the row height to the line box -- which is what
-     pushed the hero to 134% of a 700px viewport in the first attempt. */
-  const first = chs[0];
-  const out = el('p', { class: 'cmap__out' },
-    el('b', {}, `${String(first.no).padStart(2, '0')} ${first.title}`),
-    el('span', { class: 'num' }, `${first.stats.n} 条 · A 级 ${first.stats.A || 0}`));
-
-  const rows = chs.map((c, i) => {
-    const n = c.stats.n;
-    const a = c.stats.A || 0;
-    const row = el('a', {
-      class: 'cmap__r', href: `#/ch/${c.no}`,
-      'aria-label': `第 ${c.no} 节 ${c.title}，${n} 条，A 级 ${a} 条`,
-      style: `--d:${(i * 11)}ms`,
-      onpointerenter: show, onfocus: show,
-    },
-      el('i', { class: 'cmap__all', style: `width:${(n / max * 100).toFixed(1)}%` },
-        el('i', { class: 'cmap__a', style: `width:${(n ? a / n * 100 : 0).toFixed(1)}%` })));
-    function show() {
-      out.replaceChildren(
-        el('b', {}, `${String(c.no).padStart(2, '0')} ${c.title}`),
-        el('span', { class: 'num' }, `${n} 条 · A 级 ${a}`));
-    }
-    return row;
-  });
-
-  return el('figure', { class: 'cmap' },
-    el('figcaption', { class: 'cmap__cap' },
-      el('span', {}, `01–${String(chs.length).padStart(2, '0')} 节`),
-      el('span', { class: 'cmap__key' },
-        el('i', { class: 'cmap__ka' }), 'A 级',
-        el('i', { class: 'cmap__kb' }), 'B / C 级')),
-    el('div', { class: 'cmap__rows' }, ...rows),
-    out);
-}
-
 /* ── home ───────────────────────────────────────────────────────────── */
 export function viewHome(book, state) {
   const m = book.meta;
@@ -201,39 +138,33 @@ const examples = reduceMotion
     ...EXAMPLES.map((w) => el('a', { class: 'find__chip', href: `#/explore?q=${encodeURIComponent(w)}` }, w)))
   : null;
 
-  /* Evidence is the only quick filter left. The cost filters used to sit here
-     labelled 不花钱 / 不占时间 / 不需要毅力, but `cost=money` selects items whose
-     money flag is SET (data.js filters on it.flags[c]) -- so those labels stated
-     the opposite of what they returned. And the underlying flags contradict the
-     book anyway: howToRead says 性价比极高 means 既不花钱、不花时间、不需要毅力 and
-     should be 104 entries, where this extraction has 78 and every one of them
-     carries all three cost markers. Relabelling would have made the lie tidier
-     rather than smaller. The cost filters remain on the explore page, where the
-     per-item markers are visible next to them. */
-  const quick = el('div', { class: 'quick' },
-    el('span', { class: 'quick__l' }, '按证据等级'),
+  /* One quiet row of ways in, under a rule. Everything on it is a real query,
+     and every number on it is one the book itself publishes -- 410 / 149 / 49
+     over 608 is exactly what evidenceStats says.
+
+     The cost filters that used to sit here are gone rather than relabelled.
+     `cost=money` selects entries whose money flag is SET (data.js filters on
+     it.flags[c]), so the labels 不花钱 / 不占时间 / 不需要毅力 stated the reverse of
+     what they returned. And the flags contradict the book anyway: howToRead says
+     性价比「极高」means 既不花钱、不花时间、不需要毅力 and that there are 104 of them,
+     where this extraction has 78 -- every one carrying all three cost markers --
+     while the only 10 genuinely cost-free entries are labelled 一般. The
+     per-item cost markers stay on the explore page, where a reader can see them
+     next to the claim they belong to. */
+  const ways = el('nav', { class: 'ways', 'aria-label': '按证据等级浏览' },
+    el('span', { class: 'ways__l' }, '按证据等级'),
     ...[['A', m.evidence.A], ['B', m.evidence.B], ['C', m.evidence.C]].map(([k, n]) =>
-      el('a', { class: 'quick__c', href: `#/explore?ev=${k}` },
-        el('b', { class: 'num' }, k), el('span', { class: 'num' }, `${n} 条`))));
+      el('a', { class: 'ways__c', href: `#/explore?ev=${k}` },
+        el('b', { class: 'num' }, k),
+        el('span', { class: 'num' }, fmt(n)))),
+    el('a', { class: 'ways__all', href: '#/explore' }, `全部 ${fmt(m.items)} 条`));
 
-  /* The return types as the second way in. Every one is a real query. The counts
-     overlap -- 319 of the 608 entries carry more than one 口径 -- so they are
-     labelled as such rather than presented as a partition of 608. */
-  const RES_ICON = { '寿命': 'heart', '时间与精力': 'clock', '金钱': 'wallet', '人身自由': 'shield' };
-  const resCells = el('div', { class: 'kinds' },
-    el('span', { class: 'kinds__l' }, '按回报（一条可属多类）'),
-    ...book.method.resources.map((r) => {
-      const key = r.k === '时间与精力' ? '时间精力' : r.k;
-      const n = book.items.filter((i) => i.cj.includes(key)).length;
-      return el('a', {
-        class: 'kinds__c spot', href: '#/explore?cj=' + encodeURIComponent(key),
-        title: r.d,
-      },
-        el('span', { class: 'kinds__ico', 'aria-hidden': 'true' }, icon(RES_ICON[r.k] || 'tag', 17)),
-        el('span', { class: 'kinds__k' }, r.k),
-        el('span', { class: 'kinds__n num' }, fmt(n)));
-    }));
-
+  /* Full measure, no side column. Three rounds in this corner all failed the
+     same way -- a ~300px sidebar of small marks reads as a sidebar, and no
+     amount of content in it makes the page feel composed. Removing the corner
+     only works if the statement grows to fill the width, so the title is now
+     roughly double its old size and the taxonomy widgets are gone rather than
+     relocated. */
   const hero = el('section', { class: 'poster' },
     el('div', { class: 'wrap poster__in' },
       el('p', { class: 'poster__eyebrow num' },
@@ -254,21 +185,15 @@ const examples = reduceMotion
           el('svg', { viewBox: '0 0 20 20', width: 17, height: 17 },
             el('circle', { cx: '8.5', cy: '8.5', r: '5.6', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7' }),
             el('path', { d: 'M12.8 12.8 17 17', stroke: 'currentColor', 'stroke-width': '1.7', fill: 'none', 'stroke-linecap': 'round' }))),
+        // the ghost has to share the input's origin, not the field's padding box,
+        // or it renders on top of the icon
         field,
         el('button', { class: 'find__go', type: 'submit' }, '搜索'),
         el('kbd', { class: 'find__kbd', 'aria-hidden': 'true' }, '/')),
 
       counter,
       examples,
-      quick,
-      resCells,
-
-      /* The right column. Empty for two rounds now, because a decorative
-         wordmark was worse than nothing: a dot-matrix "Life" is a template
-         gesture, it says nothing about 608 graded entries, and "Life" in Latin
-         letters on a Chinese site is an arbitrary choice. What goes here is the
-         shape of the corpus itself. */
-      el('div', { class: 'poster__art' }, corpusMap(book))));
+      ways));
 
   root.append(hero);
 

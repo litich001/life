@@ -349,28 +349,10 @@
   }
 }
 
-/* quick filters — three ways in besides free text */
-  .quick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
-  .quick__l {
-    font-size: var(--step--1); color: var(--muted); margin-right: 2px;
-  }
-  .quick__sep { width: 1px; height: 16px; background: var(--line); margin-inline: 6px; }
-  .quick__c {
-    display: inline-flex; align-items: center; gap: 7px;
-    padding: 5px 11px; border: 1px solid var(--line); color: var(--ink-2);
-    font-size: var(--step--1);
-    transition: border-color .18s var(--ease), color .18s var(--ease), background-color .18s var(--ease);
-  }
-  .quick__c b { font-weight: 600; color: var(--ink); }
-  .quick__c span { color: var(--muted); font-size: 11px; }
-  .quick__c:hover { border-color: var(--ink); background: var(--paper-2); }
-  /* A is the grade worth filtering by, so it carries the evidence hue */
-  .quick__c:first-of-type b { color: var(--data); }
-
   /* These duplicate the filter rail on the explore page, which a phone gets
      anyway — dropping the row keeps the hero inside one screen. Must come after
      the base rule above, or the later declaration wins on equal specificity. */
-  @media (max-width: 640px) { .quick { display: none; } }
+  @media (max-width: 640px) { }
   .lg__ico { color: var(--muted); }
 
   /* content-author credit table */
@@ -428,8 +410,7 @@
   /* touch feedback — :hover does nothing on a phone, :active is the real signal */
   @media (hover: none) {
     .card:active { transform: none; box-shadow: none; }
-    .card:active::before { transform: scaleY(1); }
-    .find__chip:active, .quick__c:active { background: var(--paper-2); border-color: var(--ink); }
+    .card:active::before { transform: scaleY(1); }.find__chip:active{ background: var(--paper-2); border-color: var(--ink); }
   }
 
 /* rotating placeholder — a real placeholder can't animate, so the field goes
@@ -719,7 +700,10 @@
     font-family: var(--mono); font-size: 11.5px; letter-spacing: .04em; color: var(--muted);
   }
 
-  section { padding-block: clamp(46px, 7vw, 104px); }
+  /* Section rhythm. Excludes .poster on purpose: the hero carries its own
+     padding-block on .poster__in, and inheriting this on top of it added 180px
+     at 1280 -- which is most of why the hero kept coming in over budget. */
+  section:not(.poster) { padding-block: clamp(46px, 7vw, 104px); }
   .sec-head { display: flex; align-items: baseline; gap: 18px; margin-bottom: clamp(22px, 3vw, 40px); }
   .sec-head h2 { font-size: var(--step-3); }
   .sec-head .u-label { flex: none; }
@@ -886,124 +870,157 @@
     .band__more { position: static; display: inline-block; margin-top: 4px; }
   }
 
-  /* Hero: the search field leads, but the hero still needs a composition —
-   a flat vertical stack of equal-weight blocks reads as an unstyled default.
-   Title and search take the left; the evidence ledger anchors the right. */
-  /* Hero height budget. At 1280x800 this used to be 806px -- 101% of the screen,
-     so the fold showed nothing but the hero. Target is roughly 75-80% so the
-     situation tiles below it peek in and invite the scroll. */
+  /* ── the hero ────────────────────────────────────────────────────────────
+     Full measure, no side column, and one statement that owns the width.
+
+     Three things were tried in that corner and all three failed the same way: an
+     evidence ledger, a dot-matrix wordmark, a 33-bar corpus map. The error was
+     the form, not the content -- a ~300px column of small marks reads as a
+     sidebar no matter what is in it, and a hero with a sidebar reads as
+     unfinished. So the corner is gone, and the title roughly doubles to pay for
+     the width it now spans.
+
+     That also made the hero SHORTER, which was the other goal all along: it used
+     to pack seven stacked elements into ~640px. Four elements at double the type
+     is about 430px, so more than half the screen now belongs to what is below
+     the fold. */
   .poster { position: relative; border-bottom: 1px solid var(--line); }
   .poster__in {
-    padding-block: clamp(24px, 3.2vw, 44px) clamp(20px, 2.6vw, 32px);
-    display: grid; gap: clamp(14px, 1.8vw, 20px);
+    padding-block: clamp(26px, 3.4vw, 52px) clamp(22px, 2.8vw, 38px);
+    display: grid; gap: clamp(18px, 2.2vw, 26px);
   }
-  .poster__main { display: grid; gap: clamp(11px, 1.4vw, 15px); justify-items: start; }
-  .poster__title {
-    font-size: clamp(1.85rem, 4.2vw, 3.3rem); line-height: 1.1; letter-spacing: -.038em;
-    font-weight: 700; margin: 0;
-    text-wrap: balance;
-  }
-  .poster__title em { font-style: normal; color: var(--accent-deep); }
+
   .poster__eyebrow {
     font-family: var(--mono); font-size: 12px; letter-spacing: .04em;
     color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 9px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--line);
   }
   .poster__eyebrow i { font-style: normal; opacity: .4; }
   .poster__eyebrow a { color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 1px; }
   .poster__eyebrow a:hover { color: var(--ink); border-bottom-color: var(--accent); }
 
-  /* Return types. This used to be a section halfway down the page, which put the
-     main way of browsing below the situations block. Folded into the hero it sits
-     where someone actually reads it, and the evidence ledger is gone -- the quick
-     filters below already filter by grade.
-
-     One row, one line per cell. Stacked cards cost 116px here and pushed the hero
-     back to 86% of an 800px screen, which defeats the point of putting it here. */
-  .kinds {
-    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 1px; background: var(--line); border: 1px solid var(--line);
-    width: 100%; max-width: 640px;
+  /* 7.4vw, not 6vw: the first line is 11 CJK glyphs and each is 1em wide, so the
+     font-size IS the line length. At 6vw the cap kicked in at 1280 and the title
+     stopped filling the measure. 1.75rem floor keeps 11 glyphs inside 320px. */
+  /* No text-wrap: balance here. It optimises for even line lengths and will
+     re-break a line you broke on purpose, ignoring the <br>: at 360px it split
+     the title into 3 lines and cut 寿命 in half across two of them, which also
+     destroyed the emphasis. The two lines below are chosen, so the browser is
+     better off left alone. */
+  .poster__title {
+    font-size: clamp(1.55rem, 7.4vw, 5.2rem);
+    line-height: 1.04; letter-spacing: -.042em;
+    font-weight: 700; margin: 0;
   }
-  .kinds__l {
-    grid-column: 1 / -1; background: var(--paper);
+  .poster__title em { font-style: normal; color: var(--accent-deep); }
+
+  /* The ways-in row. Quiet on purpose: a rule, a label, three numbers and an
+     escape. It gives the hero a bottom edge without adding a second block of
+     visual weight competing with the title. */
+  .ways {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 18px;
+    border-top: 1px solid var(--line); padding-top: 14px;
+  }
+  .ways__l {
     font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
     text-transform: uppercase; color: var(--muted);
-    padding: 6px 11px; border-bottom: 1px solid var(--line);
   }
-  .kinds__c {
-    background: var(--paper); padding: 9px 11px;
-    display: flex; align-items: center; gap: 7px; min-width: 0;
-    transition: background-color .22s var(--ease), color .22s var(--ease);
+  .ways__c {
+    display: inline-flex; align-items: baseline; gap: 6px;
+    font-size: var(--step--1); color: var(--muted);
+    border-bottom: 1px solid transparent; padding: 2px 0;
+    transition: color .2s var(--ease), border-color .2s var(--ease);
   }
-  .kinds__ico { color: var(--data); flex: none; display: grid; place-items: center; }
-  .kinds__k {
-    font-size: var(--step--1); font-weight: 600; letter-spacing: -.005em;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  .ways__c b { font-weight: 600; color: var(--ink); }
+  .ways__c span { font-variant-numeric: tabular-nums; }
+  /* A is the grade worth filtering by, so it carries the evidence hue */
+  .ways__c:first-of-type b { color: var(--data); }
+  .ways__c:hover { color: var(--ink); border-bottom-color: var(--ink); }
+  .ways__all {
+    margin-inline-start: auto; font-size: var(--step--1); color: var(--muted);
+    border-bottom: 1px solid var(--line); padding: 2px 0;
+    transition: color .2s var(--ease), border-color .2s var(--ease);
   }
-  .kinds__n { font-size: 11.5px; color: var(--muted); margin-inline-start: auto; flex: none; }
-  /* the hover state is a solid blue field -- the one place the second hue is a
-     block rather than a mark, which is what makes it read as a real second
-     colour instead of a tint of the first */
-  .kinds__c:hover { background: var(--data); color: var(--data-ink); }
-  .kinds__c:hover .kinds__ico { color: var(--data-ink); }
-  .kinds__c:hover .kinds__n { color: color-mix(in srgb, var(--data-ink) 84%, var(--data)); }
+  .ways__all:hover { color: var(--ink); border-bottom-color: var(--accent); }
 
-  .poster__art { display: none; }
-  @media (min-width: 860px) { .poster__art { display: block; } }
-
-  /* ── the corpus map ──────────────────────────────────────────────────────
-     33 rows, one per chapter. The whole point is that it is small: it has to sit
-     in a 300px column and still read as a precise index rather than a chart.
-     So one colour, one axis, hairlines instead of boxes, and no grid -- the
-     density IS the design. A 33-column stacked A/B/C version was tried first and
-     had to be thrown away: at ~6px per column the B and C segments fall below a
-     pixel and turn into moire. */
-  .cmap { margin: 0; display: grid; gap: 8px; }
-  .cmap__cap {
-    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
-    text-transform: uppercase; color: var(--muted);
-    padding-bottom: 7px; border-bottom: 1px solid var(--line);
+  /* ── search field ────────────────────────────────────────────────────────
+     Full measure rather than capped at 640px. Under a title that now spans the
+     whole column, a half-width field read as a leftover, and the single strongest
+     action on the page was the smallest object on it. */
+  .find {
+    position: relative;
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 5px 5px 5px 16px;
+    background: var(--paper); border: 1px solid var(--ink);
+    box-shadow: var(--lift);
+    transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
   }
-  .cmap__key { margin-inline-start: auto; display: flex; align-items: center; gap: 5px; letter-spacing: .04em; }
-  .cmap__ka, .cmap__kb { width: 11px; height: 3px; flex: none; }
-  .cmap__ka { background: var(--data); }
-  .cmap__kb { background: var(--paper-3); border: 1px solid var(--line); }
-
-  /* Rows are pure bars in a taller row box. The row is the hit target, so it is
-     9px while the bar inside it is 5px -- that gives a usable pointer target
-     without a text line box setting the height, which is how the first attempt
-     reached 738px. The gaps between bars come from the row box, not from grid
-     gap, so the two do not compound. */
-  .cmap__rows { display: grid; }
-  .cmap__r {
-    display: flex; align-items: center; height: 9px; padding: 0;
-    transition: background-color .18s var(--ease);
+  .find:focus-within { box-shadow: var(--lift-lg); }
+  .find__ico { color: var(--muted); display: grid; place-items: center; flex: none; }
+  /* the rotating ghost has to share the input's origin -- see .find__ghost */
+  .find__field { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; }
+  .find__input {
+    position: relative; z-index: 1; /* typed text sits above the ghost */
+    flex: 1; min-width: 0; border: 0; background: none; padding: 15px 0;
+    font: 400 var(--step-1)/1.35 var(--sans); color: var(--ink);
   }
-  .cmap__all {
-    display: block; height: 5px; background: var(--paper-3);
-    transform-origin: 0 50%; transform: scaleX(0);
-    animation: cmapWipe .5s var(--ease-out) backwards;
-    animation-delay: calc(var(--d, 0ms) + 120ms);
+  .find__input:focus { outline: none; }
+  .find__input::placeholder { color: var(--muted); }
+  .find__input::-webkit-search-cancel-button { display: none; }
+  .find__go {
+    flex: none; align-self: stretch; padding: 0 26px;
+    border: 0; background: var(--ink); color: var(--paper);
+    font-size: var(--step-0); font-weight: 500;
+    transition: background-color .2s var(--ease);
   }
-  @keyframes cmapWipe { to { transform: scaleX(1); } }
-  .cmap__a { display: block; height: 100%; background: var(--data); }
-
-  .cmap__r:hover, .cmap__r:focus-visible { background: var(--paper-2); }
-  .cmap__r:hover .cmap__all, .cmap__r:focus-visible .cmap__all { background: color-mix(in srgb, var(--data) 24%, var(--paper-3)); }
-  .cmap__r:focus-visible { outline: 2px solid var(--accent-deep); outline-offset: 1px; }
-
-  /* one readout for all 33 rows, so nothing ever floats over the hero */
-  .cmap__out {
-    display: grid; gap: 1px; min-height: 2.6em; align-content: start;
-    border-top: 1px solid var(--line); padding-top: 7px;
+  .find__go:hover { background: var(--accent-deep); }
+  .find__kbd {
+    flex: none; font: 500 11px/1 var(--mono); color: var(--muted);
+    border: 1px solid var(--line); padding: 5px 7px; margin-right: 8px;
   }
-  .cmap__out b { font-size: 12.5px; font-weight: 600; line-height: 1.3; }
-  .cmap__out span { font-size: 10.5px; color: var(--muted); }
 
+  /* rotating placeholder -- a real placeholder cannot animate, so the field goes
+     transparent and this sibling does the typing. It must be positioned against
+     .find__field (which wraps the input), not against .find: anchoring it to the
+     form put the text on top of the magnifier icon.
+     The placeholder is the fallback for no-JS and for the empty idle state. While
+     the ghost is painting it must step aside completely -- hiding it only on
+     :focus stacked it on top of the typing, because the ghost runs unfocused. */
+  .find__ghost {
+    position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    pointer-events: none; color: var(--muted);
+    font: 400 var(--step-1)/1.35 var(--sans); max-width: 100%;
+    white-space: nowrap; overflow: hidden; opacity: 0;
+  }
+  .find__ghost::after {
+    content: ""; display: inline-block; width: 1.5px; height: 1.05em;
+    margin-left: 3px; background: var(--accent-deep); vertical-align: -.16em;
+    animation: caret 1.05s steps(2, start) infinite;
+  }
+  .find__ghost.is-on { opacity: 1; }
+  @keyframes caret { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+  .find__field.has-ghost .find__input::placeholder { color: transparent; }
   @media (prefers-reduced-motion: reduce) {
-    .cmap__all { animation: none; }
+    .find__ghost { display: none; }
+    .find__input::placeholder { color: var(--muted); }
   }
+  @media (max-width: 640px) {
+    .find__ghost { font-size: var(--step-0); }
+  }
+
+  .find__count {
+    font-size: var(--step--1); color: var(--muted); min-height: 1.4em;
+    margin-top: -14px; font-variant-numeric: tabular-nums;
+  }
+  .find__count.is-empty { color: var(--accent-deep); }
+  .find__eg { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+  .find__egl { font-size: var(--step--1); color: var(--muted); margin-right: 2px; }
+  .find__chip {
+    font-size: var(--step--1); padding: 5px 11px;
+    border: 1px solid var(--line); color: var(--ink-2);
+    transition: border-color .18s var(--ease), color .18s var(--ease), background-color .18s var(--ease);
+  }
+  .find__chip:hover { border-color: var(--ink); color: var(--ink); background: var(--paper-2); }
 
   /* ── scroll-spy indicator ───────────────────────────────────────────────
      The TOC is a list of links; this is the one bar that slides to whichever
@@ -1037,102 +1054,21 @@
     opacity: 0; transition: opacity .3s var(--ease);
   }
   .spot:hover::after { opacity: 1; }
-  .spot > * { position: relative; z-index: 1; }
-
-  /* icon micro-motion. This is the only kind that survives on touch, where
-     there is no hover -- a small lift and rotate, nothing that moves the layout */
-  .sit__ico, .about__cardi, .kinds__ico, .lg__ico, .idx33__no {
+  .spot > * { position: relative; z-index: 1; }.sit__ico, .about__cardi, .lg__ico, .idx33__no{
     transition: transform .3s var(--ease-spring), color .22s var(--ease);
   }
   .about__card:hover .about__cardi { transform: rotate(-8deg) scale(1.06); }
   .idx33:hover .idx33__no { transform: translateX(3px); }
   .sit:active .sit__ico { transform: translateY(-1px); }
 
-  /* Two columns once there is room. Without this the title/search stack sits in
-     a full-width container and the right half of the hero is simply empty. */
-  @media (min-width: 860px) {
-    .poster__in {
-      grid-template-columns: minmax(0, 1fr) clamp(268px, 25vw, 348px);
-      column-gap: clamp(28px, 3.6vw, 56px);
-      align-items: start;
-    }
-    /* the eyebrow and title stay in the left column; the map is the only thing
-       that goes right, so it can sit at the top without competing */
-    .poster__eyebrow, .poster__title, .find, .find__count,
-    .find__eg, .quick, .kinds { grid-column: 1; }
-    .poster__art { grid-column: 2; grid-row: 1 / span 6; align-self: center; }
-    .poster__title { font-size: clamp(2rem, 3.3vw, 3.05rem); }
-  }
-  /* One scrollable row on a phone. Four columns at 320 is 70px per cell and the
-     labels truncate to nothing; wrapping to two columns costs three rows. */
-  @media (max-width: 560px) {
-    .kinds {
-      grid-template-columns: none; grid-auto-flow: column;
-      grid-auto-columns: max-content; overflow-x: auto;
-      scrollbar-width: none; -webkit-overflow-scrolling: touch;
-    }
-    .kinds::-webkit-scrollbar { display: none; }
-    .kinds__l { display: none; }
-    .kinds__c { border-right: 1px solid var(--line); }
-    .kinds__c:last-child { border-right: 0; }
-  }
-
-  /* search field */
-  .find {
-    position: relative;              /* anchor for the rotating ghost text */
-    display: flex; align-items: center; gap: 10px;
-    max-width: 640px; padding: 4px 4px 4px 14px;
-    background: var(--paper); border: 1px solid var(--ink);
-    box-shadow: var(--lift);
-    transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
-  }
-  .find:focus-within { box-shadow: var(--lift-lg); }
-  .find__ico { color: var(--muted); display: grid; place-items: center; flex: none; }
-  .find__input {
-    position: relative; z-index: 1;   /* typed text sits above the ghost */
-    flex: 1; min-width: 0; border: 0; background: none; padding: 13px 0;
-    font: 400 var(--step-1)/1.35 var(--sans); color: var(--ink);
-  }
-  .find__input:focus { outline: none; }
-  .find__input::placeholder { color: var(--muted); }
-  .find__input::-webkit-search-cancel-button { display: none; }
-  .find__go {
-    flex: none; align-self: stretch; padding: 0 18px; border: 0;
-    background: var(--ink); color: var(--paper); font-size: var(--step--1); font-weight: 500;
-    transition: background-color .2s var(--ease);
-  }
-  .find__go:hover { background: var(--accent-deep); }
-  .find__kbd {
-    flex: none; font: 500 11px/1 var(--mono); color: var(--muted);
-    border: 1px solid var(--line); padding: 4px 6px; margin-right: 6px;
-  }
-  .find__count {
-    font-size: var(--step--1); color: var(--muted); min-height: 1.4em;
-    margin-top: -10px; font-variant-numeric: tabular-nums;
-  }
-  .find__count.is-empty { color: var(--accent-deep); }
-
-  .find__eg { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
-  .find__egl { font-size: var(--step--1); color: var(--muted); margin-right: 2px; }
-  .find__chip {
-    font-size: var(--step--1); padding: 5px 11px; border: 1px solid var(--line);
-    color: var(--ink-2); transition: border-color .18s var(--ease), color .18s var(--ease), background-color .18s var(--ease);
-  }
-  .find__chip:hover { border-color: var(--ink); color: var(--ink); background: var(--paper-2); }
-  /* the one place the accent becomes a solid field.
-     every colour on it is an opaque mix into the accent, never an alpha,
-     so contrast can't silently depend on what's behind it. */
-  .cta--fire { background: var(--accent-deep); color: var(--accent-ink); }
-  .cta--fire span { color: color-mix(in srgb, var(--accent-ink) 90%, var(--accent-deep)); }
-  .cta--fire kbd { border-color: color-mix(in srgb, var(--accent-ink) 46%, var(--accent-deep)); }
-  .cta--fire:hover { background: color-mix(in srgb, var(--accent-deep) 84%, #000); }
-  .cta--fire:hover span { color: var(--accent-ink); }
-
   /* On a phone the hero must not eat more than a screen — otherwise the first
-     actionable thing (the situation tiles) is below the fold. */
+     actionable thing (the situation tiles) is below the fold.
+     No font-size override on the title here: a fixed 1.72rem beat the clamp, and
+     at 360px that made line 1 wrap even though 7.4vw fits it. The clamp already
+     scales it, and line 1 needs about 10.5em of content box to stay on one line. */
   @media (max-width: 640px) {
     .poster__in { padding-block: 22px 26px; gap: 16px; }
-    .poster__title { font-size: 1.65rem; line-height: 1.22; }
+    .poster__title { line-height: 1.1; }
     .find { padding-left: 11px; }
     .find__input { padding: 11px 0; font-size: var(--step-0); }
     .find__kbd { display: none; }
