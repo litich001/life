@@ -174,7 +174,11 @@
     display: grid; gap: 5px; align-content: start; position: relative;
     transition: background-color .24s var(--ease), color .24s var(--ease);
   }
-  .about__cardt { font-size: var(--step-1); font-weight: 600; letter-spacing: -.015em; }
+  .about__cardt {
+    font-size: var(--step-1); font-weight: 600; letter-spacing: -.015em;
+    /* reserve room for the absolutely positioned arrow, or long titles run under it */
+    padding-right: 26px;
+  }
   .about__cardd { font-size: var(--step--1); color: var(--muted); line-height: 1.55; }
   .about__cardgo {
     position: absolute; top: clamp(18px, 2.4vw, 28px); right: clamp(18px, 2.4vw, 28px);
@@ -584,6 +588,41 @@
   .chmarked__go { margin-left: auto; color: var(--ink); border-bottom: 1px solid var(--line); }
   .chmarked__go:hover { border-bottom-color: var(--accent); }
 
+/* long-form index: five pieces, each folded to its opening paragraph */
+  .longidx { padding-bottom: clamp(50px, 7vw, 100px); }
+  .piece {
+    border-top: 1px solid var(--line);
+    padding-block: clamp(22px, 3vw, 36px);
+    display: grid; gap: 12px;
+  }
+  .piece:last-child { border-bottom: 1px solid var(--line); }
+  .piece__top { display: grid; gap: 6px; }
+  .piece__top h2 {
+    font-size: var(--step-2); letter-spacing: -.024em; line-height: 1.18;
+    max-width: 26ch;
+  }
+  .piece__top h2 a:hover { color: var(--accent-deep); }
+  .piece__meta { font-size: 11.5px; color: var(--muted); letter-spacing: .04em; }
+  .piece__lead { color: var(--ink); line-height: 1.66; max-width: 62ch; }
+  .piece__first { color: var(--muted); line-height: 1.7; max-width: 62ch; }
+  .piece__body {
+    display: grid; gap: 12px; max-width: 62ch; padding-top: 4px;
+    animation: unfurl .34s var(--ease-out) both;
+  }
+  .piece__body[hidden] { display: none; }
+  .piece__body p { color: var(--ink-2); line-height: 1.72; }
+  @keyframes unfurl { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  .piece__act { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; padding-top: 4px; }
+  .piece__more {
+    padding: 9px 16px; border: 1px solid var(--ink); background: var(--paper);
+    font-size: var(--step--1); color: var(--ink);
+    transition: background-color .2s var(--ease), color .2s var(--ease);
+  }
+  .piece__more:hover { background: var(--ink); color: var(--paper); }
+  .piece__read { font-size: var(--step--1); color: var(--muted); padding: 9px 0; }
+  .piece__read:hover { color: var(--ink); }
+  @media (prefers-reduced-motion: reduce) { .piece__body { animation: none; } }
+
 /* ── base ──────────────────────────────────────────────────────────── */
 @layer components {
 
@@ -836,9 +875,15 @@
   .chcard__no { font-family: var(--mono); font-size: var(--step-1); letter-spacing: .04em; }
   .chcard__n { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
   .chcard__t { font-weight: 600; letter-spacing: -.015em; line-height: 1.2; }
-  .chcard__b {
+  /* Multi-line truncation.
+   NOT display:-webkit-box + -webkit-line-clamp: Chrome now computes that
+   display as `flow-root` and ignores the clamp entirely, so the text renders at
+   full length and runs over whatever sits below it. Clamping by max-height
+   against a known line-height works everywhere and cuts at the line boundary. */
+.chcard__b {
     font-size: var(--step--1); color: var(--muted); line-height: 1.55;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    overflow: hidden; min-width: 0; max-width: 100%;
+    max-height: 3.1em;              /* 2 lines x 1.55 */
   }
   .chcard__bar { display: flex; height: 3px; gap: 1px; margin-top: 2px; }
   .chcard__bar i { display: block; height: 100%; background: var(--line); }
@@ -1097,8 +1142,7 @@
     .seven__t { font-size: var(--step-1); }
     .seven__p {
       /* three lines is enough to tell you what the entry is about */
-      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
-      overflow: hidden;
+      overflow: hidden; max-height: 4.8em;   /* 3 lines x 1.6 */
     }
   }
 
@@ -1120,6 +1164,9 @@
   .idx33__b {
     grid-column: 2; font-size: 11.5px; color: var(--muted); line-height: 1.45;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    /* grid items default to min-width:auto, which defeats the ellipsis and lets
+       the blurb run under the 条数 in column 3 */
+    min-width: 0;
   }
   .idx33__n { font-size: 11px; color: var(--muted); }
   .idx33:hover .idx33__n { color: var(--ink); }
@@ -1313,7 +1360,7 @@
     .card__title { font-size: var(--step-0); margin-top: 7px; }
     .card__plain {
       margin-top: 5px; line-height: 1.6;
-      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+      overflow: hidden; max-height: 4.8em;   /* 3 lines x 1.6 */
     }
     .card__meta { margin-top: 9px; padding-top: 8px; gap: 4px 12px; font-size: 10.5px; }
     .card__tail { margin-top: 4px; }

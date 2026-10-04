@@ -516,8 +516,63 @@ function navPrevNext(book, no) {
 }
 
 /* ── long-form reader ───────────────────────────────────────────────── */
+export function viewLongIndex(book) {
+  const root = el('div', { class: 'wrap longidx' });
+
+  root.append(el('nav', { class: 'crumbs', 'aria-label': '面包屑' },
+    el('a', { href: '#/' }, '概览'), el('i', {}, '/'),
+    el('span', {}, '长文')));
+
+  root.append(el('div', { class: 'pagehead' },
+    el('span', { class: 'u-label' }, `${book.appendices.length} 篇`),
+    el('h1', {}, '长文'),
+    el('p', {}, '每个话题单独写一篇，比条目本身长。默认收起标题和第一段，点开看全文。')));
+
+  for (const a of book.appendices) {
+    const h3 = a.blocks.filter((b) => b.t === 'h3').length;
+    const tables = a.blocks.filter((b) => b.t === 'table').length;
+    const paras = a.blocks.filter((b) => b.t === 'p' || b.t === 'li');
+    const chars = paras.reduce((n, p) => n + (p.x || '').length, 0);
+
+    /* The first paragraph is the summary; the rest stays folded until asked. */
+    const first = paras[0] ? paras[0].x : '';
+    const body = el('div', { class: 'piece__body', hidden: true },
+      ...paras.slice(1).map((p) => el('p', {}, linkify(p.x, book))));
+
+    const toggle = el('button', {
+      class: 'piece__more', type: 'button', 'aria-expanded': 'false',
+      onclick: (e) => {
+        const b = e.currentTarget;
+        const open = b.getAttribute('aria-expanded') === 'true';
+        b.setAttribute('aria-expanded', String(!open));
+        body.hidden = open;
+        b.textContent = open ? '展开全文' : '收起';
+      },
+    }, '展开全文');
+
+    root.append(el('article', { class: 'piece' },
+      el('div', { class: 'piece__top' },
+        el('h2', {}, el('a', { href: `#/long/${a.id}` }, a.title)),
+        el('span', { class: 'piece__meta num' },
+          `${paras.length} 段 · ${h3} 节${tables ? ` · ${tables} 张表` : ''}`)),
+      el('p', { class: 'piece__lead' }, linkify(a.lead || first.slice(0, 110), book)),
+      el('p', { class: 'piece__first' }, linkify(first, book)),
+      body,
+      el('div', { class: 'piece__act' },
+        toggle,
+        el('a', { class: 'piece__read', href: `#/long/${a.id}` }, '单独阅读'))));
+  }
+
+  reveal(root);
+  return root;
+}
+
 export function viewLong(book, id) {
-  const a = book.appendices.find((x) => x.id === id) || book.appendices[0];
+  const a = book.appendices.find((x) => x.id === id);
+  /* No id used to silently fall back to article #1 and dump 14 screens of text
+     on #/long. That is an index route; give it an index. */
+  if (!a) return viewLongIndex(book);
+
   const root = el('div', { class: 'wrap long' });
 
   root.append(el('nav', { class: 'crumbs', 'aria-label': '面包屑' },
