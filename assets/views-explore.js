@@ -1,5 +1,5 @@
 /* Views: item card, explore, home, chapters, chapter reader, long-form, method. */
-import { el, frag, esc, linkify, hi, store, toast, openSheet, closeSheet, reveal, countUp, fmt, $$ } from './ui.js';
+import { el, frag, esc, linkify, hi, store, toast, openSheet, closeSheet, reveal, countUp, fmt, $$, spotlight } from './ui.js';
 import { runQuery, countBy, snippet, parseQuery } from './data.js';
 
 export const COST_LABEL = { money: '不花钱', time: '不占时间', will: '不需要毅力' };
@@ -74,7 +74,7 @@ export function itemCard(book, it, opts = {}) {
   );
 
   const card = el('article', {
-    class: 'card reveal', id: `i-${it.ref}`, data: { ref: it.ref },
+    class: 'card spot reveal', id: `i-${it.ref}`, data: { ref: it.ref },
   }, head, title, plain, meta, el('div', { class: 'card__tail' }, actions),
      el('div', { class: 'card__detail', hidden: true }));
 
@@ -379,6 +379,7 @@ const nActive = ['ev', 'ch', 'cj', 'cost', 'mag', 'val', 'flag']
   root.append(el('div', { class: 'explore__top' }, bar, chipsRow),
               el('div', { class: 'explore__body' }, rail, main));
   reveal(root);
+  spotlight(root);
   return root;
 }
 

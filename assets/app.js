@@ -1,5 +1,5 @@
 /* Router + boot. */
-import { $, $$, el, theme, reveal, revealAll, initTip, toast, store, closeSheet, fmt } from './ui.js';
+import { $, $$, el, theme, reveal, revealAll, initTip, toast, store, closeSheet, fmt, runTeardown } from './ui.js';
 import { loadBook } from './data.js';
 import { viewExplore, bindState, pushUrl, marks, resetFacets, initKeyboardNav } from './views-explore.js';
 import { viewHome, viewChapters, viewChapter, viewLong, viewMethod, viewAbout, applyJump } from './views-pages.js';
@@ -43,6 +43,11 @@ function route(opts = {}) {
      which is the single most irritating thing a filterable list can do. */
   const rerender = () => { route({ keepScroll: true }); };
   let view;
+
+  /* Tear the previous view down BEFORE building the new one. A view registers
+     its cleanup while it constructs itself, so running this afterwards would
+     fire the incoming view's own teardown and tear down what it just built. */
+  runTeardown();
 
   switch (parts[0]) {
     case undefined:
@@ -142,6 +147,7 @@ document.addEventListener('app:rerender', () => {
   if (!location.hash.startsWith('#/explore')) return;
   const { parts } = parseHash();
   if (parts[0] !== 'explore') return;
+  runTeardown();
   main.replaceChildren(viewExplore(book, state, () => route()));
   const input = $('#q');
   if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }

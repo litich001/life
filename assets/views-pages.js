@@ -1,5 +1,5 @@
 ﻿/* Home, chapter index, chapter reader, long-form reader, methodology. */
-import { el, frag, linkify, reveal, fmt, openSheet, closeSheet, toast, icon } from './ui.js';
+import { el, frag, linkify, reveal, fmt, openSheet, closeSheet, toast, icon, wordmark, spotlight, scrollSpy, onTeardown } from './ui.js';
 import { itemCard, openRefSheet, isMarked, toggleMark, marks, badge, CJ_LABEL } from './views-explore.js';
 import { runQuery } from './data.js';
 
@@ -163,7 +163,7 @@ const examples = reduceMotion
       const key = r.k === '时间与精力' ? '时间精力' : r.k;
       const n = book.items.filter((i) => i.cj.includes(key)).length;
       return el('a', {
-        class: 'kinds__c', href: '#/explore?cj=' + encodeURIComponent(key),
+        class: 'kinds__c spot', href: '#/explore?cj=' + encodeURIComponent(key),
         title: r.d,
       },
         el('span', { class: 'kinds__ico', 'aria-hidden': 'true' }, icon(RES_ICON[r.k] || 'tag', 17)),
@@ -198,7 +198,12 @@ const examples = reduceMotion
       counter,
       examples,
       quick,
-      resCells));
+      resCells,
+
+      /* The right column. It was empty from the last round because the evidence
+         ledger came out -- the title/search stack alone reads unbalanced in a
+         full-width container. This is that space, doing something. */
+      el('div', { class: 'poster__art' }, wordmark())));
 
   root.append(hero);
 
@@ -224,7 +229,7 @@ const examples = reduceMotion
         el('span', { class: 'sitgroup__n num' }, `${list.length} 类`)));
     const grid = el('div', { class: 'situations' });
     for (const s of list) {
-      grid.append(el('a', { class: 'sit', href: s.href },
+      grid.append(el('a', { class: 'sit spot', href: s.href },
         el('span', { class: 'sit__ico' }, icon(s.icon, 19)),
         el('span', { class: 'sit__b' },
           el('span', { class: 'sit__t' }, s.title),
@@ -264,7 +269,7 @@ const examples = reduceMotion
       '节标题写的是这一节要防的结果，具体做不做以条目标题为准。')));
   const idx = el('div', { class: 'index33' });
   book.chapters.forEach((c, i) => {
-    idx.append(el('a', { class: 'idx33 reveal', data: { d: i % 6 }, href: `#/ch/${c.no}` },
+    idx.append(el('a', { class: 'idx33 spot reveal', data: { d: i % 6 }, href: `#/ch/${c.no}` },
       el('span', { class: 'idx33__no num' }, String(c.no).padStart(2, '0')),
       el('span', { class: 'idx33__t' }, c.title),
       el('span', { class: 'idx33__b' }, c.blurb.slice(0, 34) + (c.blurb.length > 34 ? '…' : '')),
@@ -280,7 +285,7 @@ const examples = reduceMotion
     el('p', { class: 'band__d' }, `${book.appendices.length} 篇，含对照表和决策表。`)));
   const lg = el('div', { class: 'longgrid' });
   book.appendices.forEach((a, i) => {
-    lg.append(el('a', { class: 'lg reveal', data: { d: i }, href: `#/long/${a.id}` },
+    lg.append(el('a', { class: 'lg spot reveal', data: { d: i }, href: `#/long/${a.id}` },
       el('span', { class: 'lg__ico' }, icon('book', 17)),
       el('span', { class: 'lg__t' }, a.title)));
   });
@@ -288,6 +293,7 @@ const examples = reduceMotion
   root.append(lWrap);
 
   reveal(root);
+  spotlight(root);
   return root;
 }
 
@@ -580,10 +586,16 @@ export function viewLong(book, id) {
     el('a', { href: '#/long' }, '长文'), el('i', {}, '/'),
     el('span', {}, a.title.slice(0, 14) + '…')));
 
+  const tocLinks = a.blocks.filter((b) => b.t === 'h3').map((b) =>
+    el('a', { href: '#', onclick: (e) => { e.preventDefault(); jumpToBlock(b.x); } }, b.x));
+
+  /* No wrapper element around the links. Below 1080px .toc becomes a
+     grid-auto-flow: column scroller, and a single wrapper child collapses all
+     the links into one full-width column -- which made the TOC 424px tall
+     instead of 73px and pushed it into the article. */
   const toc = el('nav', { class: 'toc', 'aria-label': '本文目录' },
     el('div', { class: 'toc__t u-label' }, '目录'),
-    ...a.blocks.filter((b) => b.t === 'h3').map((b) =>
-      el('a', { href: '#', onclick: (e) => { e.preventDefault(); jumpToBlock(b.x); } }, b.x)),
+    ...tocLinks,
     el('div', { class: 'toc__sel' },
       el('span', { class: 'u-label' }, '换一篇'),
       el('select', {
@@ -594,9 +606,10 @@ export function viewLong(book, id) {
   body.append(el('h1', {}, a.title));
   if (a.lead) body.append(el('p', { class: 'lead' }, a.lead));
   let tblN = 0;
+  const heads = [];
   for (const b of a.blocks) {
     if (b.t === 'p') { body.append(el('p', {}, linkify(b.x, book))); continue; }
-    if (b.t === 'h3') { body.append(el('h2', {}, b.x)); continue; }
+    if (b.t === 'h3') { const h = el('h2', {}, b.x); heads.push(h); body.append(h); continue; }
     if (b.t === 'h4') { body.append(el('h3', {}, b.x)); continue; }
     if (b.t === 'li') { body.append(el('p', { class: 'li' }, linkify(b.x, book))); continue; }
     if (b.t === 'table') {
@@ -604,6 +617,10 @@ export function viewLong(book, id) {
       body.append(tableBlock(b.x, tblN));
     }
   }
+  /* Mark the heading being read and slide the bar to it. scrollSpy runs now and
+     returns its own teardown -- wrapping it in another arrow would defer the
+     call until teardown time, which is exactly backwards. */
+  onTeardown(scrollSpy(tocLinks, () => heads));
 
   root.append(el('div', { class: 'long__grid' }, toc, body));
   reveal(root);
@@ -758,7 +775,7 @@ export function viewAbout(book) {
     sectionHead('二', '相关站点'),
     el('div', { class: 'about__cards' },
       ...AUTHOR.links.map(([t, href, d, ic], i) =>
-        el('a', { class: 'about__card reveal', data: { d: i }, href, target: '_blank', rel: 'noopener' },
+        el('a', { class: 'about__card spot reveal', data: { d: i }, href, target: '_blank', rel: 'noopener' },
           el('span', { class: 'about__cardi', 'aria-hidden': 'true' }, icon(ic, 18)),
           el('span', { class: 'about__cardb' },
             el('span', { class: 'about__cardt' }, t),

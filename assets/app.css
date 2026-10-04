@@ -948,7 +948,126 @@
   .kinds__c:hover .kinds__ico { color: var(--data-ink); }
   .kinds__c:hover .kinds__n { color: color-mix(in srgb, var(--data-ink) 84%, var(--data)); }
 
-  @media (min-width: 1000px) {
+  /* ── the Life wordmark ──────────────────────────────────────────────── */
+  .poster__art { display: none; }
+  @media (min-width: 820px) { .poster__art { display: block; } }
+
+  .wordmark { display: block; width: 100%; height: auto; overflow: visible; }
+
+  /* The grid is 2 batched paths, so the whole draw-in is 2 dash animations.
+     Every animated rule here declares its FINAL state as the base style and
+     animates with fill-mode backwards. With forwards, a browser that never
+     advances the timeline -- a background tab, a paused debugger, some
+     headless setups -- leaves the whole wordmark invisible instead of static. */
+  .wordmark__grid {
+    fill: none; stroke: var(--line); stroke-width: .5;
+    stroke-dasharray: 2400; stroke-dashoffset: 0;
+    animation: wmGrid 1.5s var(--ease) .1s backwards;
+  }
+  @keyframes wmGrid { from { stroke-dashoffset: 2400; } }
+  .wordmark__rule {
+    fill: none; stroke: var(--ink); stroke-width: 1;
+    stroke-dasharray: 240; stroke-dashoffset: 0;
+    animation: wmRule 1s var(--ease) .75s backwards;
+  }
+  @keyframes wmRule { from { stroke-dashoffset: 240; } }
+
+  /* dots arrive on a wave: --i is 0..1 across the word, written per dot in JS */
+  .wordmark__dot {
+    fill: var(--data);
+    transform-box: fill-box; transform-origin: 50% 50%;
+    animation: wmDot .62s var(--ease-out) backwards;
+    animation-delay: calc(.28s + var(--i, 0) * 1s);
+  }
+  @keyframes wmDot { from { opacity: 0; transform: scale(.12); } }
+
+  /* pointer light-up. --lit is 0..1 per dot, set from the pointer position.
+     Base opacity is the resting value, so a dot with no --lit is just visible. */
+  .wordmark__dot {
+    r: calc(2.6px + var(--lit, 0) * 2.4px);
+    opacity: calc(.9 - var(--lit, 0) * .16);
+  }
+
+  /* the sweep. transform on a rect is compositor-friendly; animating x is not */
+  .wordmark__sweep { animation: wmSweep 6.5s var(--ease) infinite 1s; }
+  @keyframes wmSweep {
+    0%        { transform: translateX(0); opacity: 0; }
+    14%       { opacity: .75; }
+    86%       { opacity: .75; }
+    100%      { transform: translateX(320px); opacity: 0; }
+  }
+
+  /* on a real pointer, add a slow breath so the mark is never fully static */
+  @media (hover: hover) and (pointer: fine) {
+    .wordmark__dot {
+      animation: wmDot .62s var(--ease-out) both, wmBreathe 4.4s var(--ease) infinite;
+      animation-delay: calc(.28s + var(--i, 0) * 1s), calc(1.7s + var(--i, 0) * 2.4s);
+    }
+  }
+  @keyframes wmBreathe { 0%, 100% { opacity: .74; } 50% { opacity: 1; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wordmark__grid, .wordmark__rule { stroke-dashoffset: 0; animation: none; }
+    .wordmark__dot { animation: none; opacity: .9; }
+    .wordmark__sweep { display: none; }
+  }
+
+  /* ── scroll-spy indicator ───────────────────────────────────────────────
+     The TOC is a list of links; this is the one bar that slides to whichever
+     heading you are actually reading. Position comes from offsetTop rather
+     than a hardcoded row height, so it survives line wrapping.
+
+     .toc is position: sticky, which is already a containing block, so the bar
+     needs no position of its own -- and must not be given one, or it would
+     override the sticky and break the narrow-screen scroller below. */
+  .toc__ind {
+    position: absolute; left: 0; top: 0; width: 2px; height: 0;
+    background: var(--accent); opacity: 0;
+    transition: transform .38s var(--ease-out), height .38s var(--ease-out), opacity .3s var(--ease);
+    pointer-events: none;
+  }
+  .toc a[aria-current="true"] { color: var(--ink); border-left-color: var(--accent); padding-left: 16px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toc__ind { transition: none; }
+  }
+
+  /* ── pointer spotlight on tiles ─────────────────────────────────────────
+     One delegated listener writes --sx/--sy; the pseudo-element does the rest.
+     It sits under the text (z-index 0 with children lifted to 1) so it can
+     never fight the accent wipe for the same stacking context. */
+  .spot { position: relative; }
+  .spot::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+    background: radial-gradient(130px circle at var(--sx, 50%) var(--sy, 50%),
+      color-mix(in srgb, var(--accent) 14%, transparent), transparent 72%);
+    opacity: 0; transition: opacity .3s var(--ease);
+  }
+  .spot:hover::after { opacity: 1; }
+  .spot > * { position: relative; z-index: 1; }
+
+  /* icon micro-motion. This is the only kind that survives on touch, where
+     there is no hover -- a small lift and rotate, nothing that moves the layout */
+  .sit__ico, .about__cardi, .kinds__ico, .lg__ico, .idx33__no {
+    transition: transform .3s var(--ease-spring), color .22s var(--ease);
+  }
+  .about__card:hover .about__cardi { transform: rotate(-8deg) scale(1.06); }
+  .idx33:hover .idx33__no { transform: translateX(3px); }
+  .sit:active .sit__ico { transform: translateY(-1px); }
+
+  /* Two columns once there is room. Without this the title/search stack sits in
+     a full-width container and the right half of the hero is simply empty. */
+  @media (min-width: 820px) {
+    .poster__in {
+      grid-template-columns: minmax(0, 1fr) minmax(216px, 268px);
+      column-gap: clamp(24px, 3.2vw, 48px);
+      align-items: start;
+    }
+    /* the eyebrow and title stay in the left column; the art is the only thing
+       that goes right, so it can sit at the top without competing */
+    .poster__eyebrow, .poster__title, .find, .find__count,
+    .find__eg, .quick, .kinds { grid-column: 1; }
+    .poster__art { grid-column: 2; grid-row: 1 / span 6; align-self: center; }
     .poster__title { font-size: clamp(2rem, 3.3vw, 3.05rem); }
   }
   /* One scrollable row on a phone. Four columns at 320 is 70px per cell and the

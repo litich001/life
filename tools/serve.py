@@ -2,7 +2,6 @@
 import functools
 import http.server
 import os
-import socketserver
 
 PORT = int(os.environ.get('PORT', '8021'))
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,7 +18,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         pass
 
 
-socketserver.TCPServer.allow_reuse_address = True
-with socketserver.TCPServer(('127.0.0.1', PORT), functools.partial(Handler, directory=ROOT)) as httpd:
+# Threading, not plain TCPServer. A single-threaded server handles one request
+# at a time, so a client that opens a socket and walks away without closing it
+# leaves the server blocked in recv() forever -- every later request then hangs
+# until it times out, which looks exactly like the browser being broken.
+# daemon_threads so Ctrl-C does not wait on a stuck connection.
+class Server(http.server.ThreadingHTTPServer):
+    allow_reuse_address = True
+    daemon_threads = True
+
+
+with Server(('127.0.0.1', PORT), functools.partial(Handler, directory=ROOT)) as httpd:
     print('serving %s on %d' % (ROOT, PORT))
     httpd.serve_forever()

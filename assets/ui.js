@@ -168,6 +168,300 @@ export function icon(name, size = 20, cls = '') {
 
 export const hasIcon = (n) => Boolean(P[n]);
 
+/* ── the Life wordmark ────────────────────────────────────────────────
+ * A 5x7 pixel face cut out of a larger dot matrix, sitting on a faint
+ * engineering grid. Three motions stack: the grid draws in, the dots arrive on
+ * a diagonal wave, and a soft scan sweeps across. Move the pointer near it and
+ * the dots within a radius light up and swell -- so it is something you play
+ * with, not something that plays at you.
+ *
+ * The glyphs are authored as bitmaps rather than outlined paths on purpose:
+ * one string per letter, and the dots fall out of the loop for free. Outlining
+ * "Life" would mean committing to one typeface's proportions forever. */
+const GLYPHS = [
+  ['X....',
+    'X....',
+    'X....',
+    'X....',
+    'X....',
+    'X....',
+    'XXXXX'],
+  ['..X..',
+    '.....',
+    '..X..',
+    '..X..',
+    '..X..',
+    '..X..',
+    '..X..'],
+  ['..XX.',
+    '.X...',
+    'XXXXX',
+    '.X...',
+    '.X...',
+    '.X...',
+    '.X...'],
+  ['.XXX.',
+    'X...X',
+    'XXXXX',
+    'X....',
+    'X...X',
+    '.XXX.',
+    '.....'],
+];
+
+const GLYPH_W = 5, GLYPH_H = 7, GLYPH_GAP = 1;
+
+function svgEl(name, attrs) {
+  const n = document.createElementNS('http://www.w3.org/2000/svg', name);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  return n;
+}
+
+/* Light the dots near the pointer. Pure geometry, no DOM reads, so it can be
+   checked directly instead of inferred from a screenshot. `px`/`py` are in the
+   SVG's own viewBox units. Returns the index of the brightest dot, or -1. */
+export function lightDots(dots, px, py, radius = 46) {
+  let best = -1, bestV = 0;
+  for (let k = 0; k < dots.length; k++) {
+    const d = dots[k];
+    const dx = d.x - px, dy = d.y - py;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const v = dist < radius ? (1 - dist / radius) : 0;
+    d.el.style.setProperty('--lit', v ? +v.toFixed(3) : 0);
+    if (v > bestV) { bestV = v; best = k; }
+  }
+  return best;
+}
+
+export function wordmark() {
+  const CELL = 10, ADV = GLYPH_W + GLYPH_GAP;
+  const cols = GLYPHS.length * ADV - GLYPH_GAP;
+  const W = 250, H = 150;
+  const ox = (W - cols * CELL) / 2, oy = 44;
+
+  const svg = svgEl('svg', {
+    class: 'wordmark', viewBox: `0 0 ${W} ${H}`,
+    role: 'img', 'aria-label': 'Life',
+  });
+
+  /* engineering grid behind the word, as two batched paths so it is 2 nodes
+     rather than 40 and the draw-in is a single dash animation */
+  const grid = 20;
+  let v = '', h = '';
+  for (let x = grid; x < W; x += grid) v += `M${x} 0V${H}`;
+  for (let y = grid; y < H; y += grid) h += `M0 ${y}H${W}`;
+  svg.append(svgEl('path', { class: 'wordmark__grid', d: v + h }));
+
+  /* the sweep: a soft light band that crosses the whole mark on a loop */
+  const defs = svgEl('defs', {});
+  const lg = svgEl('linearGradient', { id: 'wmsweep', x1: '0', y1: '0', x2: '1', y2: '0' });
+  lg.append(
+    svgEl('stop', { offset: '0', 'stop-color': 'var(--data)', 'stop-opacity': '0' }),
+    svgEl('stop', { offset: '.5', 'stop-color': 'var(--data)', 'stop-opacity': '.5' }),
+    svgEl('stop', { offset: '1', 'stop-color': 'var(--data)', 'stop-opacity': '0' }),
+  );
+  defs.append(lg);
+  svg.append(defs);
+  const sweep = svgEl('rect', { class: 'wordmark__sweep', x: -70, y: 0, width: 70, height: H, fill: 'url(#wmsweep)' });
+  svg.append(sweep);
+
+  /* dots */
+  const g = svgEl('g', { class: 'wordmark__dots' });
+  const dots = [];
+  let cx = ox;
+  for (const glyph of GLYPHS) {
+    for (let r = 0; r < GLYPH_H; r++) {
+      for (let c = 0; c < GLYPH_W; c++) {
+        if (glyph[r][c] !== 'X') continue;
+        const px = cx + c * CELL + CELL / 2;
+        const py = oy + r * CELL + CELL / 2;
+        const d = svgEl('circle', { class: 'wordmark__dot', cx: px, cy: py, r: 2.6 });
+        g.append(d);
+        dots.push({ el: d, x: px, y: py });
+      }
+    }
+    cx += ADV * CELL;
+  }
+  svg.append(g);
+
+  /* baseline under the mark, and a tick at each end */
+  svg.append(svgEl('path', { class: 'wordmark__rule', d: `M${ox} ${oy + GLYPH_H * CELL + 8}H${ox + cols * CELL}` }));
+
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (calm) { svg.classList.add('is-calm'); return svg; }
+
+  /* Stagger the entrance left-to-right so the mark assembles rather than
+     appearing. --i is 0..1 across the word, read by the CSS delay. */
+  const span = cols * CELL;
+  dots.forEach((d) => {
+    const f = (d.x - ox) / span;
+    d.el.style.setProperty('--i', (f * 0.55).toFixed(3));
+  });
+
+  /* Pointer light-up. pointermove fires well above display rate, so this is
+     the one place a rAF throttle genuinely earns its keep -- but the first
+     update is applied synchronously so the highlight never lags a frame. */
+  let raf = 0;
+  const toBox = (e) => {
+    const b = svg.getBoundingClientRect();
+    if (!b.width || !b.height) return null;
+    return { x: (e.clientX - b.left) / b.width * W, y: (e.clientY - b.top) / b.height * H };
+  };
+  const clearDots = () => lightDots(dots, 1e6, 1e6, 0);
+
+  svg.addEventListener('pointermove', (e) => {
+    const p = toBox(e);
+    if (!p) return;
+    lightDots(dots, p.x, p.y);
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      const q = toBox(e);
+      if (q) lightDots(dots, q.x, q.y);
+    });
+  });
+  svg.addEventListener('pointerleave', () => {
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    clearDots();
+  });
+
+  return svg;
+}
+
+/* ── view teardown ───────────────────────────────────────────────────
+ * A view that attaches global listeners has to be able to detach them. Without
+ * this, navigating away leaves the handler attached and after a few route
+ * changes several scroll-spies are fighting over one indicator. Lives here
+ * rather than in app.js so views-pages.js does not have to import the router,
+ * which would be a cycle. */
+let teardowns = [];
+export function onTeardown(fn) { teardowns.push(fn); }
+export function runTeardown() {
+  if (!teardowns.length) return;
+  const list = teardowns;
+  teardowns = [];
+  for (const fn of list) { try { fn(); } catch (e) { /* a dead handler must not block the next page */ } }
+}
+
+/* ── scroll-spy ──────────────────────────────────────────────────────
+ * Marks whichever heading you are currently reading, and slides a single bar
+ * to it. Driven by scroll position rather than IntersectionObserver, because IO
+ * fires on crossing rather than on "which one is nearest the top of the
+ * viewport" -- which is the thing a reader actually expects.
+ *
+ * Returns a teardown so a route change can detach it; forgetting to is how you
+ * end up with three handlers fighting over one indicator. */
+export function scrollSpy(links, getTargets) {
+  if (!links.length) return () => {};
+  const host = links[0].parentElement;
+  const ind = document.createElement('i');
+  ind.className = 'toc__ind';
+  ind.setAttribute('aria-hidden', 'true');
+  host.append(ind);
+
+  let on = -1;
+
+  const place = (i) => {
+    const a = links[i];
+    if (!a) return;
+    ind.style.height = a.offsetHeight + 'px';
+    ind.style.transform = `translateY(${a.offsetTop}px)`;
+    ind.style.opacity = '1';
+    links.forEach((x, j) => {
+      if (j === i) x.setAttribute('aria-current', 'true');
+      else x.removeAttribute('aria-current');
+    });
+  };
+
+  const clear = () => {
+    on = -1;
+    ind.style.opacity = '0';
+    links.forEach((x) => x.removeAttribute('aria-current'));
+  };
+
+  const update = () => {
+    /* The view calls this while it is still detached, so every offset reads 0
+       on the first pass. Without this the bar sits at the origin and nothing
+       corrects it until the reader happens to scroll. */
+    if (!host.isConnected || !links[0].offsetHeight) return;
+
+    /* Below the TOC breakpoint it lays out as a horizontal scroller, where every
+       link shares a row and a sliding vertical bar means nothing. Detected from
+       the layout itself rather than a width, so it cannot drift out of step with
+       the media query that produced it. */
+    if (links.length > 1 && links[0].offsetTop === links[1].offsetTop) { clear(); return; }
+
+    const ts = getTargets();
+    if (!ts.length) return;
+    const LINE = 120;   // the reading line, clear of the sticky topbar
+    let i = 0;
+    for (let k = 0; k < ts.length; k++) {
+      if (ts[k].getBoundingClientRect().top <= LINE) i = k;
+      else break;
+    }
+    // At the very bottom the last heading is the active one even if it has not
+    // reached the line, otherwise the bar empties out at the end of the page.
+    // Guarded on the page actually being taller than the viewport, or a short
+    // article pins itself to the last section on load.
+    const doc = document.documentElement;
+    if (doc.scrollHeight - window.innerHeight > 40
+        && window.scrollY + window.innerHeight >= doc.scrollHeight - 8) {
+      i = ts.length - 1;
+    }
+    if (i === on) return;
+    on = i;
+    place(i);
+  };
+
+  /* No rAF throttle here. A TOC is 14-40 links, so update() is a handful of
+     getBoundingClientRect calls -- well under a tenth of a millisecond, and
+     scroll already fires at most once per frame. Wrapping it in
+     requestAnimationFrame bought nothing measurable and made the whole thing
+     unverifiable in an unfocused tab, where rAF callbacks are simply dropped. */
+  const schedule = () => update();
+
+  addEventListener('scroll', schedule, { passive: true });
+  addEventListener('resize', schedule, { passive: true });
+
+  /* Fonts and images land after mount and change every offset. Observe the
+     host and re-place rather than hoping the reader scrolls. */
+  let ro = null;
+  const attach = () => {
+    if (ro || !host.isConnected) return;
+    ro = new ResizeObserver(() => { on = -1; update(); });
+    ro.observe(host);
+    on = -1;
+    update();
+  };
+  if (host.isConnected) attach();
+  /* the view calls scrollSpy before it is mounted, so one retry next task */
+  else setTimeout(attach, 0);
+
+  return () => {
+    removeEventListener('scroll', schedule);
+    removeEventListener('resize', schedule);
+    if (ro) ro.disconnect();
+    clear();
+    ind.remove();
+  };
+}
+
+/* ── pointer spotlight ───────────────────────────────────────────────
+ * A radial highlight that tracks the cursor across a tile. Implemented with two
+ * custom properties the CSS reads, so there is no per-element listener: one
+ * delegated pointermove on the document does all of them. */
+export function spotlight(root = document) {
+  if (window.matchMedia('(pointer: coarse)').matches) return;
+  root.addEventListener('pointermove', (e) => {
+    const t = e.target instanceof Element ? e.target.closest('.spot') : null;
+    if (!t) return;
+    const b = t.getBoundingClientRect();
+    t.style.setProperty('--sx', ((e.clientX - b.left) / b.width * 100).toFixed(1) + '%');
+    t.style.setProperty('--sy', ((e.clientY - b.top) / b.height * 100).toFixed(1) + '%');
+  }, { passive: true });
+}
+
 /* ── toast ──────────────────────────────────────────────────────────── */
 let toastT;
 export function toast(msg) {
