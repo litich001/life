@@ -213,7 +213,16 @@ $('#markBtn').addEventListener('click', () => {
 $$('[data-close]').forEach((n) => n.addEventListener('click', closeSheet));
 
 addEventListener('beforeprint', revealAll);
-window.__qa = { revealAll, book: () => book, state };
+/* QA hook. `ready` only flips once the data has loaded and the first view is on
+   screen -- exposing __qa at module-evaluation time made every automated check
+   pass while the page was still showing the boot skeleton. */
+const qa = {
+  revealAll,
+  book: () => book,
+  state,
+  ready: false,
+};
+window.__qa = qa;
 document.documentElement.classList.add('js');
 
 /* ── boot ───────────────────────────────────────────────────────────── */
@@ -241,6 +250,8 @@ document.documentElement.classList.add('js');
         + '请用一个静态服务器，例如：'),
       el('pre', {}, 'python -m http.server 8000'),
       el('p', {}, '然后打开 http://localhost:8000/')));
+    qa.ready = false;
+    qa.failed = true;
     return;
   }
   initTip(book);
@@ -250,6 +261,7 @@ document.documentElement.classList.add('js');
   fillFooter();
   route();
   window.__book = book;
+  qa.ready = true;
   // Warm the long-text index in the background; the first search awaits it so
   // results never change underneath the reader.
   const idle = window.requestIdleCallback || ((f) => setTimeout(f, 200));
