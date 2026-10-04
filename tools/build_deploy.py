@@ -40,11 +40,16 @@ CACHE_BUST = re.compile(rb'((?:href|src)=")((?:assets|data)/[^"?]+)(\?[^"]*)?(")
 
 
 def asset_version(assets: list[Path]) -> str:
-    """Short hash over every deployable asset, so any change busts the cache."""
+    """Short hash over the *content* of every deployable asset.
+
+    Content, not mtime: a fresh clone (every CI run) gives identical bytes and
+    must produce the same version, otherwise the cache busts on every build for
+    no reason.
+    """
     h = hashlib.sha256()
     for p in sorted(assets):
-        h.update(p.name.encode())
-        h.update(str(p.stat().st_mtime_ns).encode())
+        h.update(p.as_posix().encode())
+        h.update(p.read_bytes())
     return h.hexdigest()[:8]
 
 REQUIRED = [
@@ -63,6 +68,14 @@ REQUIRED = [
 
 
 def main() -> int:
+    args = sys.argv[1:]
+    # GitHub Pages publishes the repo as-is, so it never sees the generated
+    # _deploy/index.html -- only Cloudflare would get the version stamp. With
+    # --stamp-root the stamped HTML is written back to index.html in the repo
+    # so both hosts serve versioned asset URLs. Keep it in the same commit as
+    # the asset change and the two stay in step.
+    stamp_root = "--stamp-root" in args
+
     missing = [p for p in REQUIRED if not (ROOT / p).exists()]
     if missing:
         print("missing from repo, cannot deploy:", file=sys.stderr)
@@ -95,13 +108,25 @@ def main() -> int:
     version = asset_version(assets)
     index = OUT / "index.html"
     html = index.read_bytes()
-    stamped, n = CACHE_BUST.subn(rb'\1\2?v=' + version.encode() + rb'\4', html)
-    if n == 0:
-        print("warning: no asset URLs found in index.html to version", file=sys.stderr)
-    index.write_bytes(stamped)
+
+    def stamp(raw: bytes) -> bytes:
+        out, n = CACHE_BUST.subn(rb'\1\2?v=' + version.encode() + rb'\4', raw)
+        if n == 0:
+            print("warning: no asset URLs found in index.html to version", file=sys.stderr)
+        return out
+
+    index.write_bytes(stamp(html))
+
+    if stamp_root:
+        root_index = ROOT / "index.html"
+        stamped = stamp(root_index.read_bytes())
+        # don't rewrite the file if nothing changed, or every build dirties git
+        if stamped != root_index.read_bytes():
+            root_index.write_bytes(stamped)
+            print(f"stamped repo index.html -> v{version} (commit this with the asset change)")
 
     size = sum(f.stat().st_size for f in OUT.rglob("*") if f.is_file())
-    print(f"_deploy ready: {copied} files, {size / 1024:.0f} KB, assets versioned v{version} ({n} refs)")
+    print(f"_deploy ready: {copied} files, {size / 1024:.0f} KB, assets versioned v{version}")
     return 0
 
 
