@@ -316,7 +316,7 @@ export function viewExplore(book, state, rerender) {
         (v) => `${v}. ${book.chTitle.get(+v)}`, 'ch'),
       el('div', { class: 'rail__note' },
         el('p', {}, '收益量级与性价比是本站按口径页公布的界线自动套用的估算。'),
-        el('p', {}, el('a', { href: '#/method' }, '看方法论 →')))),
+        el('p', {}, el('a', { href: '#/method' }, '口径与分级 →')))),
   );
   // A search term alone must not push the results below the fold: the panel only
 // starts open when the reader has actually picked facets.

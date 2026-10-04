@@ -1,4 +1,4 @@
-/* Home, chapter index, chapter reader, long-form reader, methodology. */
+﻿/* Home, chapter index, chapter reader, long-form reader, methodology. */
 import { el, frag, linkify, reveal, fmt, openSheet, closeSheet, toast, icon } from './ui.js';
 import { itemCard, openRefSheet, isMarked, toggleMark, marks, badge, CJ_LABEL } from './views-explore.js';
 import { runQuery } from './data.js';
@@ -14,6 +14,10 @@ function sectionHead(label, title, extra) {
 
 /* Words people actually type into this, offered as one-tap starting points. */
 const EXAMPLES = ['押金', '加班费', '噪声', '离婚', '租房', '体检', '失眠', '裁员', '低保', '疫苗'];
+
+/* How many of the free-and-high-value items the home page lists before it makes
+   you ask for the rest. */
+const SEVEN = 7;
 
 /* Longer prompts that cycle through the hero field when it is empty. A single
    static placeholder only ever advertises one thing; cycling shows the range.
@@ -71,10 +75,17 @@ export function viewHome(book, state) {
      goes transparent and a sibling element does the typing instead -- which also
      means the moment you click it looks like focus, not like nothing happening. */
   const ghost = el('span', { class: 'find__ghost', 'aria-hidden': 'true' });
+  const field = el('div', { class: 'find__field' }, input, ghost);
+  /* The real placeholder and the ghost are both transparent-by-default text at
+     the same origin, so they must never both be visible. Earlier the placeholder
+     was only hidden on :focus while the ghost animates unfocused -- which stacked
+     「搜一件事」 exactly on top of the typing. The field carries the state. */
+  const setGhostOn = (on) => field.classList.toggle('has-ghost', on);
   const stop = () => {
     clearInterval(typer);
     typer = null;
     ghost.classList.remove('is-on');
+    setGhostOn(false);
   };
   let typer = null;
   let pi = 0;
@@ -83,6 +94,7 @@ export function viewHome(book, state) {
     pi += 1;
     ghost.textContent = '';
     ghost.classList.add('is-on');
+    setGhostOn(true);
     let n = 0;
     typer = setInterval(() => {
       n += 1;
@@ -140,62 +152,61 @@ const examples = reduceMotion
         title: `${label}的条目`,
       }, label)));
 
+  /* The return types double as the primary taxonomy: each one is a real query,
+     not a label. This used to be a separate section further down the page, which
+     put the main way of browsing below the situations block; folded into the hero
+     it sits where someone actually reads it. */
+  const RES_ICON = { '寿命': 'heart', '时间与精力': 'clock', '金钱': 'wallet', '人身自由': 'shield' };
+  const resCells = el('div', { class: 'kinds' },
+    el('span', { class: 'kinds__l' }, '按回报'),
+    ...book.method.resources.map((r) => {
+      const key = r.k === '时间与精力' ? '时间精力' : r.k;
+      const n = book.items.filter((i) => i.cj.includes(key)).length;
+      return el('a', {
+        class: 'kinds__c', href: '#/explore?cj=' + encodeURIComponent(key),
+        title: r.d,
+      },
+        el('span', { class: 'kinds__ico', 'aria-hidden': 'true' }, icon(RES_ICON[r.k] || 'tag', 17)),
+        el('span', { class: 'kinds__k' }, r.k),
+        el('span', { class: 'kinds__n num' }, fmt(n)));
+    }));
+
   const hero = el('section', { class: 'poster' },
     el('div', { class: 'wrap poster__in' },
-      el('div', { class: 'poster__main' },
-        el('h1', { class: 'poster__title' },
-          '用最少的钱、时间和精力，', el('br'),
-          '换回', el('em', {}, '寿命'), '、金钱和自由'),
+      el('p', { class: 'poster__eyebrow num' },
+        `${fmt(m.items)} 条建议`, el('i', { 'aria-hidden': 'true' }, '/'),
+        `${m.chapters} 节`, el('i', { 'aria-hidden': 'true' }, '/'),
+        `${book.appendices.length} 篇长文`, el('i', { 'aria-hidden': 'true' }, '/'),
+        el('a', { href: '#/method' }, '口径与分级')),
 
-        el('form', {
-          class: 'find', role: 'search',
-          onsubmit: (e) => { e.preventDefault(); if (input.value.trim()) go(input.value.trim()); },
-        },
-          el('span', { class: 'find__ico', 'aria-hidden': 'true' },
-            el('svg', { viewBox: '0 0 20 20', width: 17, height: 17 },
-              el('circle', { cx: '8.5', cy: '8.5', r: '5.6', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7' }),
-              el('path', { d: 'M12.8 12.8 17 17', stroke: 'currentColor', 'stroke-width': '1.7', fill: 'none', 'stroke-linecap': 'round' }))),
-          // the ghost has to share the input's origin, not the field's padding box,
-          // or it renders on top of the icon
-          el('div', { class: 'find__field' }, input, ghost),
-          el('button', { class: 'find__go', type: 'submit' }, '搜索'),
-          el('kbd', { class: 'find__kbd', 'aria-hidden': 'true' }, '/')),
+      el('h1', { class: 'poster__title' },
+        '用最少的钱、时间和精力，', el('br'),
+        '换回', el('em', {}, '寿命'), '、金钱和自由'),
 
-        counter,
-        examples,
-        quick),
+      el('form', {
+        class: 'find', role: 'search',
+        onsubmit: (e) => { e.preventDefault(); if (input.value.trim()) go(input.value.trim()); },
+      },
+        el('span', { class: 'find__ico', 'aria-hidden': 'true' },
+          el('svg', { viewBox: '0 0 20 20', width: 17, height: 17 },
+            el('circle', { cx: '8.5', cy: '8.5', r: '5.6', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7' }),
+            el('path', { d: 'M12.8 12.8 17 17', stroke: 'currentColor', 'stroke-width': '1.7', fill: 'none', 'stroke-linecap': 'round' }))),
+        field,
+        el('button', { class: 'find__go', type: 'submit' }, '搜索'),
+        el('kbd', { class: 'find__kbd', 'aria-hidden': 'true' }, '/')),
 
-      el('aside', { class: 'poster__side' },
-        el('div', { class: 'ledger__t' }, '证据分级'),
-        // explicit class, not :first-of-type -- that means "first div sibling",
-        // and .ledger__t is the first div, so the A row never matched
-        el('div', { class: 'ledger__b ledger__b--a' }, statBar('A', m.evidence.A, m.items)),
-        el('div', { class: 'ledger__b' }, statBar('B', m.evidence.B, m.items)),
-        el('div', { class: 'ledger__b' }, statBar('C', m.evidence.C, m.items)),
-        el('p', { class: 'ledger__n' },
-          el('a', { href: '#/method' }, '分级标准与算法'))),
-
-    el('div', { class: 'poster__cta' },
-        el('a', { class: 'cta cta--fire', href: '#/explore?ch=13' },
-          el('span', { class: 'cta__ico' }, icon('pulse', 18)),
-          el('b', {}, '情况紧急'),
-          el('span', {}, '有人倒地、受伤、突然不舒服')),
-        el('a', { class: 'cta', href: '#/explore' },
-          el('span', { class: 'cta__ico' }, icon('filter', 18)),
-          el('b', {}, '按条件筛'),
-          el('span', {}, `${m.items} 条，按成本、证据、口径筛`)),
-        el('a', { class: 'cta', href: '#/chapters' },
-          el('span', { class: 'cta__ico' }, icon('book', 18)),
-          el('b', {}, '按章节看'),
-          el('span', {}, `${m.chapters} 节，每节内按性价比排`)))));
+      counter,
+      examples,
+      quick,
+      resCells));
 
   root.append(hero);
 
   /* ── situations, grouped by what kind of problem it is ───────────── */
   const sitWrap = el('section', { class: 'wrap' });
   sitWrap.append(el('div', { class: 'band' },
-    el('h2', {}, '你想了解什么情况'),
-    el('p', { class: 'band__d' }, '按遇到的事情分了几类，点进去就是筛好的条目。')));
+    el('h2', {}, '按情况'),
+    el('p', { class: 'band__d' }, `共 ${book.situations.length} 类。点进去就是筛好的条目。`)));
 
   const groups = book.situationGroups || [];
   const byGroup = new Map(groups.map((g) => [g, []]));
@@ -225,15 +236,15 @@ const examples = reduceMotion
   root.append(sitWrap);
 
   /* ── free and high-value ───────────────────────────────────────────── */
-  const seven = book.items.filter((i) => i.value === '极高').slice(0, 7);
+  const free = book.items.filter((i) => i.value === '极高');
   const sevenWrap = el('section', { class: 'wrap' });
   sevenWrap.append(el('div', { class: 'band' },
     el('h2', {}, '不花钱、不占时间、不费毅力'),
     el('p', { class: 'band__d' },
-      `符合这三条的共 ${book.items.filter((i) => i.value === '极高').length} 条，先看前 ${seven.length} 条。`),
+      `符合这三条的共 ${free.length} 条，先看前 ${SEVEN} 条。`),
     el('a', { class: 'band__more', href: '#/explore?val=' + encodeURIComponent('极高') }, '查看全部')));
   const poster = el('ol', { class: 'seven' });
-  seven.forEach((it, i) => {
+  free.slice(0, SEVEN).forEach((it, i) => {
     poster.append(el('li', { class: 'seven__i reveal', data: { d: i % 4 } },
       el('a', { href: it.href },
         el('span', { class: 'seven__no num' }, String(i + 1).padStart(2, '0')),
@@ -245,33 +256,12 @@ const examples = reduceMotion
   sevenWrap.append(poster);
   root.append(sevenWrap);
 
-  /* ── the four measures ─────────────────────────────────────────────── */
-  const resWrap = el('section', { class: 'wrap' });
-  resWrap.append(el('div', { class: 'band' },
-    el('h2', {}, '每条建议算的是哪一种回报'),
-    el('p', { class: 'band__d' }, '四类之间不换算，也不能直接比大小。')));
-  const resGrid = el('div', { class: 'res res--4' });
-  const RES_ICON = { '寿命': 'heart', '时间与精力': 'clock', '金钱': 'wallet', '人身自由': 'shield' };
-  for (const r of book.method.resources) {
-    const key = r.k === '时间与精力' ? '时间精力' : r.k;
-    const n = book.items.filter((i) => i.cj.includes(key)).length;
-    resGrid.append(el('a', {
-      class: 'res__cell reveal', href: '#/explore?cj=' + encodeURIComponent(key),
-    },
-      el('span', { class: 'res__ico' }, icon(RES_ICON[r.k] || 'tag', 18)),
-      el('div', { class: 'res__k' }, r.k),
-      el('div', { class: 'res__d' }, r.d),
-      el('div', { class: 'res__n num' }, `${fmt(n)} 条`)));
-  }
-  resWrap.append(resGrid);
-  root.append(resWrap);
-
   /* ── chapter index, dense ─────────────────────────────────────────── */
   const chWrap = el('section', { class: 'wrap' });
   chWrap.append(el('div', { class: 'band' },
     el('h2', {}, `按 ${book.chapters.length} 节浏览`),
     el('p', { class: 'band__d' },
-      '节标题说的是这一节要防的结果，具体做不做看条目标题。')));
+      '节标题写的是这一节要防的结果，具体做不做以条目标题为准。')));
   const idx = el('div', { class: 'index33' });
   book.chapters.forEach((c, i) => {
     idx.append(el('a', { class: 'idx33 reveal', data: { d: i % 6 }, href: `#/ch/${c.no}` },
@@ -287,7 +277,7 @@ const examples = reduceMotion
   const lWrap = el('section', { class: 'wrap' });
   lWrap.append(el('div', { class: 'band' },
     el('h2', {}, '长文'),
-    el('p', { class: 'band__d' }, '五个话题各写一篇，含对照表和决策表。')));
+    el('p', { class: 'band__d' }, `${book.appendices.length} 篇，含对照表和决策表。`)));
   const lg = el('div', { class: 'longgrid' });
   book.appendices.forEach((a, i) => {
     lg.append(el('a', { class: 'lg reveal', data: { d: i }, href: `#/long/${a.id}` },
@@ -417,7 +407,7 @@ export function viewChapters(book) {
   root.append(el('div', { class: 'pagehead' },
     el('span', { class: 'u-label' }, `${book.chapters.length} 节 · ${fmt(book.items.length)} 条`),
     el('h1', {}, '章节'),
-    el('p', {}, '每节内的条目按性价比从高到低排列。节标题说的是这一节要防的结果，具体做不做以条目标题为准。')));
+    el('p', {}, '每节内的条目按性价比从高到低排列。节标题写的是这一节要防的结果，具体做不做以条目标题为准。')));
 
   root.append(el('div', { class: 'chindex__bar' },
     el('div', { class: 'search' }, search),
@@ -442,7 +432,7 @@ export function viewChapter(book, no, jumpTo) {
   const root = el('div', { class: 'wrap' });
 
   root.append(el('nav', { class: 'crumbs', 'aria-label': '面包屑' },
-    el('a', { href: '#/' }, '概览'), el('i', {}, '/'),
+    el('a', { href: '#/' }, '首页'), el('i', {}, '/'),
     el('a', { href: '#/chapters' }, '章节'), el('i', {}, '/'),
     el('span', {}, `第 ${c.no} 节`)));
 
@@ -530,13 +520,13 @@ export function viewLongIndex(book) {
   const root = el('div', { class: 'wrap longidx' });
 
   root.append(el('nav', { class: 'crumbs', 'aria-label': '面包屑' },
-    el('a', { href: '#/' }, '概览'), el('i', {}, '/'),
+    el('a', { href: '#/' }, '首页'), el('i', {}, '/'),
     el('span', {}, '长文')));
 
   root.append(el('div', { class: 'pagehead' },
     el('span', { class: 'u-label' }, `${book.appendices.length} 篇`),
     el('h1', {}, '长文'),
-    el('p', {}, '每个话题单独写一篇，比条目本身长。默认收起标题和第一段，点开看全文。')));
+    el('p', {}, `每个话题单独成篇，比条目本身长。默认收起，点开看全文。`)));
 
   for (const a of book.appendices) {
     const h3 = a.blocks.filter((b) => b.t === 'h3').length;
@@ -586,7 +576,7 @@ export function viewLong(book, id) {
   const root = el('div', { class: 'wrap long' });
 
   root.append(el('nav', { class: 'crumbs', 'aria-label': '面包屑' },
-    el('a', { href: '#/' }, '概览'), el('i', {}, '/'),
+    el('a', { href: '#/' }, '首页'), el('i', {}, '/'),
     el('a', { href: '#/long' }, '长文'), el('i', {}, '/'),
     el('span', {}, a.title.slice(0, 14) + '…')));
 
@@ -645,7 +635,7 @@ export function viewMethod(book) {
   const M = book.method;
 
   root.append(el('nav', { class: 'crumbs', 'aria-label': '面包屑' },
-    el('a', { href: '#/' }, '概览'), el('i', {}, '/'), el('span', {}, '方法论')));
+    el('a', { href: '#/' }, '首页'), el('i', {}, '/'), el('span', {}, '口径')));
   root.append(el('div', { class: 'pagehead' },
     el('span', { class: 'u-label' }, '怎么读'),
     el('h1', {}, '这些条目是怎么算账的'),
@@ -703,110 +693,23 @@ export function viewMethod(book) {
 
 /* ── about ──────────────────────────────────────────────────────────── */
 
-/** 李哲的个人信息，取自 https://www.lizhe.work/ */
-/** Everything here is taken from https://www.lizhe.work/ — nothing invented. */
+/* Kept deliberately small. This page used to carry the whole CV -- employers,
+   dates, awards, a list of 60 organisations, phone number and email -- all of
+   which is one click away on the personal site and none of which a reader of
+   608 life-hacks needs. What stays: who made this, and where to go next.
+   Name, role and the five links are all from https://www.lizhe.work/ -- nothing
+   here is invented. */
 const AUTHOR = {
   name: '李哲',
   en: 'Li Zhe',
-  role: 'GEO 专家 · AI 营销实践者 · 品牌增长顾问',
-  tagline: '把 AI 的聪明，变成品牌的影响力。',
-  lede: '让好产品被理解、被记住，也更值得被选择。',
-  bio: '在市场一线待了 11 年。做过品牌、产品、内容和活动，现在一头扎进 AI：'
-    + '亲手搭工具、做产品、跑客户，也把新发现带到课堂和现场。',
-  focus: ['AI 营销咨询', 'GEO', '品牌增长', '课程与分享'],
-  numbers: [
-    ['11', '年在市场一线'], ['40+', '年度活动峰值'],
-    ['30%', '活动转化提升'], ['2', '持续更新的产品'],
-  ],
-
-  products: [
-    {
-      no: '01', name: '天行 GEO', tag: 'AI SEARCH',
-      href: 'https://aigeo.games/',
-      lead: '帮品牌进入 AI 的答案。',
-      desc: '围绕真实提问整理品牌实体、专业内容、案例证据与引用来源，'
-        + '并持续观察不同 AI 平台如何理解、提及和推荐品牌。',
-      points: ['问题与意图研究', '品牌知识库', '内容与证据工程', 'AI 可见性观察'],
-      stats: [['175', '专题研究'], ['114', '知识文章'], ['14', '内容入口']],
-    },
-    {
-      no: '02', name: 'Creator OS', tag: 'CONTENT WORKFLOW',
-      href: 'https://creatoros.com.cn/',
-      lead: '把内容运营接成一条工作流。',
-      desc: '从信源、选题、写作、配图、排版、评审到推送，七个环节可以独立使用，'
-        + '也可以连续执行，适合个人创作者与内容团队。',
-      points: ['30+ 信源聚合', 'AI 写作与风格库', '配图和公众号排版', '评审、发布与多账号'],
-      stats: [['30+', '日常信源'], ['10万+', '文章资料'], ['7', '工作步骤']],
-    },
-  ],
-
-  jobs: [
-    {
-      when: '2024.06 — 现在', org: '杉数科技', what: '决策式 AI',
-      note: '研究 AI 怎么真正进入市场工作。把 GEO、智能体和工作流放进真实业务里，'
-        + '看它们能解决什么，也看清它们暂时做不到什么。',
-      points: ['参与搭建市场团队和日常协作体系', '推动 GEO 产品从需求验证走向客户交付', '把 AI 用进内容、媒体和品牌工作流'],
-    },
-    {
-      when: '2021.04 — 2024.06', org: '嘉诚信息', what: '数字政府、AI 与网络安全',
-      note: '面对政府和企业客户，可信、准确、好理解比热闹的创意更重要。',
-      points: ['完成品牌视觉与官网的系统升级', '连续出版 6 期行业刊物，年度深度内容 30+ 篇', '用市场数据帮助团队更早发现项目与行业变化'],
-    },
-    {
-      when: '2017.02 — 2021.03', org: '亚控科技', what: '工业自动化软件',
-      note: '工业软件不太会自己讲故事，得先理解产品，再理解客户，'
-        + '最后用一句不绕的话把两边接起来。',
-      points: ['每年参与 40+ 场发布会、沙龙和研讨会', '每年统筹 10+ 场大型展会，活动转化提升 20%—30%', '连续三年优秀员工'],
-    },
-  ],
-
-  skills: ['品牌战略', '品牌定位', '产品 GTM', 'B2B 营销', '整合传播', '媒体公关',
-    '内容策略', '市场活动', '生态合作', 'AI 产品', 'AI 工作流', 'GEO', '智能体', '课程与演讲'],
-
-  pillars: [
-    ['BRAND', '建立清晰、稳定的品牌认知',
-      '从定位、叙事到官网、PR 和高管表达，让品牌长期说同一件重要的事。'],
-    ['GROWTH', '让市场工作靠近业务结果',
-      '市场洞察、产品 GTM、销售材料、活动和线索机制彼此相连，品牌声量才有机会走向客户选择。'],
-    ['COMMUNICATION', '在碎片时代持续获得注意与信任',
-      '媒体、公关、内容、活动和行业关系共同建立可信度。表达要有记忆点，事实、案例与来源要站得住。'],
-    ['AI ERA', '把知识、流程和判断变成组织资产',
-      '智能体、GEO 与内容系统都围绕清楚的知识底稿、可复用工作流和人的最终判断展开。'],
-  ],
-
-  network: [
-    ['权威媒体', '人民网、新华网、央视、光明日报、经济日报、中国日报、环球时报、澎湃新闻'],
-    ['科技与商业媒体', '36氪、虎嗅、雷锋网、极客公园、钛媒体、IT之家、DoNews、界面新闻'],
-    ['AI 同行', '机器之心、量子位、AI 科技评论、新智元、InfoQ、DataFun、PaperWeekly'],
-    ['研究与咨询', 'Gartner、IDC、Frost & Sullivan、爱分析、亿欧智库、艾瑞咨询、甲子光年、Forrester'],
-    ['产业机构', '中国信通院、电子标准院、赛迪研究院、国家工业信息安全发展研究中心、工信部、中国软件行业协会'],
-    ['技术生态', '华为、百度、深信服、龙芯、鲲鹏、飞腾、兆芯、麒麟软件、统信软件、海光信息'],
-  ],
-
-  standing: [
-    ['分享现场', '数十场行业分享与主题演讲，专业会议与沙龙的主要嘉宾及讲师'],
-    ['课程覆盖', '数千人课程与活动累计学员覆盖'],
-  ],
-
-  honors: [
-    ['JURY · 行业评审', ['数英奖专家评委', '虎啸奖评审团评委', 'DMAA 国际数字营销奖终审评委']],
-    ['EXPERT · 专业身份', ['AI+营销应用创新论坛专家', '指北 AI 社区导师', '趣营销 AI 实战专家']],
-    ['CERTIFIED · AI 能力', ['人工智能训练师（高级）', 'Prompt / 智能体 / 微调工程师认证', 'Microsoft 生成式 AI 职业技能']],
-    ['HONOR · 年度荣誉', ['GMTS 2025 杰出 B2B 营销人物']],
-  ],
-
-  contact: [
-    ['邮箱', 'jaylee1993@foxmail.com', 'mailto:jaylee1993@foxmail.com'],
-    ['电话', '185 1351 6890', 'tel:+8618513516890'],
-    ['方向', 'AI 营销咨询、GEO、品牌增长、课程与分享', null],
-  ],
+  role: 'GEO · AI 营销',
 
   links: [
-    ['李哲的个人站', 'https://www.lizhe.work/', '完整履历、作品与近况'],
-    ['天行 GEO', 'https://aigeo.games/', '帮品牌进入 AI 的答案'],
-    ['Creator OS', 'https://creatoros.com.cn/', '把内容运营接成一条工作流'],
-    ['Alice 李哲站', 'https://alice-lizhesite.vercel.app/', '另一个我'],
-    ['AI 品牌传播专家', 'https://dmpr.cn/', '同行站点'],
+    ['个人站', 'https://www.lizhe.work/', '完整履历、作品与近况', 'person'],
+    ['天行 GEO', 'https://aigeo.games/', '帮品牌进入 AI 的答案', 'target'],
+    ['Creator OS', 'https://creatoros.com.cn/', '把内容运营接成一条工作流', 'layers'],
+    ['Alice', 'https://alice-lizhesite.vercel.app/', '另一个我', 'spark'],
+    ['品牌传播', 'https://dmpr.cn/', '同行站点', 'tag'],
   ],
 
   icp: '京ICP备2026050119号-2',
@@ -816,108 +719,25 @@ export function viewAbout(book) {
   const root = el('div', { class: 'wrap about' });
 
   root.append(el('nav', { class: 'crumbs', 'aria-label': '面包屑' },
-    el('a', { href: '#/' }, '概览'), el('i', {}, '/'), el('span', {}, '关于作者')));
+    el('a', { href: '#/' }, '首页'), el('i', {}, '/'), el('span', {}, '关于')));
 
-  root.append(el('header', { class: 'about__hero' },
+  root.append(el('header', { class: 'about__hero about__hero--tight' },
     el('div', { class: 'about__id' },
       el('span', { class: 'about__mark', 'aria-hidden': 'true' }, 'LZ'),
       el('h1', {}, AUTHOR.name, el('em', {}, AUTHOR.en))),
-    el('p', { class: 'about__role' }, AUTHOR.role),
-    el('p', { class: 'about__tag' }, AUTHOR.tagline),
-    el('p', { class: 'about__lede' }, AUTHOR.lede),
-    el('p', { class: 'about__bio' }, AUTHOR.bio),
-    el('ul', { class: 'about__focus' }, ...AUTHOR.focus.map((f) => el('li', {}, f)))));
+    el('p', { class: 'about__role' }, AUTHOR.role)));
 
-  root.append(el('section', { class: 'about__stats' },
-    ...AUTHOR.numbers.map(([v, k], i) =>
-      el('div', { class: 'about__stat reveal', data: { d: i } },
-        el('b', { class: 'num' }, v), el('span', {}, k)))));
-
-  /* products */
+  /* Provenance in one block: who wrote it, where it lives, under what licence.
+     CC BY 4.0 requires the credit, so this cannot be trimmed away. */
   root.append(el('section', { class: 'about__sec' },
-    sectionHead('一', '在做的两个产品'),
-    el('div', { class: 'prod' }, ...AUTHOR.products.map((p, i) =>
-      el('a', { class: 'prod__c reveal', data: { d: i }, href: p.href, target: '_blank', rel: 'noopener' },
-        el('div', { class: 'prod__top' },
-          el('span', { class: 'prod__no num' }, p.no),
-          el('span', { class: 'prod__tag' }, p.tag)),
-        el('h3', { class: 'prod__name' }, p.name),
-        el('p', { class: 'prod__lead' }, p.lead),
-        el('p', { class: 'prod__d' }, p.desc),
-        el('ul', { class: 'prod__points' }, ...p.points.map((x) => el('li', {}, x))),
-        el('div', { class: 'prod__stats' },
-          ...p.stats.map(([v, k]) => el('div', {}, el('b', { class: 'num' }, v), el('span', {}, k)))))))));
-
-  /* work history */
-  root.append(el('section', { class: 'about__sec' },
-    sectionHead('二', '工作经历'),
-    el('ol', { class: 'about__jobs about__jobs--full' }, ...AUTHOR.jobs.map((j, i) =>
-      el('li', { class: 'reveal', data: { d: i } },
-        el('span', { class: 'about__when num' }, j.when),
-        el('div', { class: 'about__job' },
-          el('b', {}, j.org, el('i', {}, j.what)),
-          el('p', { class: 'about__jobnote' }, j.note),
-          el('ul', { class: 'about__points' }, ...j.points.map((x) => el('li', {}, x)))))))));
-
-  /* capabilities */
-  root.append(el('section', { class: 'about__sec' },
-    sectionHead('三', '怎么做事'),
-    el('div', { class: 'pillars' }, ...AUTHOR.pillars.map(([k, t, d], i) =>
-      el('div', { class: 'pillar reveal', data: { d: i } },
-        el('span', { class: 'pillar__k' }, k),
-        el('h3', {}, t),
-        el('p', {}, d)))),
-    el('ul', { class: 'about__skills' }, ...AUTHOR.skills.map((s, i) =>
-      el('li', { class: 'reveal', data: { d: i % 8 } }, s)))));
-
-  /* network */
-  root.append(el('section', { class: 'about__sec' },
-    sectionHead('四', '合作过的圈子'),
-    el('p', { class: 'about__now' },
-      '名单本身没那么重要的是——重要的是遇到问题时，知道该找谁。'),
-    el('dl', { class: 'net' }, ...AUTHOR.network.flatMap(([k, v], i) => [
-      el('dt', { class: 'reveal', data: { d: i } }, k),
-      el('dd', { class: 'reveal', data: { d: i } }, v),
-    ]))));
-
-  /* standing + honours */
-  root.append(el('section', { class: 'about__sec' },
-    sectionHead('五', '行业里的记录'),
-    el('div', { class: 'standing' }, ...AUTHOR.standing.map(([k, v], i) =>
-      el('div', { class: 'reveal', data: { d: i } },
-        el('b', {}, k), el('span', {}, v)))),
-    el('div', { class: 'honors' }, ...AUTHOR.honors.map(([k, list], i) =>
-      el('div', { class: 'honors__g reveal', data: { d: i } },
-        el('div', { class: 'honors__k' }, k),
-        el('ul', {}, ...list.map((x) => el('li', {}, x))))))));
-
-  /* contact + links */
-  const contactRows = AUTHOR.contact.map(([k, v, href]) =>
-    el('div', { class: 'contact__r' },
-      el('span', { class: 'contact__k' }, k),
-      href ? el('a', { class: 'contact__v', href }, v) : el('span', { class: 'contact__v' }, v)));
-
-  const linkCards = AUTHOR.links.map(([t, href, d]) =>
-    el('a', { class: 'about__card reveal', href, target: '_blank', rel: 'noopener' },
-      el('span', { class: 'about__cardt' }, t),
-      el('span', { class: 'about__cardd' }, d),
-      el('span', { class: 'about__cardgo', 'aria-hidden': 'true' }, '↗')));
-
-  root.append(el('section', { class: 'about__sec' },
-    sectionHead('六', '联系与友链'),
-    el('div', { class: 'contact' }, ...contactRows),
-    el('div', { class: 'about__cards' }, ...linkCards),
-    el('p', { class: 'about__icp' }, AUTHOR.icp)));
-
-  /* who wrote the content, and where it lives. CC BY 4.0 requires the credit. */
-  root.append(el('section', { class: 'about__sec' },
-    sectionHead('七', '内容作者'),
+    sectionHead('一', '内容与出处'),
     el('div', { class: 'credit' },
       el('div', { class: 'credit__row' },
-        el('span', { class: 'credit__k' }, '作者'),
-        el('span', { class: 'credit__v' }, 'eternity4719')),
+        el('span', { class: 'credit__k' }, '内容作者'),
+        el('a', { class: 'credit__v credit__v--link', href: 'https://github.com/eternity4719', target: '_blank', rel: 'noopener' },
+          'eternity4719')),
       el('div', { class: 'credit__row' },
-        el('span', { class: 'credit__k' }, '项目地址'),
+        el('span', { class: 'credit__k' }, '项目'),
         el('a', { class: 'credit__v credit__v--link', href: 'https://github.com/eternity4719/HowToLiveBetter', target: '_blank', rel: 'noopener' },
           'github.com/eternity4719/HowToLiveBetter')),
       el('div', { class: 'credit__row' },
@@ -932,7 +752,19 @@ export function viewAbout(book) {
         el('span', { class: 'credit__k' }, '本站'),
         el('span', { class: 'credit__v' },
           `${book.items.length} 条建议、${book.chapters.length} 个章节、${book.appendices.length} 篇长文`,
-          el('em', {}, '由李哲整理成可检索的站点。只做检索、筛选与排版，不改写结论。'))))));
+          el('em', {}, '只做检索、筛选与排版，不改写结论。'))))));
+
+  root.append(el('section', { class: 'about__sec' },
+    sectionHead('二', '相关站点'),
+    el('div', { class: 'about__cards' },
+      ...AUTHOR.links.map(([t, href, d, ic], i) =>
+        el('a', { class: 'about__card reveal', data: { d: i }, href, target: '_blank', rel: 'noopener' },
+          el('span', { class: 'about__cardi', 'aria-hidden': 'true' }, icon(ic, 18)),
+          el('span', { class: 'about__cardb' },
+            el('span', { class: 'about__cardt' }, t),
+            el('span', { class: 'about__cardd' }, d)),
+          el('span', { class: 'about__cardgo', 'aria-hidden': 'true' }, icon('arrow', 15))))),
+    el('p', { class: 'about__icp' }, AUTHOR.icp)));
 
   reveal(root);
   return root;

@@ -124,91 +124,33 @@
     font-family: var(--mono); font-size: var(--step--1); letter-spacing: .14em;
     text-transform: uppercase; color: var(--accent-deep); margin-bottom: 12px;
   }
-  .about__tag {
-    font-size: var(--step-2); line-height: 1.35; letter-spacing: -.022em;
-    font-weight: 500; margin-bottom: 14px; max-width: 24ch;
-  }
-  .about__bio { color: var(--ink-2); line-height: 1.72; max-width: 58ch; }
-  .about__focus {
-    list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px;
-  }
-  .about__focus li {
-    font-family: var(--mono); font-size: 12px; letter-spacing: .04em;
-    padding: 6px 12px; border: 1px solid var(--line); color: var(--ink-2);
-  }
 
-  .about__stats {
-    display: grid; gap: 1px; background: var(--line); border-block: 1px solid var(--line);
-    grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); margin-bottom: clamp(40px, 6vw, 80px);
-  }
-  .about__stat { background: var(--paper); padding: clamp(18px, 2.4vw, 30px) clamp(14px, 2vw, 24px); }
-  .about__stat b {
-    display: block; font-size: clamp(1.9rem, 3.6vw, 3rem); line-height: 1;
-    letter-spacing: -.045em; font-weight: 500; margin-bottom: 8px;
-  }
-  .about__stat span { font-size: var(--step--1); color: var(--muted); }
-
-  .about__sec { margin-bottom: clamp(34px, 5vw, 66px); }
-  .about__now { color: var(--ink-2); line-height: 1.72; max-width: 62ch; margin-bottom: 20px; }
-
-  .about__jobs { list-style: none; display: grid; gap: 0; border-top: 1px solid var(--line); }
-  .about__jobs li {
-    display: grid; gap: 4px clamp(20px, 4vw, 56px);
-    grid-template-columns: auto minmax(0, 1fr); align-items: baseline;
-    padding: clamp(16px, 2.2vw, 26px) 2px; border-bottom: 1px solid var(--line-2);
-  }
-  @media (min-width: 720px) { .about__jobs li { grid-template-columns: 168px minmax(0, 1fr); } }
-  .about__when { font-size: 11.5px; letter-spacing: .04em; color: var(--muted); white-space: nowrap; }
-  .about__job b { font-size: var(--step-1); font-weight: 600; letter-spacing: -.015em; display: flex; gap: 10px; flex-wrap: wrap; align-items: baseline; }
-  .about__job b i {
-    font-style: normal; font-size: var(--step--1); font-weight: 400; color: var(--muted);
-  }
-  .about__job > span { display: block; font-size: var(--step--1); color: var(--muted); margin-top: 4px; }
-
-  .about__skills { list-style: none; display: flex; flex-wrap: wrap; gap: 7px; }
-  .about__skills li {
-    font-size: var(--step--1); padding: 7px 13px; background: var(--paper-2);
-    color: var(--ink-2); transition: color .2s var(--ease), background-color .2s var(--ease);
-  }
-  .about__skills li:hover { background: var(--accent-deep); color: var(--accent-ink); }
-
-  .about__honors { list-style: none; display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
-  .about__honors li {
-    background: var(--paper); padding: 13px 16px; font-size: var(--step--1);
-    transition: background-color .2s var(--ease), padding-inline .2s var(--ease);
-  }
-  .about__honors li:hover { background: var(--paper-2); padding-inline: 22px; }
+  .about__sec { margin-bottom: clamp(30px, 4.4vw, 56px); }
+  .about__hero--tight { padding-block: clamp(14px, 2.4vw, 30px) clamp(26px, 3.6vw, 46px); }
+  .about__hero--tight .about__id { margin-bottom: 12px; }
+  .about__hero--tight .about__role { margin-bottom: 0; }
+  .about__icp { margin-top: 20px; font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
 
   .about__cards { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); }
   .about__card {
-    background: var(--paper); padding: clamp(18px, 2.4vw, 28px);
-    display: grid; gap: 5px; align-content: start; position: relative;
+    background: var(--paper); padding: clamp(16px, 2vw, 24px);
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 4px 13px; align-items: start; position: relative;
     transition: background-color .24s var(--ease), color .24s var(--ease);
   }
-  .about__cardt {
-    font-size: var(--step-1); font-weight: 600; letter-spacing: -.015em;
-    /* reserve room for the absolutely positioned arrow, or long titles run under it */
-    padding-right: 26px;
+  .about__cardi {
+    color: var(--data); display: grid; place-items: center;
+    grid-row: 1 / span 2; padding-top: 2px;
   }
+  .about__cardb { display: grid; gap: 3px; min-width: 0; }
+  .about__cardt { font-size: var(--step-0); font-weight: 600; letter-spacing: -.012em; }
   .about__cardd { font-size: var(--step--1); color: var(--muted); line-height: 1.55; }
-  .about__cardgo {
-    position: absolute; top: clamp(18px, 2.4vw, 28px); right: clamp(18px, 2.4vw, 28px);
-    font-family: var(--mono); color: var(--muted);
-    transition: transform .3s var(--ease-out), color .2s var(--ease);
-  }
+  .about__cardgo { color: var(--muted); padding-top: 2px; transition: transform .3s var(--ease-out), color .2s var(--ease); }
   .about__card:hover { background: var(--ink); color: var(--paper); }
   .about__card:hover .about__cardd,
   .about__card:hover .about__cardgo { color: var(--paper-2); }
-  .about__card:hover .about__cardgo { transform: translate(3px, -3px); }
-
-  .about__mail { margin-top: 20px; font-family: var(--mono); font-size: var(--step--1); }
-  /* standalone action, not inline in a sentence — so it needs a real target */
-  .about__mail a { letter-spacing: .03em; display: inline-block; padding: 8px 0; border-bottom: 1px solid var(--accent); }
-
-  /* legal credit — present but deliberately understated */
-  .about__sec--legal { border-top: 1px solid var(--line); padding-top: clamp(26px, 3.6vw, 44px); }
-  .about__sec--legal p { font-size: var(--step--1); color: var(--muted); line-height: 1.7; max-width: 68ch; }
-  .about__sec--legal i { font-style: normal; opacity: .5; padding-inline: 4px; }
+  .about__card:hover .about__cardi { color: var(--paper-2); }
+  .about__card:hover .about__cardgo { transform: translateX(3px); }
 
   /* friend links in the footer */
   .foot__links { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 16px; }
@@ -267,11 +209,7 @@
     background: var(--accent); transform: scaleY(0); transform-origin: 50% 0;
     transition: transform .34s var(--ease-out);
   }
-  .card:hover::before { transform: scaleY(1); }
-
-  /* No will-change here: background-color and color are paint properties, so
-     promoting them creates layers that cost more than the transition saves. */
-  .sit, .idx33, .lg, .cta, .about__card, .about__honors li, .about__skills li {
+  .card:hover::before { transform: scaleY(1); }.sit, .idx33, .lg, .about__card{
     transition-property: background-color, color;
     transition-duration: .24s;
     transition-timing-function: var(--ease);
@@ -300,13 +238,7 @@
     .cards > .card:nth-child(6n+4) { animation-delay: .09s; }
     .cards > .card:nth-child(6n+5) { animation-delay: .12s; }
     .cards > .card:nth-child(6n+6) { animation-delay: .15s; }
-  }
-
-  /* Press feedback: everything clickable acknowledges the touch. */
-  .sit:active, .idx33:active, .lg:active, .about__card:active, .about__skills li:active,
-  .seven__i a:active, .cta:active { transform: scale(.988); }
-  .sit, .idx33, .lg, .about__card, .cta { transition-property: background-color, color, transform; }
-  .sit, .idx33, .lg, .about__card, .cta { transition-duration: .24s; }
+  }.sit:active, .idx33:active, .lg:active, .about__card:active, .seven__i a:active{ transform: scale(.988); }.sit, .idx33, .lg, .about__card{ transition-property: background-color, color, transform; }.sit, .idx33, .lg, .about__card{ transition-duration: .24s; }
 
   /* Focus is visible on the keyboard path and never on mouse clicks. */
   :where(a, button, input, select, [tabindex]):focus-visible {
@@ -439,13 +371,6 @@
      anyway — dropping the row keeps the hero inside one screen. Must come after
      the base rule above, or the later declaration wins on equal specificity. */
   @media (max-width: 640px) { .quick { display: none; } }
-
-  .cta__ico { color: var(--muted); display: block; margin-bottom: 8px; }
-  .cta:hover .cta__ico { color: var(--ink); }
-  .cta--fire .cta__ico { color: color-mix(in srgb, var(--accent-ink) 88%, var(--accent-deep)); }
-  .cta--fire:hover .cta__ico { color: var(--accent-ink); }
-
-  .res__ico { color: var(--accent-deep); display: block; margin-bottom: 10px; }
   .lg__ico { color: var(--muted); }
 
   /* content-author credit table */
@@ -463,7 +388,6 @@
     font-size: var(--step--1); margin-top: 3px;
   }
   .credit__v--link { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
-  .about__role2 { color: var(--muted); font-size: var(--step--1); margin-top: 6px; }
 
 /* boot skeleton — mirrors the result grid so the first paint already shows
    the shape of what is coming, instead of a spinner and a line of text */
@@ -526,8 +450,10 @@
   }
   .find__ghost.is-on { opacity: 1; }
   @keyframes caret { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
-  /* the real placeholder only exists for no-JS and for the empty unfocused state */
-  .find__input:focus::placeholder { color: transparent; }
+  /* The placeholder is the fallback for no-JS and for the empty idle state. While
+     the ghost is painting it must step aside completely -- hiding it only on
+     :focus stacked it on top of the typing, because the ghost runs unfocused. */
+  .find__field.has-ghost .find__input::placeholder { color: transparent; }
   @media (prefers-reduced-motion: reduce) {
     .find__ghost { display: none; }
     .find__input::placeholder { color: var(--muted); }
@@ -640,118 +566,13 @@
   .piece__read { font-size: var(--step--1); color: var(--muted); padding: 9px 0; }
   .piece__read:hover { color: var(--ink); }
   @media (prefers-reduced-motion: reduce) { .piece__body { animation: none; } }
-
-.about__lede {
-    font-size: var(--step-1); color: var(--ink-2); line-height: 1.6;
-    margin-bottom: 14px; max-width: 44ch;
-  }
-
-  /* two products */
-  .prod { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line);
-    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); }
-  .prod__c {
-    background: var(--paper); padding: clamp(20px, 2.6vw, 32px);
-    display: grid; gap: 10px; align-content: start;
-    transition: background-color .24s var(--ease), color .24s var(--ease);
-  }
-  .prod__c:hover { background: var(--paper-2); }
-  .prod__top { display: flex; align-items: center; gap: 10px; }
-  .prod__no { font-size: 11px; color: var(--accent-deep); letter-spacing: .1em; }
-  .prod__tag {
-    font-family: var(--mono); font-size: 10px; letter-spacing: .12em;
-    color: var(--muted); border: 1px solid var(--line); padding: 3px 7px;
-  }
-  .prod__name { font-size: var(--step-2); letter-spacing: -.022em; line-height: 1.15; }
-  .prod__lead { font-size: var(--step-0); font-weight: 500; line-height: 1.5; }
-  .prod__d { color: var(--muted); font-size: var(--step--1); line-height: 1.68; }
-  .prod__points {
-    list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px;
-  }
-  .prod__points li {
-    font-size: 12px; padding: 4px 9px; background: var(--paper-2); color: var(--ink-2);
-  }
-  .prod__stats {
-    display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 6px;
-    padding-top: 14px; border-top: 1px solid var(--line);
-  }
-  .prod__stats b { display: block; font-size: var(--step-1); font-weight: 600; letter-spacing: -.02em; }
-  .prod__stats span { font-size: 11.5px; color: var(--muted); }
-
-  /* work history, fuller */
-  .about__jobs--full li { align-items: start; padding-block: clamp(18px, 2.4vw, 26px); }
-  .about__jobnote { color: var(--ink-2); line-height: 1.68; margin-top: 8px; font-size: var(--step--1); max-width: 60ch; }
-  .about__points {
-    list-style: none; margin-top: 10px; display: grid; gap: 5px; max-width: 62ch;
-  }
-  .about__points li {
-    font-size: var(--step--1); color: var(--muted); line-height: 1.55;
-    padding-inline-start: 15px; position: relative;
-  }
-  .about__points li::before {
-    content: ""; position: absolute; left: 0; top: .62em;
-    width: 6px; height: 1px; background: var(--accent-deep);
-  }
-
-  /* four pillars */
-  .pillars {
-    display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line);
-    grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); margin-bottom: 18px;
-  }
-  .pillar { background: var(--paper); padding: clamp(16px, 2.2vw, 24px); }
   .pillar__k {
     font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em;
     color: var(--accent-deep); display: block; margin-bottom: 9px;
   }
-  .pillar h3 { font-size: var(--step-0); letter-spacing: -.012em; line-height: 1.35; }
-  .pillar p { color: var(--muted); font-size: var(--step--1); line-height: 1.62; margin-top: 7px; }
-
-  /* network */
-  .net {
-    display: grid; gap: 0 clamp(20px, 3vw, 44px);
-    grid-template-columns: 120px minmax(0, 1fr);
-    border-top: 1px solid var(--line);
-  }
-  @media (max-width: 640px) { .net { grid-template-columns: minmax(0, 1fr); } }
-  .net dt {
-    font-size: var(--step--1); color: var(--ink); font-weight: 600;
-    padding: 14px 0; border-bottom: 1px solid var(--line-2);
-  }
-  .net dd {
-    margin: 0; font-size: var(--step--1); color: var(--muted); line-height: 1.7;
-    padding: 14px 0; border-bottom: 1px solid var(--line-2);
-  }
-  @media (max-width: 640px) { .net dd { padding-block: 0 14px; } }
-
-  /* standing + honours */
-  .standing {
-    display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line);
-    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); margin-bottom: 18px;
-  }
-  .standing > div { background: var(--paper); padding: clamp(16px, 2.2vw, 24px); }
-  .standing b { display: block; font-size: var(--step-0); letter-spacing: -.015em; margin-bottom: 6px; }
-  .standing span { font-size: var(--step--1); color: var(--muted); line-height: 1.62; }
-
-  .honors { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line);
-    grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); }
-  .honors__g { background: var(--paper); padding: clamp(16px, 2.2vw, 24px); }
-  .honors__k {
-    font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
-    color: var(--muted); padding-bottom: 10px; margin-bottom: 10px;
-    border-bottom: 1px solid var(--line-2);
-  }
-  .honors__g ul { list-style: none; display: grid; gap: 7px; }
-  .honors__g li { font-size: var(--step--1); line-height: 1.5; }
-
-  /* contact */
-  .contact { display: grid; gap: 0 clamp(20px, 3vw, 44px);
-    grid-template-columns: 84px minmax(0, 1fr); border-top: 1px solid var(--line); margin-bottom: 22px; }
-  .contact__r { display: contents; }
-  .contact__k { font-size: var(--step--1); color: var(--muted); padding: 12px 0; border-bottom: 1px solid var(--line-2); }
-  .contact__v { font-size: var(--step-0); padding: 12px 0; border-bottom: 1px solid var(--line-2); overflow-wrap: anywhere; }
-  a.contact__v { color: var(--ink); border-bottom-color: var(--line); width: fit-content;
-    display: inline-block; margin-bottom: 12px; }
-  a.contact__v:hover { border-bottom-color: var(--accent); }
-  @media (max-width: 640px) { .contact { grid-template-columns: minmax(0, 1fr); } .contact__k { padding-bottom: 0; border: 0; } }
+  @media (max-width: 640px) { }
+  @media (max-width: 640px) { }
+  @media (max-width: 640px) { }
 
   .about__icp { margin-top: 22px; font-size: 11.5px; color: var(--muted); font-family: var(--mono); }
 
@@ -946,7 +767,6 @@
   .res__cell:hover, .res__cell[aria-pressed="true"] { background: var(--paper-2); }
   .res__k { font-size: var(--step-1); font-weight: 600; }
   .res__d { color: var(--muted); font-size: var(--step--1); line-height: 1.6; }
-  .res__n { font-size: 11.5px; color: var(--muted); margin-top: auto; padding-top: 10px; }
   .res--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
   /* stat band */
@@ -1084,41 +904,66 @@
     text-wrap: balance;
   }
   .poster__title em { font-style: normal; color: var(--accent-deep); }
+  .poster__eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .04em;
+    color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 9px;
+  }
+  .poster__eyebrow i { font-style: normal; opacity: .4; }
+  .poster__eyebrow a { color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 1px; }
+  .poster__eyebrow a:hover { color: var(--ink); border-bottom-color: var(--accent); }
+
+  /* Return types. This used to be a section halfway down the page, which put the
+     main way of browsing below the situations block. Folded into the hero it sits
+     where someone actually reads it, and the evidence ledger is gone -- the quick
+     filters below already filter by grade.
+
+     One row, one line per cell. Stacked cards cost 116px here and pushed the hero
+     back to 86% of an 800px screen, which defeats the point of putting it here. */
+  .kinds {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px; background: var(--line); border: 1px solid var(--line);
+    width: 100%; max-width: 640px;
+  }
+  .kinds__l {
+    grid-column: 1 / -1; background: var(--paper);
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 6px 11px; border-bottom: 1px solid var(--line);
+  }
+  .kinds__c {
+    background: var(--paper); padding: 9px 11px;
+    display: flex; align-items: center; gap: 7px; min-width: 0;
+    transition: background-color .22s var(--ease), color .22s var(--ease);
+  }
+  .kinds__ico { color: var(--data); flex: none; display: grid; place-items: center; }
+  .kinds__k {
+    font-size: var(--step--1); font-weight: 600; letter-spacing: -.005em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .kinds__n { font-size: 11.5px; color: var(--muted); margin-inline-start: auto; flex: none; }
+  /* the hover state is a solid blue field -- the one place the second hue is a
+     block rather than a mark, which is what makes it read as a real second
+     colour instead of a tint of the first */
+  .kinds__c:hover { background: var(--data); color: var(--data-ink); }
+  .kinds__c:hover .kinds__ico { color: var(--data-ink); }
+  .kinds__c:hover .kinds__n { color: color-mix(in srgb, var(--data-ink) 84%, var(--data)); }
 
   @media (min-width: 1000px) {
-    .poster__in {
-      /* left column has to stay wide enough for two lines of the title, or the
-         explicit <br> plus a soft wrap turns into three ragged lines */
-      grid-template-columns: minmax(0, 1fr) minmax(190px, 236px);
-      align-items: end; column-gap: clamp(26px, 3.4vw, 54px);
-    }
     .poster__title { font-size: clamp(2rem, 3.3vw, 3.05rem); }
-    .poster__cta { grid-column: 1 / -1; }
-    .poster__side { align-self: end; }
   }
-
-  /* evidence ledger — informative, and it gives the hero an anchor */
-  .ledger { border-top: 1px solid var(--ink); padding-top: 10px; }
-  .ledger__t {
-    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+  /* One scrollable row on a phone. Four columns at 320 is 70px per cell and the
+     labels truncate to nothing; wrapping to two columns costs three rows. */
+  @media (max-width: 560px) {
+    .kinds {
+      grid-template-columns: none; grid-auto-flow: column;
+      grid-auto-columns: max-content; overflow-x: auto;
+      scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    }
+    .kinds::-webkit-scrollbar { display: none; }
+    .kinds__l { display: none; }
+    .kinds__c { border-right: 1px solid var(--line); }
+    .kinds__c:last-child { border-right: 0; }
   }
-  .ledger__b + .ledger__b { margin-top: 6px; }
-  .ledger__n { margin-top: 10px; font-size: var(--step--1); }
-  .ledger__n a {
-    color: var(--muted); border-bottom: 1px solid var(--line);
-    display: inline-block; padding: 5px 0;   /* standalone action, not inline in prose */
-  }
-  .ledger__n a:hover { color: var(--ink); border-bottom-color: var(--accent); }
-
-  .sbar { display: grid; grid-template-columns: 1.4em minmax(0, 1fr) 2.6em; gap: 10px; align-items: center; }
-  .sbar__l { font-size: 11px; color: var(--muted); }
-  .sbar__t { height: 5px; background: var(--paper-3); }
-  .sbar__t i { display: block; height: 100%; background: var(--ink); }
-  .sbar__n { font-size: 11px; color: var(--muted); text-align: right; }
-  /* A is the grade worth looking for, so it carries the evidence hue. */
-  .ledger__b--a .sbar__t i { background: var(--data); }
-  .ledger__b--a .sbar__l { color: var(--data); font-weight: 600; }
 
   /* search field */
   .find {
@@ -1162,22 +1007,6 @@
     color: var(--ink-2); transition: border-color .18s var(--ease), color .18s var(--ease), background-color .18s var(--ease);
   }
   .find__chip:hover { border-color: var(--ink); color: var(--ink); background: var(--paper-2); }
-
-  .poster__cta {
-    display: grid; gap: 1px; background: var(--line);
-    border: 1px solid var(--line); margin-top: clamp(10px, 1.4vw, 16px);
-    grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
-  }
-  .cta {
-    background: var(--paper); padding: clamp(11px, 1.2vw, 15px) clamp(13px, 1.4vw, 18px);
-    display: grid; gap: 3px; align-content: start;
-    transition: background-color .22s var(--ease), color .22s var(--ease);
-  }
-  .cta b { font-size: var(--step-0); font-weight: 600; letter-spacing: -.01em; }
-  .cta span { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
-  .cta kbd { font: 500 10px/1 var(--mono); border: 1px solid var(--line); padding: 2px 5px; border-radius: 2px; }
-  .cta:hover { background: var(--paper-2); }
-  .cta:hover span { color: var(--ink-2); }
   /* the one place the accent becomes a solid field.
      every colour on it is an opaque mix into the accent, never an alpha,
      so contrast can't silently depend on what's behind it. */
@@ -1196,19 +1025,6 @@
     .find__input { padding: 11px 0; font-size: var(--step-0); }
     .find__kbd { display: none; }
     .find__go { padding: 0 14px; }
-    /* the ledger is a desktop anchor; on a phone it is just three more rows */
-    .poster__side { display: none; }
-    /* three stacked blocks cost 311px; lay them out as rows instead */
-    .poster__cta { margin-top: 2px; grid-template-columns: 1fr; gap: 1px; }
-    .cta {
-      padding: 12px 14px;
-      grid-template-columns: auto minmax(0, 1fr);
-      grid-template-areas: "ico b" "ico d";
-      align-items: center; column-gap: 12px; row-gap: 1px;
-    }
-    .cta__ico { grid-area: ico; margin: 0; }
-    .cta b { grid-area: b; }
-    .cta > span:last-child { grid-area: d; }
     .sitgroup { margin-top: 20px; }
     .sitgroup__t { padding-bottom: 7px; margin-bottom: 10px; font-size: var(--step-0); }
   }
@@ -1806,8 +1622,7 @@
     .res--4 { grid-template-columns: 1fr; }
     .res__tools { width: 100%; justify-content: space-between; }
   }
-  @media print {
-    .topbar, .rail, .foot, .poster__cta, .card__actions, .search, .toc, .sheet, .toast, .progress { display: none !important; }
+  @media print {.topbar, .rail, .foot, .card__actions, .search, .toc, .sheet, .toast, .progress{ display: none !important; }
     body { background: #fff; }
     .card { break-inside: avoid; }
   }

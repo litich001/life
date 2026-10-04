@@ -142,6 +142,9 @@ const P = {
   check: '<path d="m5 12.5 4.5 4.5L19 7"/>',
   clockSmall: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
   spark: '<path d="M12 3v5M12 16v5M3 12h5M16 12h5M6.4 6.4l3.5 3.5M14.1 14.1l3.5 3.5M17.6 6.4l-3.5 3.5M9.9 14.1l-3.5 3.5"/>',
+  person: '<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
+  target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>',
+  globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.6 3.6 5.5 3.6 8.5S14.4 18 12 20.5C9.6 18 8.4 15 8.4 12S9.6 6 12 3.5Z"/>',
 };
 
 /** Inline SVG icon. `size` in px, `cls` for styling hooks. */
