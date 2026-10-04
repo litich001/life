@@ -115,7 +115,15 @@ wrangler.toml      Analytics Engine 数据集绑定
 python -m pip install pymupdf
 python tools/build_data.py      # 重新生成 data/book.json 与 data/detail.json
 python tools/serve.py           # 本地预览 http://localhost:8021
+python tools/build_deploy.py    # 组装 _deploy/，并给入口资源加 ?v=<hash>
 ```
+
+`build_deploy.py` 会给部署版 `index.html` 里的 `app.css`、`app.js`、`book.json`
+加上 `?v=<hash>`。两个托管商都发 `cache-control: max-age=600`，不加版本号的话，
+部署后浏览器最长会继续跑十分钟前的旧 JS。
+
+`app.js` 内部相对路径动态 import 的模块（`views-pages.js` 等）拿不到这个版本号，
+最坏仍可能命中十分钟前的缓存——可接受，且会自愈。
 
 解析结果与原书自报的数字一致：33 节、608 条、A 级 410 / B 级 149 / C 级 49。
 

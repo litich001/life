@@ -7,6 +7,8 @@ and a local `wrangler pages deploy` publish identical bytes.
 Only what needs serving is copied: the site itself, the two data files, and the
 Pages Function. Build tooling stays out of the bundle.
 """
+import hashlib
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -28,6 +30,22 @@ INCLUDE_GLOBS = [
     ("data", "*.json"),
     ("functions", "*.js"),
 ]
+
+# Both hosts send `cache-control: max-age=600` for everything, so after a deploy
+# a browser can keep running the previous JS for ten minutes. Versioning the URLs
+# fixes it: index.html itself is only cached briefly, but a changed asset gets a
+# new name, so nobody executes stale code. Unchanged assets keep their URL and
+# stay in cache.
+CACHE_BUST = re.compile(rb'((?:href|src)=")((?:assets|data)/[^"?]+)(\?[^"]*)?(")')
+
+
+def asset_version(assets: list[Path]) -> str:
+    """Short hash over every deployable asset, so any change busts the cache."""
+    h = hashlib.sha256()
+    for p in sorted(assets):
+        h.update(p.name.encode())
+        h.update(str(p.stat().st_mtime_ns).encode())
+    return h.hexdigest()[:8]
 
 REQUIRED = [
     "index.html",
@@ -65,15 +83,25 @@ def main() -> int:
         shutil.copy2(s, target)
         copied += 1
 
+    assets: list[Path] = []
     for folder, pattern in INCLUDE_GLOBS:
         for s in sorted((ROOT / folder).glob(pattern)):
             target = OUT / folder / s.name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(s, target)
+            assets.append(s)
             copied += 1
 
+    version = asset_version(assets)
+    index = OUT / "index.html"
+    html = index.read_bytes()
+    stamped, n = CACHE_BUST.subn(rb'\1\2?v=' + version.encode() + rb'\4', html)
+    if n == 0:
+        print("warning: no asset URLs found in index.html to version", file=sys.stderr)
+    index.write_bytes(stamped)
+
     size = sum(f.stat().st_size for f in OUT.rglob("*") if f.is_file())
-    print(f"_deploy ready: {copied} files, {size / 1024:.0f} KB")
+    print(f"_deploy ready: {copied} files, {size / 1024:.0f} KB, assets versioned v{version} ({n} refs)")
     return 0
 
 
