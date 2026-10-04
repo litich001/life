@@ -33,12 +33,15 @@ function readExploreParams(p) {
   state.page = 1;
 }
 
-function route() {
+function route(opts = {}) {
   if (!book) return;
   closeSheet();
   const { parts, q } = parseHash();
   const key = parts.join('/');
-  const rerender = () => { route(); };
+  /* An in-place update (ticking a facet, changing sort, loading more) is not a
+     navigation. Scrolling to the top there throws away wherever the reader was,
+     which is the single most irritating thing a filterable list can do. */
+  const rerender = () => { route({ keepScroll: true }); };
   let view;
 
   switch (parts[0]) {
@@ -67,15 +70,30 @@ function route() {
       return;
   }
 
+  const y = opts.keepScroll ? scrollY : 0;
+  if (current) scrollMemory.set(current, scrollY);
   main.replaceChildren(view);
   current = key;
   syncNav(parts[0] || 'home');
-  afterRender(parts);
+  afterRender(parts, y);
 }
 
-function afterRender(parts) {
+/* Where each route was left. Browsers restore scroll on their own history
+   navigations, but a hash route re-renders through here, so without this every
+   back-and-forth between a chapter and the result list starts at the top. */
+const scrollMemory = new Map();
+
+function afterRender(parts, keepY = 0) {
   document.title = titleFor(parts);
-  if (!['ch', 'long'].includes(parts[0])) scrollTo({ top: 0, behavior: 'instant' });
+  if (keepY) {
+    scrollTo({ top: keepY, behavior: 'instant' });
+  } else if (!['ch', 'long'].includes(parts[0])) {
+    const remembered = scrollMemory.get(current) || 0;
+    scrollTo({ top: remembered, behavior: 'instant' });
+    /* Land keyboard and screen-reader users at the top of the new page rather
+       than wherever the old page's last tab stop happened to be. */
+    main.focus({ preventScroll: true });
+  }
   requestAnimationFrame(() => { reveal(main); updateProgress(); applyJump(); });
   const jump = document.getElementById(location.hash.split('/').pop());
   if (jump && parts.length > 1) jump.scrollIntoView({ block: 'start' });
@@ -200,9 +218,19 @@ document.documentElement.classList.add('js');
 
 /* ── boot ───────────────────────────────────────────────────────────── */
 (async function boot() {
+  /* A skeleton shaped like the result list, not a spinner. The page is going to
+     be a two-column grid of cards; showing that shape immediately means the
+     first paint already answers "how much is there" instead of just "wait". */
   const loader = el('div', { class: 'wrap boot' },
     el('div', { class: 'boot__bar' }, el('i')),
-    el('p', { class: 'u-label' }, '正在载入 608 条建议…'));
+    el('div', { class: 'boot__grid', 'aria-hidden': 'true' },
+      ...Array.from({ length: 8 }, (_, i) =>
+        el('div', { class: 'boot__card' },
+          el('span', { class: 'boot__l' }),
+          el('span', { class: 'boot__t', style: `width:${[92, 74, 85, 66, 88, 71, 79, 60][i]}%` }),
+          el('span', { class: 'boot__p' }),
+          el('span', { class: 'boot__p', style: 'width:82%' })))),
+    el('p', { class: 'sr-only', role: 'status' }, '正在载入 608 条建议'));
   main.replaceChildren(loader);
   try {
     book = await loadBook();

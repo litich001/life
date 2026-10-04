@@ -94,18 +94,36 @@ function toggleDetail(btn, book, it, terms) {
   const card = btn.closest('.card');
   const box = card.querySelector('.card__detail');
   const open = btn.getAttribute('aria-expanded') === 'true';
-  btn.setAttribute('aria-expanded', String(!open));
-  btn.querySelector('.btn-ghost__i').textContent = open ? '＋' : '－';
 
   if (open) {
+    btn.setAttribute('aria-expanded', 'false');
+    btn.querySelector('.btn-ghost__i').textContent = '＋';
+    card.classList.remove('is-open');
     // Collapse, then restore [hidden] once the height transition is done so the
     // collapsed panel leaves the accessibility tree again.
-    card.classList.remove('is-open');
     const done = () => { if (!card.classList.contains('is-open')) box.hidden = true; };
     box.addEventListener('transitionend', done, { once: true });
     setTimeout(done, 420);
     return;
   }
+
+  /* One at a time. Several panels open at once turns a 60-card result page into
+     an unreadable wall of collapsed text. */
+  for (const other of document.querySelectorAll('.card.is-open')) {
+    if (other === card) continue;
+    const b = other.querySelector('.btn-ghost');
+    if (b) {
+      b.setAttribute('aria-expanded', 'false');
+      const i = b.querySelector('.btn-ghost__i');
+      if (i) i.textContent = '＋';
+    }
+    other.classList.remove('is-open');
+    const ob = other.querySelector('.card__detail');
+    if (ob) setTimeout(() => { if (!other.classList.contains('is-open')) ob.hidden = true; }, 420);
+  }
+
+  btn.setAttribute('aria-expanded', 'true');
+  btn.querySelector('.btn-ghost__i').textContent = '－';
 
   if (book.hydrated) {
     box.replaceChildren(detailBody(book, it, terms));
@@ -190,9 +208,21 @@ export function viewExplore(book, state, rerender) {
 
   let hits = res.hits;
   if (state.onlyMarks) hits = hits.filter((h) => isMarked(h.it.ref));
-  if (state.sort === 'ev') hits = [...hits].sort((a, b) => a.it.evidence.localeCompare(b.it.evidence) || b.sc - a.sc);
-  else if (state.sort === 'val') hits = [...hits].sort((a, b) => b.it.mag.length - a.it.mag.length || b.sc - a.sc);
-  else hits = [...hits].sort((a, b) => b.sc - a.sc || a.it.ch - b.it.ch || a.it.no - b.it.no);
+  /* Relevance, then the site's own ranking, then chapter order. `val` sorts by
+     the derived value tier (极高 before 高 before 一般) and `ev` by grade. */
+  const RANK = { '极高': 0, '高': 1, '一般': 2 };
+  if (state.sort === 'ev') {
+    hits = [...hits].sort((a, b) => a.it.evidence.localeCompare(b.it.evidence) || b.sc - a.sc);
+  } else if (state.sort === 'val') {
+    hits = [...hits].sort((a, b) =>
+      (RANK[a.it.value] ?? 9) - (RANK[b.it.value] ?? 9) ||
+      (RANK[a.it.mag] ?? 9) - (RANK[b.it.mag] ?? 9) ||
+      b.sc - a.sc);
+  } else if (state.sort === 'book') {
+    hits = [...hits].sort((a, b) => a.it.ch - b.it.ch || a.it.no - b.it.no);
+  } else {
+    hits = [...hits].sort((a, b) => b.sc - a.sc || a.it.ch - b.it.ch || a.it.no - b.it.no);
+  }
 
   const root = el('div', { class: 'wrap explore' });
   root.append(el('h1', { class: 'sr-only' }, `检索 ${book.items.length} 条建议`));
@@ -328,10 +358,17 @@ const nActive = ['ev', 'ch', 'cj', 'cost', 'mag', 'val', 'flag']
       list.append(itemCard(book, h.it, { terms: res.terms, d: i % step }));
     });
     if (hits.length > (state.page * 60 || 60)) {
+      const left = hits.length - (state.page * 60 || 60);
       list.append(el('button', {
         class: 'loadmore', type: 'button',
-        onclick: () => { state.page = (state.page || 1) + 1; rerender(); },
-      }, `再看 ${Math.min(60, hits.length - (state.page * 60 || 60))} 条`));
+        onclick: () => {
+          const before = scrollY + scrollHeight;
+          state.page = (state.page || 1) + 1;
+          rerender();
+          // the list grew above the fold; keep the reader's eyes where they were
+          requestAnimationFrame(() => scrollTo({ top: scrollY + (scrollHeight - before), behavior: 'instant' }));
+        },
+      }, `再看 ${Math.min(60, left)} 条`, el('i', {}, `（已显示 ${state.page * 60 || 60} / ${hits.length}）`)));
     }
   }
 
@@ -378,13 +415,23 @@ function facetGroup(title, set, live, all, label, key) {
     })));
 }
 
+/* These must stay in step with the branches in viewExplore — an option with no
+   handler (or a handler with no option) is how you end up sorting by nothing. */
+const SORTS = [
+  ['relevance', '按相关度'],
+  ['val', '按性价比'],
+  ['ev', '按证据等级'],
+  ['book', '按章节顺序'],
+];
+
 function sortSel(state, rerender) {
+  const known = SORTS.some(([v]) => v === state.sort);
   const sel = el('select', {
     class: 'select', 'aria-label': '排序方式',
     onchange: (e) => { state.sort = e.target.value; pushUrl(); rerender(); },
   });
-  for (const [v, t] of [['relevance', '按相关度'], ['book', '按书的顺序'], ['ev', '按证据等级']]) {
-    sel.append(el('option', { value: v, selected: state.sort === v }, t));
+  for (const [v, t] of SORTS) {
+    sel.append(el('option', { value: v, selected: (known ? state.sort : 'relevance') === v }, t));
   }
   return sel;
 }
