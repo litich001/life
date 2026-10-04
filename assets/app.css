@@ -31,6 +31,13 @@
     --accent:     #E4320B;
     --accent-deep: #BE2A06;
     --accent-ink: #FFFFFF;
+    /* Second hue with a job rather than as decoration: vermilion means "act now"
+       (emergency block, active state, focus ring), blue means "this is well
+       evidenced" (grade A, the evidence ledger, grade counters). Two signals,
+       each meaning one thing, instead of one colour meaning everything. */
+    --data:       #1B3FD8;
+    --data-ink:   #FFFFFF;
+    --data-soft:  rgba(27, 63, 216, .10);
     --link:       #1B3FD8;
     --line:       rgba(11, 11, 12, .16);
     --line-2:     rgba(11, 11, 12, .085);
@@ -70,6 +77,9 @@
     --accent:     #FF5A2B;
     --accent-deep: #FF6A3D;
     --accent-ink: #0A0A0B;
+    --data:       #8FB0F5;
+    --data-ink:   #0A0A0B;
+    --data-soft:  rgba(143, 176, 245, .14);
     --link:       #7C9BFF;
     --line:       rgba(244, 243, 238, .2);
     --line-2:     rgba(244, 243, 238, .11);
@@ -82,6 +92,7 @@
       --ink: #F4F3EE; --ink-2: #C9C8C1; --muted: #8E8D87;
       --paper: #0A0A0B; --paper-2: #131316; --paper-3: #1C1C20;
       --accent: #FF5A2B; --accent-deep: #FF6A3D; --accent-ink: #0A0A0B; --link: #7C9BFF;
+      --data: #8FB0F5; --data-ink: #0A0A0B; --data-soft: rgba(143, 176, 245, .14);
       --line: rgba(244,243,238,.2); --line-2: rgba(244,243,238,.11); --line-3: rgba(244,243,238,.06);
       --mark: #6B5B00;
     }
@@ -258,9 +269,12 @@
   }
   .card:hover::before { transform: scaleY(1); }
 
-  /* Tiles share one language: the accent field arrives as a wipe from the left. */
+  /* No will-change here: background-color and color are paint properties, so
+     promoting them creates layers that cost more than the transition saves. */
   .sit, .idx33, .lg, .cta, .about__card, .about__honors li, .about__skills li {
-    will-change: background-color, color;
+    transition-property: background-color, color;
+    transition-duration: .24s;
+    transition-timing-function: var(--ease);
   }
 
   /* Nav: the underline grows from the centre rather than the left edge. */
@@ -277,14 +291,15 @@
     }
   }
 
-  /* Cards in a grid stagger in horizontally as well as vertically, so a row
-     reads as one object arriving rather than seven separate ones. */
+  /* This stagger used transition-delay on the cards, which delays the *hover*
+     transition too -- so moving across a row felt laggy and broken rather than
+     staggered. Delays belong on the reveal animation, not on hover. */
   @media (prefers-reduced-motion: no-preference) {
-    .cards > .card:nth-child(6n+2) { transition-delay: .03s; }
-    .cards > .card:nth-child(6n+3) { transition-delay: .06s; }
-    .cards > .card:nth-child(6n+4) { transition-delay: .09s; }
-    .cards > .card:nth-child(6n+5) { transition-delay: .12s; }
-    .cards > .card:nth-child(6n+6) { transition-delay: .15s; }
+    .cards > .card:nth-child(6n+2) { animation-delay: .03s; }
+    .cards > .card:nth-child(6n+3) { animation-delay: .06s; }
+    .cards > .card:nth-child(6n+4) { animation-delay: .09s; }
+    .cards > .card:nth-child(6n+5) { animation-delay: .12s; }
+    .cards > .card:nth-child(6n+6) { animation-delay: .15s; }
   }
 
   /* Press feedback: everything clickable acknowledges the touch. */
@@ -417,8 +432,8 @@
   .quick__c b { font-weight: 600; color: var(--ink); }
   .quick__c span { color: var(--muted); font-size: 11px; }
   .quick__c:hover { border-color: var(--ink); background: var(--paper-2); }
-  /* A is the grade worth filtering by, so it carries the accent */
-  .quick__c:first-of-type b { color: var(--accent-deep); }
+  /* A is the grade worth filtering by, so it carries the evidence hue */
+  .quick__c:first-of-type b { color: var(--data); }
 
   /* These duplicate the filter rail on the explore page, which a phone gets
      anyway — dropping the row keeps the hero inside one screen. Must come after
@@ -494,10 +509,13 @@
   }
 
 /* rotating placeholder — a real placeholder can't animate, so the field goes
-     transparent and this sibling does the typing */
+     transparent and this sibling does the typing. It must be positioned against
+     .find__field (which wraps the input), not against .find: anchoring it to the
+     form put the text on top of the magnifier icon. */
+  .find__field { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; }
   .find__ghost {
     position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-    padding: 13px 0; pointer-events: none; color: var(--muted);
+    pointer-events: none; color: var(--muted);
     font: 400 var(--step-1)/1.35 var(--sans); max-width: 100%;
     white-space: nowrap; overflow: hidden; opacity: 0;
   }
@@ -515,7 +533,7 @@
     .find__input::placeholder { color: var(--muted); }
   }
   @media (max-width: 640px) {
-    .find__ghost { padding: 11px 0; font-size: var(--step-0); }
+    .find__ghost { font-size: var(--step-0); }
   }
 
   /* chapter index: search, filter, sort */
@@ -1001,7 +1019,7 @@
   }
   .chcard__bar { display: flex; height: 3px; gap: 1px; margin-top: 2px; }
   .chcard__bar i { display: block; height: 100%; background: var(--line); }
-  .chcard__bar i[data-e="A"] { background: var(--ink); }
+  .chcard__bar i[data-e="A"] { background: var(--data); }
   .chcard__bar i[data-e="B"] { background: var(--muted); }
   .chcard__bar i[data-e="C"] { background: var(--paper-3); border: 1px solid var(--line); }
 }
@@ -1051,14 +1069,17 @@
   /* Hero: the search field leads, but the hero still needs a composition —
    a flat vertical stack of equal-weight blocks reads as an unstyled default.
    Title and search take the left; the evidence ledger anchors the right. */
+  /* Hero height budget. At 1280x800 this used to be 806px -- 101% of the screen,
+     so the fold showed nothing but the hero. Target is roughly 75-80% so the
+     situation tiles below it peek in and invite the scroll. */
   .poster { position: relative; border-bottom: 1px solid var(--line); }
   .poster__in {
-    padding-block: clamp(30px, 5vw, 72px) clamp(28px, 4vw, 44px);
-    display: grid; gap: clamp(18px, 2.4vw, 28px);
+    padding-block: clamp(24px, 3.2vw, 44px) clamp(20px, 2.6vw, 32px);
+    display: grid; gap: clamp(14px, 1.8vw, 20px);
   }
-  .poster__main { display: grid; gap: clamp(14px, 2vw, 22px); justify-items: start; }
+  .poster__main { display: grid; gap: clamp(11px, 1.4vw, 15px); justify-items: start; }
   .poster__title {
-    font-size: clamp(1.9rem, 4.4vw, 3.5rem); line-height: 1.1; letter-spacing: -.038em;
+    font-size: clamp(1.85rem, 4.2vw, 3.3rem); line-height: 1.1; letter-spacing: -.038em;
     font-weight: 700; margin: 0;
     text-wrap: balance;
   }
@@ -1068,22 +1089,22 @@
     .poster__in {
       /* left column has to stay wide enough for two lines of the title, or the
          explicit <br> plus a soft wrap turns into three ragged lines */
-      grid-template-columns: minmax(0, 1fr) minmax(200px, 250px);
-      align-items: end; column-gap: clamp(30px, 4vw, 64px);
+      grid-template-columns: minmax(0, 1fr) minmax(190px, 236px);
+      align-items: end; column-gap: clamp(26px, 3.4vw, 54px);
     }
-    .poster__title { font-size: clamp(2.1rem, 3.5vw, 3.2rem); }
+    .poster__title { font-size: clamp(2rem, 3.3vw, 3.05rem); }
     .poster__cta { grid-column: 1 / -1; }
     .poster__side { align-self: end; }
   }
 
   /* evidence ledger — informative, and it gives the hero an anchor */
-  .ledger { border-top: 1px solid var(--ink); padding-top: 12px; }
+  .ledger { border-top: 1px solid var(--ink); padding-top: 10px; }
   .ledger__t {
     font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
   }
-  .ledger__b + .ledger__b { margin-top: 7px; }
-  .ledger__n { margin-top: 14px; font-size: var(--step--1); }
+  .ledger__b + .ledger__b { margin-top: 6px; }
+  .ledger__n { margin-top: 10px; font-size: var(--step--1); }
   .ledger__n a {
     color: var(--muted); border-bottom: 1px solid var(--line);
     display: inline-block; padding: 5px 0;   /* standalone action, not inline in prose */
@@ -1095,8 +1116,9 @@
   .sbar__t { height: 5px; background: var(--paper-3); }
   .sbar__t i { display: block; height: 100%; background: var(--ink); }
   .sbar__n { font-size: 11px; color: var(--muted); text-align: right; }
-  /* A is the grade worth looking for, so it gets the accent; B and C recede. */
-  .ledger__b:first-of-type .sbar__t i { background: var(--accent-deep); }
+  /* A is the grade worth looking for, so it carries the evidence hue. */
+  .ledger__b--a .sbar__t i { background: var(--data); }
+  .ledger__b--a .sbar__l { color: var(--data); font-weight: 600; }
 
   /* search field */
   .find {
@@ -1143,16 +1165,16 @@
 
   .poster__cta {
     display: grid; gap: 1px; background: var(--line);
-    border: 1px solid var(--line); margin-top: clamp(26px, 3.4vw, 44px);
+    border: 1px solid var(--line); margin-top: clamp(10px, 1.4vw, 16px);
     grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
   }
   .cta {
-    background: var(--paper); padding: clamp(14px, 1.6vw, 20px);
-    display: grid; gap: 5px; align-content: start;
+    background: var(--paper); padding: clamp(11px, 1.2vw, 15px) clamp(13px, 1.4vw, 18px);
+    display: grid; gap: 3px; align-content: start;
     transition: background-color .22s var(--ease), color .22s var(--ease);
   }
-  .cta b { font-size: var(--step-1); font-weight: 600; letter-spacing: -.01em; }
-  .cta span { font-size: var(--step--1); color: var(--muted); }
+  .cta b { font-size: var(--step-0); font-weight: 600; letter-spacing: -.01em; }
+  .cta span { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
   .cta kbd { font: 500 10px/1 var(--mono); border: 1px solid var(--line); padding: 2px 5px; border-radius: 2px; }
   .cta:hover { background: var(--paper-2); }
   .cta:hover span { color: var(--ink-2); }
@@ -1378,7 +1400,7 @@
   .chip--free { border-color: color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent-deep); }
   .chip--cj { background: var(--paper-2); }
   .chip--est { border-style: dashed; }
-  .chip--a { border-color: var(--ink); color: var(--ink); }
+  .chip--a { border-color: var(--data); color: var(--data); background: var(--data-soft); }
   .chip--b { color: var(--ink-2); }
   .chip--c { opacity: .8; }
   .tag {
@@ -1393,7 +1415,7 @@
     font: 600 12px/1 var(--mono); border: 1px solid var(--ink); color: var(--ink);
     background: transparent;
   }
-  .badge[data-ev="A"] { background: var(--ink); color: var(--paper); }
+  .badge[data-ev="A"] { background: var(--data); color: var(--data-ink); }
   .badge[data-ev="B"] { border-color: var(--muted); color: var(--muted); }
   .badge[data-ev="C"] { border-style: dotted; color: var(--muted); }
   .badge--big { width: 40px; height: 40px; font-size: 20px; margin-bottom: 12px; }

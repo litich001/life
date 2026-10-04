@@ -115,9 +115,16 @@ export function viewHome(book, state) {
 
   input.addEventListener('input', stop);
 
-  const examples = el('div', { class: 'find__eg' },
+  /* The keyword chips are the fallback for when the rotating placeholder is off
+   (prefers-reduced-motion hides the ghost). With it on, they are redundant --
+   they cost a whole row of hero height, which is the difference between a hero
+   that fits on screen and one that does not. */
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const examples = reduceMotion
+  ? el('div', { class: 'find__eg' },
     el('span', { class: 'find__egl' }, '试试'),
-    ...EXAMPLES.map((w) => el('a', { class: 'find__chip', href: `#/explore?q=${encodeURIComponent(w)}` }, w)));
+    ...EXAMPLES.map((w) => el('a', { class: 'find__chip', href: `#/explore?q=${encodeURIComponent(w)}` }, w)))
+  : null;
 
   /* Three ways in besides free text. Each one is a real query, not a label. */
   const quick = el('div', { class: 'quick' },
@@ -148,8 +155,9 @@ export function viewHome(book, state) {
             el('svg', { viewBox: '0 0 20 20', width: 17, height: 17 },
               el('circle', { cx: '8.5', cy: '8.5', r: '5.6', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7' }),
               el('path', { d: 'M12.8 12.8 17 17', stroke: 'currentColor', 'stroke-width': '1.7', fill: 'none', 'stroke-linecap': 'round' }))),
-          input,
-          ghost,
+          // the ghost has to share the input's origin, not the field's padding box,
+          // or it renders on top of the icon
+          el('div', { class: 'find__field' }, input, ghost),
           el('button', { class: 'find__go', type: 'submit' }, '搜索'),
           el('kbd', { class: 'find__kbd', 'aria-hidden': 'true' }, '/')),
 
@@ -159,7 +167,9 @@ export function viewHome(book, state) {
 
       el('aside', { class: 'poster__side' },
         el('div', { class: 'ledger__t' }, '证据分级'),
-        el('div', { class: 'ledger__b' }, statBar('A', m.evidence.A, m.items)),
+        // explicit class, not :first-of-type -- that means "first div sibling",
+        // and .ledger__t is the first div, so the A row never matched
+        el('div', { class: 'ledger__b ledger__b--a' }, statBar('A', m.evidence.A, m.items)),
         el('div', { class: 'ledger__b' }, statBar('B', m.evidence.B, m.items)),
         el('div', { class: 'ledger__b' }, statBar('C', m.evidence.C, m.items)),
         el('p', { class: 'ledger__n' },
