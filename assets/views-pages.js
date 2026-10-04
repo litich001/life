@@ -1,5 +1,5 @@
 ﻿/* Home, chapter index, chapter reader, long-form reader, methodology. */
-import { el, frag, linkify, reveal, fmt, openSheet, closeSheet, toast, icon, wordmark, spotlight, scrollSpy, onTeardown } from './ui.js';
+import { el, frag, linkify, reveal, fmt, openSheet, closeSheet, toast, icon, spotlight, scrollSpy, onTeardown } from './ui.js';
 import { itemCard, openRefSheet, isMarked, toggleMark, marks, badge, CJ_LABEL } from './views-explore.js';
 import { runQuery } from './data.js';
 
@@ -32,6 +32,69 @@ const PROMPTS = [
   '账号被盗了先做哪一步',
   '孩子上学要注意什么',
 ];
+
+/* ── the corpus map ─────────────────────────────────────────────────────
+ * The hero's right column: one micro-bar per chapter, height of the whole book
+ * made visible -- length is how many entries a chapter has, and the blue portion
+ * is how much of that chapter is grade A.
+ *
+ * Every field here is one I can defend. Evidence is the only axis the book
+ * publishes a tally for, and it matches evidenceStats exactly (410/149/49);
+ * chapters partition the 608 cleanly. I deliberately did NOT plot cost or
+ * value: those contradict the book in this extraction (see the note below),
+ * and a confident-looking chart of a wrong number is worse than no chart.
+ *
+ * Two numbers argued against a scatterplot of value against cost: value is
+ * almost perfectly collinear with cost here (all 78 "极高" sit in the costs=3
+ * column), which would render as a neat diagonal staircase and imply a
+ * relationship that is really just a sort order.
+ */
+function corpusMap(book) {
+  const chs = book.chapters;
+  const max = Math.max(...chs.map((c) => c.stats.n));
+
+  /* One readout, not 33 tooltips. Hovering or focusing a row writes here, so no
+     floating layer can collide with the hero. Deliberately NOT aria-live: it is
+     driven by pointerenter, and a live region that fires on every mouse move
+     would talk over a screen-reader user. Each row's own aria-label is the
+     accessible channel, and it carries the same facts.
+
+     The rows also carry no text of their own. At 33 rows a number in every row
+     is noise, and text sets the row height to the line box -- which is what
+     pushed the hero to 134% of a 700px viewport in the first attempt. */
+  const first = chs[0];
+  const out = el('p', { class: 'cmap__out' },
+    el('b', {}, `${String(first.no).padStart(2, '0')} ${first.title}`),
+    el('span', { class: 'num' }, `${first.stats.n} 条 · A 级 ${first.stats.A || 0}`));
+
+  const rows = chs.map((c, i) => {
+    const n = c.stats.n;
+    const a = c.stats.A || 0;
+    const row = el('a', {
+      class: 'cmap__r', href: `#/ch/${c.no}`,
+      'aria-label': `第 ${c.no} 节 ${c.title}，${n} 条，A 级 ${a} 条`,
+      style: `--d:${(i * 11)}ms`,
+      onpointerenter: show, onfocus: show,
+    },
+      el('i', { class: 'cmap__all', style: `width:${(n / max * 100).toFixed(1)}%` },
+        el('i', { class: 'cmap__a', style: `width:${(n ? a / n * 100 : 0).toFixed(1)}%` })));
+    function show() {
+      out.replaceChildren(
+        el('b', {}, `${String(c.no).padStart(2, '0')} ${c.title}`),
+        el('span', { class: 'num' }, `${n} 条 · A 级 ${a}`));
+    }
+    return row;
+  });
+
+  return el('figure', { class: 'cmap' },
+    el('figcaption', { class: 'cmap__cap' },
+      el('span', {}, `01–${String(chs.length).padStart(2, '0')} 节`),
+      el('span', { class: 'cmap__key' },
+        el('i', { class: 'cmap__ka' }), 'A 级',
+        el('i', { class: 'cmap__kb' }), 'B / C 级')),
+    el('div', { class: 'cmap__rows' }, ...rows),
+    out);
+}
 
 /* ── home ───────────────────────────────────────────────────────────── */
 export function viewHome(book, state) {
@@ -138,27 +201,27 @@ const examples = reduceMotion
     ...EXAMPLES.map((w) => el('a', { class: 'find__chip', href: `#/explore?q=${encodeURIComponent(w)}` }, w)))
   : null;
 
-  /* Three ways in besides free text. Each one is a real query, not a label. */
+  /* Evidence is the only quick filter left. The cost filters used to sit here
+     labelled 不花钱 / 不占时间 / 不需要毅力, but `cost=money` selects items whose
+     money flag is SET (data.js filters on it.flags[c]) -- so those labels stated
+     the opposite of what they returned. And the underlying flags contradict the
+     book anyway: howToRead says 性价比极高 means 既不花钱、不花时间、不需要毅力 and
+     should be 104 entries, where this extraction has 78 and every one of them
+     carries all three cost markers. Relabelling would have made the lie tidier
+     rather than smaller. The cost filters remain on the explore page, where the
+     per-item markers are visible next to them. */
   const quick = el('div', { class: 'quick' },
-    el('span', { class: 'quick__l' }, '按证据'),
+    el('span', { class: 'quick__l' }, '按证据等级'),
     ...[['A', m.evidence.A], ['B', m.evidence.B], ['C', m.evidence.C]].map(([k, n]) =>
       el('a', { class: 'quick__c', href: `#/explore?ev=${k}` },
-        el('b', { class: 'num' }, k), el('span', { class: 'num' }, `${n} 条`))),
-    el('span', { class: 'quick__sep', 'aria-hidden': 'true' }),
-    el('span', { class: 'quick__l' }, '按成本'),
-    ...[['money', '不花钱'], ['time', '不占时间'], ['will', '不需要毅力']].map(([k, label]) =>
-      el('a', {
-        class: 'quick__c', href: `#/explore?cost=${k}`,
-        title: `${label}的条目`,
-      }, label)));
+        el('b', { class: 'num' }, k), el('span', { class: 'num' }, `${n} 条`))));
 
-  /* The return types double as the primary taxonomy: each one is a real query,
-     not a label. This used to be a separate section further down the page, which
-     put the main way of browsing below the situations block; folded into the hero
-     it sits where someone actually reads it. */
+  /* The return types as the second way in. Every one is a real query. The counts
+     overlap -- 319 of the 608 entries carry more than one 口径 -- so they are
+     labelled as such rather than presented as a partition of 608. */
   const RES_ICON = { '寿命': 'heart', '时间与精力': 'clock', '金钱': 'wallet', '人身自由': 'shield' };
   const resCells = el('div', { class: 'kinds' },
-    el('span', { class: 'kinds__l' }, '按回报'),
+    el('span', { class: 'kinds__l' }, '按回报（一条可属多类）'),
     ...book.method.resources.map((r) => {
       const key = r.k === '时间与精力' ? '时间精力' : r.k;
       const n = book.items.filter((i) => i.cj.includes(key)).length;
@@ -200,10 +263,12 @@ const examples = reduceMotion
       quick,
       resCells,
 
-      /* The right column. It was empty from the last round because the evidence
-         ledger came out -- the title/search stack alone reads unbalanced in a
-         full-width container. This is that space, doing something. */
-      el('div', { class: 'poster__art' }, wordmark())));
+      /* The right column. Empty for two rounds now, because a decorative
+         wordmark was worse than nothing: a dot-matrix "Life" is a template
+         gesture, it says nothing about 608 graded entries, and "Life" in Latin
+         letters on a Chinese site is an arbitrary choice. What goes here is the
+         shape of the corpus itself. */
+      el('div', { class: 'poster__art' }, corpusMap(book))));
 
   root.append(hero);
 
@@ -240,16 +305,27 @@ const examples = reduceMotion
   }
   root.append(sitWrap);
 
-  /* ── free and high-value ───────────────────────────────────────────── */
-  const free = book.items.filter((i) => i.value === '极高');
-  const sevenWrap = el('section', { class: 'wrap' });
-  sevenWrap.append(el('div', { class: 'band' },
-    el('h2', {}, '不花钱、不占时间、不费毅力'),
+  /* ── the entries with the most to gain, by evidence ──────────────────────
+   This used to be a "不花钱、不占时间、不费毅力 · 符合这三条的共 78 条" section,
+   built on value === '极高'. That claim is false against this extraction: the
+   book's howToRead defines 极高 as 既不花钱、不花时间、不需要毅力 and says there are
+   104 of them, whereas all 78 here carry all three cost markers and the only 10
+   genuinely cost-free entries are labelled 一般. Removed rather than relabelled,
+   because there is no way to phrase it honestly.
+   What replaces it uses the one ordering the book itself vouches for: grade A,
+   which its evidenceStats confirms at 410. */
+  const topA = book.items
+    .filter((i) => i.evidence === 'A')
+    .sort((a, b) => (a.ch - b.ch) || (a.no - b.no))
+    .slice(0, SEVEN);
+  const aWrap = el('section', { class: 'wrap' });
+  aWrap.append(el('div', { class: 'band' },
+    el('h2', {}, 'A 级条目，每节从最前面看起'),
     el('p', { class: 'band__d' },
-      `符合这三条的共 ${free.length} 条，先看前 ${SEVEN} 条。`),
-    el('a', { class: 'band__more', href: '#/explore?val=' + encodeURIComponent('极高') }, '查看全部')));
+      `共 ${m.evidence.A} 条有具体数字可查、出自荟萃分析或大型试验。下面按章节顺序取前 ${SEVEN} 条。`),
+    el('a', { class: 'band__more', href: '#/explore?ev=A' }, '查看全部')));
   const poster = el('ol', { class: 'seven' });
-  free.slice(0, SEVEN).forEach((it, i) => {
+  topA.forEach((it, i) => {
     poster.append(el('li', { class: 'seven__i reveal', data: { d: i % 4 } },
       el('a', { href: it.href },
         el('span', { class: 'seven__no num' }, String(i + 1).padStart(2, '0')),
@@ -258,8 +334,8 @@ const examples = reduceMotion
           el('span', { class: 'seven__p' }, it.plain.length > 96 ? it.plain.slice(0, 96) + '…' : it.plain)),
         badge(it.evidence))));
   });
-  sevenWrap.append(poster);
-  root.append(sevenWrap);
+  aWrap.append(poster);
+  root.append(aWrap);
 
   /* ── chapter index, dense ─────────────────────────────────────────── */
   const chWrap = el('section', { class: 'wrap' });

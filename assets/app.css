@@ -948,68 +948,61 @@
   .kinds__c:hover .kinds__ico { color: var(--data-ink); }
   .kinds__c:hover .kinds__n { color: color-mix(in srgb, var(--data-ink) 84%, var(--data)); }
 
-  /* ── the Life wordmark ──────────────────────────────────────────────── */
   .poster__art { display: none; }
-  @media (min-width: 820px) { .poster__art { display: block; } }
+  @media (min-width: 860px) { .poster__art { display: block; } }
 
-  .wordmark { display: block; width: 100%; height: auto; overflow: visible; }
+  /* ── the corpus map ──────────────────────────────────────────────────────
+     33 rows, one per chapter. The whole point is that it is small: it has to sit
+     in a 300px column and still read as a precise index rather than a chart.
+     So one colour, one axis, hairlines instead of boxes, and no grid -- the
+     density IS the design. A 33-column stacked A/B/C version was tried first and
+     had to be thrown away: at ~6px per column the B and C segments fall below a
+     pixel and turn into moire. */
+  .cmap { margin: 0; display: grid; gap: 8px; }
+  .cmap__cap {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted);
+    padding-bottom: 7px; border-bottom: 1px solid var(--line);
+  }
+  .cmap__key { margin-inline-start: auto; display: flex; align-items: center; gap: 5px; letter-spacing: .04em; }
+  .cmap__ka, .cmap__kb { width: 11px; height: 3px; flex: none; }
+  .cmap__ka { background: var(--data); }
+  .cmap__kb { background: var(--paper-3); border: 1px solid var(--line); }
 
-  /* The grid is 2 batched paths, so the whole draw-in is 2 dash animations.
-     Every animated rule here declares its FINAL state as the base style and
-     animates with fill-mode backwards. With forwards, a browser that never
-     advances the timeline -- a background tab, a paused debugger, some
-     headless setups -- leaves the whole wordmark invisible instead of static. */
-  .wordmark__grid {
-    fill: none; stroke: var(--line); stroke-width: .5;
-    stroke-dasharray: 2400; stroke-dashoffset: 0;
-    animation: wmGrid 1.5s var(--ease) .1s backwards;
+  /* Rows are pure bars in a taller row box. The row is the hit target, so it is
+     9px while the bar inside it is 5px -- that gives a usable pointer target
+     without a text line box setting the height, which is how the first attempt
+     reached 738px. The gaps between bars come from the row box, not from grid
+     gap, so the two do not compound. */
+  .cmap__rows { display: grid; }
+  .cmap__r {
+    display: flex; align-items: center; height: 9px; padding: 0;
+    transition: background-color .18s var(--ease);
   }
-  @keyframes wmGrid { from { stroke-dashoffset: 2400; } }
-  .wordmark__rule {
-    fill: none; stroke: var(--ink); stroke-width: 1;
-    stroke-dasharray: 240; stroke-dashoffset: 0;
-    animation: wmRule 1s var(--ease) .75s backwards;
+  .cmap__all {
+    display: block; height: 5px; background: var(--paper-3);
+    transform-origin: 0 50%; transform: scaleX(0);
+    animation: cmapWipe .5s var(--ease-out) backwards;
+    animation-delay: calc(var(--d, 0ms) + 120ms);
   }
-  @keyframes wmRule { from { stroke-dashoffset: 240; } }
+  @keyframes cmapWipe { to { transform: scaleX(1); } }
+  .cmap__a { display: block; height: 100%; background: var(--data); }
 
-  /* dots arrive on a wave: --i is 0..1 across the word, written per dot in JS */
-  .wordmark__dot {
-    fill: var(--data);
-    transform-box: fill-box; transform-origin: 50% 50%;
-    animation: wmDot .62s var(--ease-out) backwards;
-    animation-delay: calc(.28s + var(--i, 0) * 1s);
-  }
-  @keyframes wmDot { from { opacity: 0; transform: scale(.12); } }
+  .cmap__r:hover, .cmap__r:focus-visible { background: var(--paper-2); }
+  .cmap__r:hover .cmap__all, .cmap__r:focus-visible .cmap__all { background: color-mix(in srgb, var(--data) 24%, var(--paper-3)); }
+  .cmap__r:focus-visible { outline: 2px solid var(--accent-deep); outline-offset: 1px; }
 
-  /* pointer light-up. --lit is 0..1 per dot, set from the pointer position.
-     Base opacity is the resting value, so a dot with no --lit is just visible. */
-  .wordmark__dot {
-    r: calc(2.6px + var(--lit, 0) * 2.4px);
-    opacity: calc(.9 - var(--lit, 0) * .16);
+  /* one readout for all 33 rows, so nothing ever floats over the hero */
+  .cmap__out {
+    display: grid; gap: 1px; min-height: 2.6em; align-content: start;
+    border-top: 1px solid var(--line); padding-top: 7px;
   }
-
-  /* the sweep. transform on a rect is compositor-friendly; animating x is not */
-  .wordmark__sweep { animation: wmSweep 6.5s var(--ease) infinite 1s; }
-  @keyframes wmSweep {
-    0%        { transform: translateX(0); opacity: 0; }
-    14%       { opacity: .75; }
-    86%       { opacity: .75; }
-    100%      { transform: translateX(320px); opacity: 0; }
-  }
-
-  /* on a real pointer, add a slow breath so the mark is never fully static */
-  @media (hover: hover) and (pointer: fine) {
-    .wordmark__dot {
-      animation: wmDot .62s var(--ease-out) both, wmBreathe 4.4s var(--ease) infinite;
-      animation-delay: calc(.28s + var(--i, 0) * 1s), calc(1.7s + var(--i, 0) * 2.4s);
-    }
-  }
-  @keyframes wmBreathe { 0%, 100% { opacity: .74; } 50% { opacity: 1; } }
+  .cmap__out b { font-size: 12.5px; font-weight: 600; line-height: 1.3; }
+  .cmap__out span { font-size: 10.5px; color: var(--muted); }
 
   @media (prefers-reduced-motion: reduce) {
-    .wordmark__grid, .wordmark__rule { stroke-dashoffset: 0; animation: none; }
-    .wordmark__dot { animation: none; opacity: .9; }
-    .wordmark__sweep { display: none; }
+    .cmap__all { animation: none; }
   }
 
   /* ── scroll-spy indicator ───────────────────────────────────────────────
@@ -1057,13 +1050,13 @@
 
   /* Two columns once there is room. Without this the title/search stack sits in
      a full-width container and the right half of the hero is simply empty. */
-  @media (min-width: 820px) {
+  @media (min-width: 860px) {
     .poster__in {
-      grid-template-columns: minmax(0, 1fr) minmax(216px, 268px);
-      column-gap: clamp(24px, 3.2vw, 48px);
+      grid-template-columns: minmax(0, 1fr) clamp(268px, 25vw, 348px);
+      column-gap: clamp(28px, 3.6vw, 56px);
       align-items: start;
     }
-    /* the eyebrow and title stay in the left column; the art is the only thing
+    /* the eyebrow and title stay in the left column; the map is the only thing
        that goes right, so it can sit at the top without competing */
     .poster__eyebrow, .poster__title, .find, .find__count,
     .find__eg, .quick, .kinds { grid-column: 1; }
