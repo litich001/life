@@ -84,6 +84,11 @@
     --gut: clamp(18px, 4.2vw, 56px);
     --maxw: 1560px;
     --r: 2px;
+    /* The sticky header's box: .topbar__in is 60px plus the 1px border, and it is
+       in flow rather than overlaying, so it eats the top of the first screen. The
+       hero is sized as 100svh minus this so that header + hero is exactly one
+       screen and the fold lands on the hero's own rule. 54+1 below 760px. */
+    --topbar-h: 61px;
 
     --step--1: clamp(.78rem, .76rem + .1vw, .84rem);
     --step-0:  clamp(.94rem, .91rem + .16vw, 1rem);
@@ -914,20 +919,44 @@
   }
 
   /* ── the hero ────────────────────────────────────────────────────────────
-     Full measure, no side column, and one statement that owns the width.
+     The hero IS the first screen. It used to be sized purely by its content, which
+     left it at 47-65% of the viewport on desktop and 31-46% on a phone, so the
+     fold always cut through the middle of the band below and the first scroll
+     started from an arbitrary place.
 
-     Three things were tried in that corner and all three failed the same way: an
-     evidence ledger, a dot-matrix wordmark, a 33-bar corpus map. The error was
-     the form, not the content -- a ~300px column of small marks reads as a
-     sidebar no matter what is in it, and a hero with a sidebar reads as
-     unfinished. So the corner is gone, and the title roughly doubles to pay for
-     the width it now spans.
+     min-height, not height: a short window (or a long translation) must be able
+     to push the hero past one screen rather than clip the search box.
 
-     That also made the hero SHORTER, which was the other goal all along: it used
-     to pack seven stacked elements into ~640px. Four elements at double the type
-     is about 430px, so more than half the screen now belongs to what is below
-     the fold. */
-  .poster { position: relative; border-bottom: 1px solid var(--line); }
+     The two min-heights are an ordered pair, not a mistake. vh first as the
+     fallback for browsers without svh (Safari < 15.4, Chrome < 108); svh second
+     so it wins where supported. svh, not vh: 100vh on a phone is the height with
+     the URL bar HIDDEN, so the bottom of the hero would sit under the bar, while
+     svh is the height with the bar shown -- the one the reader is looking at when
+     they arrive. dvh is deliberately NOT used: it would resize the hero every
+     time the bar animates, shifting the content under the reader's thumb.
+
+     align-content: centre puts the single row (the .wrap) in the middle of the
+     leftover space, so the title sits on the optical centre of the screen
+     instead of hugging the header with a void beneath it.
+
+     THE COST, measured, because it is not free. Four text elements plus the ring
+     are 295-505px tall, so filling a 645-1051px screen leaves this much centred
+     space: 7% at 1440x600 and 0-9% at 1280x560 / 834x400 / 900x520 (short
+     windows are tight, as intended), 36-52% on landscape desktops, and 58-68% on
+     tall narrow screens -- 68% at 834x1112, 63% at 390x844. That is the price
+     of a fold that lands on a rule instead of mid-section.
+
+     The tall-narrow end is the weak one, because that is exactly where the ring
+     is dropped (see .rosebox below): a screen 1051px tall holding 339px of
+     content. Filling it would mean either letting the ring grow on those
+     viewports or capping the hero below one screen there, and both change the
+     hero's composition rather than its height, so neither was done unilaterally. */
+  .poster {
+    position: relative; border-bottom: 1px solid var(--line);
+    min-height: calc(100vh - var(--topbar-h));
+    min-height: calc(100svh - var(--topbar-h));
+    display: grid; align-content: center;
+  }
   .poster__in {
     padding-block: clamp(26px, 3.4vw, 52px) clamp(22px, 2.8vw, 38px);
     display: grid; gap: clamp(18px, 2.2vw, 26px);
@@ -1907,6 +1936,7 @@
   }
   @media (max-width: 760px) {
     .topbar__in { height: 54px; gap: 12px; }
+    :root { --topbar-h: 55px; }
     .nav { overflow-x: auto; scrollbar-width: none; }
     .nav::-webkit-scrollbar { display: none; }
     .brand__txt { display: none; }
