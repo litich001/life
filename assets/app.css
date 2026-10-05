@@ -28,23 +28,26 @@
     --paper:      #F7F6F2;
     --paper-2:    #EFEEE8;
     --paper-3:    #E6E4DC;
+    /* ── the palette, in four roles and no more ──────────────────────────
+       Four roles, and nothing on the site is allowed a hue outside them. The
+       list grew to nine last round because a five-colour set was added for the
+       situation groups on top of three already in use for evidence -- blue
+       alone ended up declared four times (--data, --ev-a, --link, --g4). Those
+       five are gone; the groups are told apart by their labels, which they
+       already had.
+
+       1  neutrals   ink / ink-2 / muted on paper / paper-2 / paper-3
+       2  accent     vermilion. One job: this needs attention NOW. Emergency
+                     block, active state, focus ring, the word 寿命 in the title.
+       3  evidence   blue / amber / violet. One job: how well evidenced. Grade
+                     A can quote a number, B has research but no quotable
+                     figure, C is convention. Never red for C -- red would read
+                     as danger, and C is meant to be unremarkable.
+       4  mark       yellow. One job: the text you just searched for. */
     --accent:     #E4320B;
     --accent-deep: #BE2A06;
     --accent-ink: #FFFFFF;
-    /* Second hue with a job rather than as decoration: vermilion means "act now"
-       (emergency block, active state, focus ring), blue means "this is well
-       evidenced" (grade A, the evidence ledger, grade counters). Two signals,
-       each meaning one thing, instead of one colour meaning everything. */
-    --data:       #1B3FD8;
-    --data-ink:   #FFFFFF;
-    --data-soft:  rgba(27, 63, 216, .10);
-    /* Evidence grade gets three hues rather than three weights of grey. The
-       grade is the most-repeated signal on the site -- badges, chapter bars,
-       the rose, the facet counts -- and colour carries it further than weight
-       does. B is amber: research exists but no number you can quote. C is a
-       desaturated violet: convention, no study behind it. Deliberately NOT
-       red for C, because red here would read as "danger" and the whole point of
-       grade C is that it is unremarkable. */
+
     --ev-a:       #1B3FD8;
     --ev-a-ink:   #FFFFFF;
     --ev-a-soft:  rgba(27, 63, 216, .12);
@@ -54,22 +57,23 @@
     --ev-c:       #6B5B95;
     --ev-c-ink:   #FFFFFF;
     --ev-c-soft:  rgba(107, 91, 149, .12);
-    /* Two surface washes so sections alternate temperature. Colour rhythm
-       without adding hues to the text. */
-    --paper-warm: #F1EEE7;
-    --paper-cool: #EEF1F5;
-    /* The rose's B/C fill. Deliberately not --paper-3, which sits at 1.05:1
-       against the paper and made the outer half of every wedge invisible. */
-    --wedge:      #D6D0C0;
-    /* The five situation groups. Light-theme values below 6:1 on paper; the dark
-       set is much lighter, because the same hues only reached 2.6-3.1:1 on a
-       near-black ground. */
-    --g1: #C2370B; --g2: #8A4B00; --g3: #1F6B4A; --g4: #1B3FD8; --g5: #6B5B95;
+
+    /* Links are the same blue as grade A on purpose: both mean "go and look at
+       the evidence", and a link hue on top of an evidence hue would be a sixth
+       thing to learn. */
     --link:       #1B3FD8;
     --line:       rgba(11, 11, 12, .16);
     --line-2:     rgba(11, 11, 12, .085);
     --line-3:     rgba(11, 11, 12, .05);
     --mark:       #FFE24A;
+
+    /* Surface washes, not hues: two temperatures so the page has rhythm. They
+       cost no contrast budget because no text changes colour on them. */
+    --paper-warm: #F1EEE7;
+    --paper-cool: #EEF1F5;
+    /* The rose's B/C fill. Not --paper-3, which is 1.05:1 on the paper and made
+       the outer half of every wedge invisible. */
+    --wedge:      #D6D0C0;
 
     --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
             "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC",
@@ -104,9 +108,6 @@
     --accent:     #FF5A2B;
     --accent-deep: #FF6A3D;
     --accent-ink: #0A0A0B;
-    --data:       #8FB0F5;
-    --data-ink:   #0A0A00;
-    --data-soft:  rgba(143, 176, 245, .14);
     --ev-a:       #7FA4F2;
     --ev-a-ink:   #0A0A0B;
     --ev-a-soft:  rgba(127, 164, 242, .18);
@@ -119,7 +120,6 @@
     --paper-warm: #131211;
     --paper-cool: #11131A;
     --wedge:      #2A2A2F;
-    --g1: #FF8A5E; --g2: #E0A14A; --g3: #4FB88A; --g4: #7FA4F2; --g5: #B0A0D6;
     --link:       #7C9BFF;
     --line:       rgba(244, 243, 238, .2);
     --line-2:     rgba(244, 243, 238, .11);
@@ -132,7 +132,10 @@
       --ink: #F4F3EE; --ink-2: #C9C8C1; --muted: #8E8D87;
       --paper: #0A0A0B; --paper-2: #131316; --paper-3: #1C1C20;
       --accent: #FF5A2B; --accent-deep: #FF6A3D; --accent-ink: #0A0A0B; --link: #7C9BFF;
-      --data: #8FB0F5; --data-ink: #0A0A0B; --data-soft: rgba(143, 176, 245, .14);
+      --ev-a: #7FA4F2; --ev-a-ink: #0A0A0B; --ev-a-soft: rgba(127,164,242,.18);
+      --ev-b: #E0A14A; --ev-b-ink: #17110A; --ev-b-soft: rgba(224,161,74,.18);
+      --ev-c: #B0A0D6; --ev-c-ink: #100E18; --ev-c-soft: rgba(176,160,214,.16);
+      --paper-warm: #131211; --paper-cool: #11131A; --wedge: #2A2A2F;
       --line: rgba(244,243,238,.2); --line-2: rgba(244,243,238,.11); --line-3: rgba(244,243,238,.06);
       --mark: #6B5B00;
     }
@@ -179,7 +182,7 @@
     transition: background-color .24s var(--ease), color .24s var(--ease);
   }
   .about__cardi {
-    color: var(--data); display: grid; place-items: center;
+    color: var(--ev-a); display: grid; place-items: center;
     grid-row: 1 / span 2; padding-top: 2px;
   }
   .about__cardb { display: grid; gap: 3px; min-width: 0; }
@@ -944,27 +947,35 @@
      viewport: at 1280 the column is 806px and line 1 needs 11 glyphs. The
      matching rule sits after the base .poster__title, further down. */
 
-  .poster__eyebrow {
-    font-family: var(--mono); font-size: 12px; letter-spacing: .04em;
-    color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 9px;
-    padding-bottom: 12px; border-bottom: 1px solid var(--line);
-  }
-  .poster__eyebrow i { font-style: normal; opacity: .4; }
-  .poster__eyebrow a { color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 1px; }
-  .poster__eyebrow a:hover { color: var(--ink); border-bottom-color: var(--accent); }
+  /* Line 1 is 12 CJK glyphs and each advances exactly 1em in the resolved font,
+     so the font-size IS the line length: it has to satisfy
+     11.496 x font-size <= column width or the line breaks.
 
-  /* 7.4vw, not 6vw: the first line is 11 CJK glyphs and each is 1em wide, so the
-     font-size IS the line length. At 6vw the cap kicked in at 1280 and the title
-     stopped filling the measure. 1.75rem floor keeps 11 glyphs inside 320px. */
-  /* No text-wrap: balance here. It optimises for even line lengths and will
-     re-break a line you broke on purpose, ignoring the <br>: at 360px it split
-     the title into 3 lines and cut 寿命 in half across two of them, which also
-     destroyed the emphasis. The two lines below are chosen, so the browser is
-     better off left alone. */
+     The column is viewport minus gutters, and the gutters grow with width
+     (measured: 269 at 320, 424 at 480, 688 at 768, 808 at 899). Solving
+     7.4vw against the narrow end gave 272px of glyphs in a 269px column at
+     320, orphaning 力， on a 17%-full line -- and lowering the clamp floor did
+     NOT fix it, because 7.4vw at 320 is 23.7px, well above any floor you'd
+     pick, so clamp keeps choosing the vw term. It is the coefficient that has
+     to move. 7vw holds the line at 91-99% fill from 320 to 899, the tightest
+     point being 320: 22.4px needs 258px against 269px, 11px of slack.
+
+     7vw, not 6vw: at 6vw the cap kicked in at 1280 and the title stopped
+     filling the measure. 1.4rem floor = 22.4px, which is exactly 7vw at 320, so
+     it binds only below the narrowest phone width tested. */
+  /* text-wrap: wrap, explicitly -- NOT by omission. The base heading rule sets
+     text-wrap: balance on every h1-h4, so merely not repeating it here leaves
+     balance in force. It optimises for even line lengths and will re-break a
+     line you broke on purpose, ignoring the <br>: at 360px it split the title
+     into 3 lines and cut 寿命 in half across two of them, which also destroyed
+     the emphasis; at 900-910px it broke line 1 into 6+6 glyphs at 50% fill on
+     each line while 465px of a 503px box sat empty. The two lines below are
+     chosen, so the browser is better off left alone. */
   .poster__title {
-    font-size: clamp(1.55rem, 7.4vw, 5.2rem);
+    font-size: clamp(1.4rem, 7vw, 5.2rem);
     line-height: 1.04; letter-spacing: -.042em;
     font-weight: 700; margin: 0;
+    text-wrap: wrap;
   }
   .poster__title em { font-style: normal; color: var(--accent-deep); }
   /* Two-column range only -- this has to come AFTER the base rule above, which
@@ -972,41 +983,70 @@
   @media (min-width: 900px) {
     .poster__title { font-size: clamp(2rem, 5.4vw, 5.2rem); }
   }
-  /* And the tight end of that range, where the column is narrowest: at 1100 the
-     column is 677px and 5.4vw needs 626px of glyphs plus the punctuation, which
-     tipped line 1 over. */
+  /* The tight end of that range. Line 1 is 用最少的钱、时间和精力，= 12 glyphs, and
+     every CJK glyph advances exactly 1em in the resolved font, so line 1 needs
+     12 x font-size x (1 - .042 tracking) of column. The column here is about
+     0.875w - 285 (measured: 503 at 900, 538 at 940, 764 at 1199).
+
+     4.9vw was the old figure and it is 4px OVER at exactly 900 -- the title
+     broke into 用最少的钱、时间和精 / 力， / 换回寿命、金钱和自由, orphaning
+     力， on a 17%-full line. Solving 4.9vw against the column gives a
+     coefficient that only just fits, so this uses 4.6vw: 41.4px at 900 against
+     a 503px column, 27px of slack (5.4%), and slack only grows with width
+     because the column grows at 0.875 per px while the glyphs grow at 0.529.
+
+     Note the layout switch at 900 is itself a 62.9 -> 41.4px jump in this
+     heading, and the band edge at 1200 is a 55.1 -> 64.8px step. Both are
+     inherent -- the first because the measure halves, the second because two
+     adjacent vw coefficients cannot be made continuous in CSS. Both sides
+     render two lines at 84-99% fill, so they are left alone rather than faked
+     by chasing a ramp that a single clamp() cannot express. */
   @media (min-width: 900px) and (max-width: 1199px) {
-    .poster__title { font-size: clamp(2rem, 4.9vw, 5.2rem); }
+    .poster__title { font-size: clamp(2rem, 4.6vw, 5.2rem); }
   }
 
   /* The ways-in row. Quiet on purpose: a rule, a label, three numbers and an
      escape. It gives the hero a bottom edge without adding a second block of
      visual weight competing with the title. */
+  /* ── the ways-in row ─────────────────────────────────────────────────────
+     Three links, each coloured by its own grade and each labelled in words
+     rather than letters. The letters alone meant nothing until you had read
+     the methodology page, which is exactly what this row asks you to skip. */
   .ways {
-    display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 18px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
     border-top: 1px solid var(--line); padding-top: 14px;
   }
-  .ways__l {
-    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--muted);
-  }
   .ways__c {
-    display: inline-flex; align-items: baseline; gap: 6px;
-    font-size: var(--step--1); color: var(--muted);
-    border-bottom: 1px solid transparent; padding: 2px 0;
-    transition: color .2s var(--ease), border-color .2s var(--ease);
+    display: inline-flex; align-items: baseline; gap: 7px;
+    padding: 5px 11px 5px 9px;
+    border: 1px solid var(--line); border-radius: 2px;
+    background: var(--paper);
+    transition: border-color .2s var(--ease), background-color .2s var(--ease);
   }
-  .ways__c b { font-weight: 600; color: var(--ink); }
-  .ways__c span { font-variant-numeric: tabular-nums; }
-  /* A is the grade worth filtering by, so it carries the evidence hue */
-  .ways__c:first-of-type b { color: var(--data); }
-  .ways__c:hover { color: var(--ink); border-bottom-color: var(--ink); }
+  .ways__c b {
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    color: var(--paper); background: var(--ink);
+    width: 17px; height: 17px; display: grid; place-items: center;
+    border-radius: 2px; align-self: center;
+    transition: background-color .2s var(--ease);
+  }
+  /* the grade does the colouring, so the row needs no separate legend */
+  .ways__c[data-ev="A"] b { background: var(--ev-a); color: var(--ev-a-ink); }
+  .ways__c[data-ev="B"] b { background: var(--ev-b); color: var(--ev-b-ink); }
+  .ways__c[data-ev="C"] b { background: var(--ev-c); color: var(--ev-c-ink); }
+  .ways__t { font-size: var(--step--1); color: var(--ink-2); white-space: nowrap; }
+  .ways__n { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .ways__c:hover { border-color: var(--ink); background: var(--paper-2); }
+  .ways__c:hover .ways__t { color: var(--ink); }
   .ways__all {
     margin-inline-start: auto; font-size: var(--step--1); color: var(--muted);
-    border-bottom: 1px solid var(--line); padding: 2px 0;
+    border-bottom: 1px solid var(--line); padding: 3px 0;
     transition: color .2s var(--ease), border-color .2s var(--ease);
   }
   .ways__all:hover { color: var(--ink); border-bottom-color: var(--accent); }
+  @media (max-width: 520px) {
+    .ways__all { margin-inline-start: 0; }
+  }
 
   /* ── search field ────────────────────────────────────────────────────────
      Full measure of its column rather than capped at 640px. Under a title this

@@ -284,9 +284,10 @@ const examples = reduceMotion
     ...EXAMPLES.map((w) => el('a', { class: 'find__chip', href: `#/explore?q=${encodeURIComponent(w)}` }, w)))
   : null;
 
-  /* One quiet row of ways in, under a rule. Everything on it is a real query,
-     and every number on it is one the book itself publishes -- 410 / 149 / 49
-     over 608 is exactly what evidenceStats says.
+  /* One quiet row of ways in. Spelled out, because A / B / C on its own means
+     nothing until you have read the methodology page -- which is exactly what
+     this row is asking people to skip. Each label is the book's own definition
+     cut to the part that distinguishes it from the others.
 
      The cost filters that used to sit here are gone rather than relabelled.
      `cost=money` selects entries whose money flag is SET (data.js filters on
@@ -297,12 +298,18 @@ const examples = reduceMotion
      while the only 10 genuinely cost-free entries are labelled 一般. The
      per-item cost markers stay on the explore page, where a reader can see them
      next to the claim they belong to. */
-  const ways = el('nav', { class: 'ways', 'aria-label': '按证据等级浏览' },
-    el('span', { class: 'ways__l' }, '按证据等级'),
-    ...[['A', m.evidence.A], ['B', m.evidence.B], ['C', m.evidence.C]].map(([k, n]) =>
-      el('a', { class: 'ways__c', href: `#/explore?ev=${k}` },
+  const GRADE = [
+    ['A', '有数字可查', m.evidence.A],
+    ['B', '有研究，没数字', m.evidence.B],
+    ['C', '经验做法', m.evidence.C],
+  ];
+  const ways = el('nav', { class: 'ways', 'aria-label': '按证据强度浏览' },
+    ...GRADE.map(([k, label, n]) =>
+      el('a', { class: 'ways__c', data: { ev: k }, href: `#/explore?ev=${k}`,
+        title: `证据等级 ${k}：${label}` },
         el('b', { class: 'num' }, k),
-        el('span', { class: 'num' }, fmt(n)))),
+        el('span', { class: 'ways__t' }, label),
+        el('span', { class: 'num ways__n' }, fmt(n)))),
     el('a', { class: 'ways__all', href: '#/explore' }, `全部 ${fmt(m.items)} 条`));
 
   /* Full measure, no side column. Three rounds in this corner all failed the
@@ -314,12 +321,6 @@ const examples = reduceMotion
   const hero = el('section', { class: 'poster' },
     el('div', { class: 'wrap poster__in' },
       el('div', { class: 'poster__col' },
-        el('p', { class: 'poster__eyebrow num' },
-          `${fmt(m.items)} 条建议`, el('i', { 'aria-hidden': 'true' }, '/'),
-          `${m.chapters} 节`, el('i', { 'aria-hidden': 'true' }, '/'),
-          `${book.appendices.length} 篇长文`, el('i', { 'aria-hidden': 'true' }, '/'),
-          el('a', { href: '#/method' }, '口径与分级')),
-
         el('h1', { class: 'poster__title' },
           '用最少的钱、时间和精力，', el('br'),
           '换回', el('em', {}, '寿命'), '、金钱和自由'),
@@ -349,7 +350,7 @@ const examples = reduceMotion
   const sitWrap = el('section', { class: 'wrap tint-warm' });
   sitWrap.append(el('div', { class: 'band' },
     el('h2', {}, '按情况'),
-    el('p', { class: 'band__d' }, `共 ${book.situations.length} 类。点进去就是筛好的条目。`)));
+    el('p', { class: 'band__d' }, '按遇到的事分了几类')));
 
   const groups = book.situationGroups || [];
   const byGroup = new Map(groups.map((g) => [g, []]));
@@ -358,21 +359,16 @@ const examples = reduceMotion
     byGroup.get(s.g).push(s);
   }
 
-  /* One hue per situation group, so the five kinds of problem are told apart at a
-     glance instead of by reading five identical vermilion dots. Assigned in
-     group order, which is the book's own order (急 钱 活 家 心).
-     The value is a var() reference, not a literal, so each group follows the
-     theme -- the light-theme hues only reached 2.6:1 on the dark ground. */
-  const GROUP_HUE = ['var(--g1)', 'var(--g2)', 'var(--g3)', 'var(--g4)', 'var(--g5)'];
-
-  let gi = 0;
+  /* No per-group colour. Five hues were tried here and they turned out to be a
+     second, redundant copy of the evidence palette -- the same blue, amber and
+     violet, plus a red and a green -- so blue alone was declared four times
+     across the stylesheet. The groups are already named in the heading; the dot
+     is one accent and nothing more. */
   for (const [name, list] of byGroup) {
     if (!list.length) continue;
-    const hue = GROUP_HUE[gi % GROUP_HUE.length];
-    gi += 1;
     const block = el('div', { class: 'sitgroup' },
       el('div', { class: 'sitgroup__t' },
-        el('span', { class: 'sitgroup__dot', 'aria-hidden': 'true', style: `--gh:${hue}` }),
+        el('span', { class: 'sitgroup__dot', 'aria-hidden': 'true' }),
         name,
         el('span', { class: 'sitgroup__n num' }, `${list.length} 类`)));
     const grid = el('div', { class: 'situations' });
@@ -405,7 +401,7 @@ const examples = reduceMotion
   aWrap.append(el('div', { class: 'band' },
     el('h2', {}, 'A 级条目，每节从最前面看起'),
     el('p', { class: 'band__d' },
-      `共 ${m.evidence.A} 条有具体数字可查、出自荟萃分析或大型试验。下面按章节顺序取前 ${SEVEN} 条。`),
+      `${m.evidence.A} 条，说得出具体降了多少`),
     el('a', { class: 'band__more', href: '#/explore?ev=A' }, '查看全部')));
   const poster = el('ol', { class: 'seven' });
   topA.forEach((it, i) => {
@@ -425,7 +421,7 @@ const examples = reduceMotion
   chWrap.append(el('div', { class: 'band' },
     el('h2', {}, `按 ${book.chapters.length} 节浏览`),
     el('p', { class: 'band__d' },
-      '节标题写的是这一节要防的结果，具体做不做以条目标题为准。')));
+      '每节内按性价比从高到低排。')));
   const idx = el('div', { class: 'index33' });
   book.chapters.forEach((c, i) => {
     idx.append(el('a', { class: 'idx33 spot reveal', data: { d: i % 6 }, href: `#/ch/${c.no}` },
@@ -441,7 +437,7 @@ const examples = reduceMotion
   const lWrap = el('section', { class: 'wrap tint-cool' });
   lWrap.append(el('div', { class: 'band' },
     el('h2', {}, '长文'),
-    el('p', { class: 'band__d' }, `${book.appendices.length} 篇，含对照表和决策表。`)));
+    el('p', { class: 'band__d' }, '每篇含对照表和决策表')));
   const lg = el('div', { class: 'longgrid' });
   book.appendices.forEach((a, i) => {
     lg.append(el('a', { class: 'lg spot reveal', data: { d: i }, href: `#/long/${a.id}` },
@@ -570,9 +566,9 @@ export function viewChapters(book) {
   });
 
   root.append(el('div', { class: 'pagehead' },
-    el('span', { class: 'u-label' }, `${book.chapters.length} 节 · ${fmt(book.items.length)} 条`),
+    el('span', { class: 'u-label' }, '33 节'),
     el('h1', {}, '章节'),
-    el('p', {}, '每节内的条目按性价比从高到低排列。节标题写的是这一节要防的结果，具体做不做以条目标题为准。')));
+    el('p', {}, '每节内按性价比从高到低排。节标题写的是这一节要防的结果，具体做不做以条目标题为准。')));
 
   root.append(el('div', { class: 'chindex__bar' },
     el('div', { class: 'search' }, search),
@@ -689,9 +685,9 @@ export function viewLongIndex(book) {
     el('span', {}, '长文')));
 
   root.append(el('div', { class: 'pagehead' },
-    el('span', { class: 'u-label' }, `${book.appendices.length} 篇`),
+    el('span', { class: 'u-label' }, '5 篇'),
     el('h1', {}, '长文'),
-    el('p', {}, `每个话题单独成篇，比条目本身长。默认收起，点开看全文。`)));
+    el('p', {}, '默认收起，点开看全文')));
 
   for (const a of book.appendices) {
     const h3 = a.blocks.filter((b) => b.t === 'h3').length;
