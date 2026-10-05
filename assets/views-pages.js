@@ -1,5 +1,5 @@
 ﻿/* Home, chapter index, chapter reader, long-form reader, methodology. */
-import { el, frag, linkify, reveal, fmt, openSheet, closeSheet, toast, icon, spotlight, scrollSpy, onTeardown } from './ui.js';
+import { el, frag, linkify, hi, reveal, fmt, openSheet, closeSheet, toast, icon, spotlight, scrollSpy, onTeardown } from './ui.js';
 import { itemCard, openRefSheet, isMarked, toggleMark, marks, badge, CJ_LABEL } from './views-explore.js';
 import { runQuery } from './data.js';
 
@@ -33,6 +33,72 @@ const PROMPTS = [
   '孩子上学要注意什么',
 ];
 
+/* ── the live preview panel ─────────────────────────────────────────────
+ * The hero's right column, and the reason the hero was dead.
+ *
+ * It used to hold an evidence ledger, then a dot-matrix wordmark, then a bar
+ * chart of the corpus. All three were decoration: the hero spent a third of its
+ * width describing a search box and showing nothing when you used it. This panel
+ * is the other half of that box -- the same query, rendered. Type 押金 and five
+ * real entries appear; clear it and it goes back to showing what is in here.
+ *
+ * So the motion on this page is not decoration either. Every transition in it
+ * is caused by the reader doing something.
+ *
+ * Idle state is five grade-A entries sampled evenly across the whole book, not
+ * the first five: the first five are all from chapter 1 and say nothing about
+ * the other 32. */
+function previewPanel(book) {
+  /* Four, not five. At five the panel became the tallest thing in the hero and
+     set its height; four is still enough to show whether a query is going the
+     right way, which is the only job this has. */
+  const LIST = 4;
+  const aList = book.items.filter((i) => i.evidence === 'A');
+  const idle = Array.from({ length: LIST },
+    (_, k) => aList[Math.floor(k * aList.length / LIST)]).filter(Boolean);
+
+  const head = el('p', { class: 'prev__h' });
+  const list = el('ol', { class: 'prev__l' });
+  const empty = el('p', { class: 'prev__e', hidden: true }, '没有匹配的条目，换个词试试。');
+  let shown = [];
+
+  function draw(q) {
+    const raw = String(q || '').trim();
+    /* runQuery parses the raw string itself and hands the terms back, which is
+       what hi() needs. Parsing separately here would mean guessing at the
+       lowercase/quote handling and getting the highlight out of step with the
+       search that produced it.
+       Its hits are { it, sc } wrappers, not the items themselves. */
+    const r = raw
+      ? runQuery(book, { q: raw, ev: [], ch: [], cj: [], cost: [], mag: [], val: [], flag: [] })
+      : null;
+    const terms = r ? r.terms : [];
+    const hits = r ? r.hits.slice(0, LIST).map((h) => h.it) : idle;
+
+    /* only rows that are new animate. A row that survived the keystroke keeps
+       its identity, so refining a query does not strobe the whole panel. */
+    const seen = new Set(shown);
+    list.replaceChildren(...hits.map((it, k) => el('li', {
+      class: 'prev__i' + (seen.has(it.ref) ? '' : ' is-in'),
+      style: `--k:${k}`,
+    }, el('a', { href: it.href },
+      el('span', { class: 'prev__t' }, terms.length ? hi(it.title, terms) : it.title),
+      el('span', { class: 'prev__m' },
+        el('span', { class: 'num' }, it.chTitle),
+        badge(it.evidence))))));
+    shown = hits.map((it) => it.ref);
+
+    const total = r ? r.hits.length : book.items.length;
+    head.replaceChildren(r
+      ? frag('找到 ', el('b', { class: 'num' }, fmt(total)), ' 条', r.relaxed ? '（已放宽为任意词）' : '')
+      : frag(el('b', { class: 'num' }, fmt(book.items.length)), ' 条里挑了几条给你看'));
+    empty.hidden = !!hits.length;
+  }
+
+  draw('');
+  return { node: el('aside', { class: 'prev' }, head, list, empty), draw };
+}
+
 /* ── home ───────────────────────────────────────────────────────────── */
 export function viewHome(book, state) {
   const m = book.meta;
@@ -52,12 +118,17 @@ export function viewHome(book, state) {
      cost / benefit / notes, and those now live in detail.json, so the count is
      only trustworthy once that has loaded -- otherwise it under-reports. Recount
      when it lands rather than showing a number we know is too low. */
+  const panel = previewPanel(book);
+  let lastHits = 0;
+
   const paint = () => {
     const q = input.value.trim();
+    panel.draw(q);
     if (!q) { counter.textContent = ''; counter.className = 'find__count'; return; }
     const n = runQuery(book, {
       q, ev: [], ch: [], cj: [], cost: [], mag: [], val: [], flag: [],
     }).hits.length;
+    lastHits = n;
     counter.textContent = n ? `找到 ${n} 条，按回车看全部` : '没有匹配，换个词试试';
     counter.className = n ? 'find__count' : 'find__count is-empty';
   };
@@ -167,33 +238,35 @@ const examples = reduceMotion
      relocated. */
   const hero = el('section', { class: 'poster' },
     el('div', { class: 'wrap poster__in' },
-      el('p', { class: 'poster__eyebrow num' },
-        `${fmt(m.items)} 条建议`, el('i', { 'aria-hidden': 'true' }, '/'),
-        `${m.chapters} 节`, el('i', { 'aria-hidden': 'true' }, '/'),
-        `${book.appendices.length} 篇长文`, el('i', { 'aria-hidden': 'true' }, '/'),
-        el('a', { href: '#/method' }, '口径与分级')),
+      el('div', { class: 'poster__col' },
+        el('p', { class: 'poster__eyebrow num' },
+          `${fmt(m.items)} 条建议`, el('i', { 'aria-hidden': 'true' }, '/'),
+          `${m.chapters} 节`, el('i', { 'aria-hidden': 'true' }, '/'),
+          `${book.appendices.length} 篇长文`, el('i', { 'aria-hidden': 'true' }, '/'),
+          el('a', { href: '#/method' }, '口径与分级')),
 
-      el('h1', { class: 'poster__title' },
-        '用最少的钱、时间和精力，', el('br'),
-        '换回', el('em', {}, '寿命'), '、金钱和自由'),
+        el('h1', { class: 'poster__title' },
+          '用最少的钱、时间和精力，', el('br'),
+          '换回', el('em', {}, '寿命'), '、金钱和自由'),
 
-      el('form', {
-        class: 'find', role: 'search',
-        onsubmit: (e) => { e.preventDefault(); if (input.value.trim()) go(input.value.trim()); },
-      },
-        el('span', { class: 'find__ico', 'aria-hidden': 'true' },
-          el('svg', { viewBox: '0 0 20 20', width: 17, height: 17 },
-            el('circle', { cx: '8.5', cy: '8.5', r: '5.6', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7' }),
-            el('path', { d: 'M12.8 12.8 17 17', stroke: 'currentColor', 'stroke-width': '1.7', fill: 'none', 'stroke-linecap': 'round' }))),
-        // the ghost has to share the input's origin, not the field's padding box,
-        // or it renders on top of the icon
-        field,
-        el('button', { class: 'find__go', type: 'submit' }, '搜索'),
-        el('kbd', { class: 'find__kbd', 'aria-hidden': 'true' }, '/')),
+        el('form', {
+          class: 'find', role: 'search',
+          onsubmit: (e) => { e.preventDefault(); if (input.value.trim()) go(input.value.trim()); },
+        },
+          el('span', { class: 'find__ico', 'aria-hidden': 'true' },
+            el('svg', { viewBox: '0 0 20 20', width: 17, height: 17 },
+              el('circle', { cx: '8.5', cy: '8.5', r: '5.6', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7' }),
+              el('path', { d: 'M12.8 12.8 17 17', stroke: 'currentColor', 'stroke-width': '1.7', fill: 'none', 'stroke-linecap': 'round' }))),
+          // the ghost has to share the input's origin, not the field's padding box,
+          // or it renders on top of the icon
+          field,
+          el('button', { class: 'find__go', type: 'submit' }, '搜索'),
+          el('kbd', { class: 'find__kbd', 'aria-hidden': 'true' }, '/')),
 
-      counter,
-      examples,
-      ways));
+        counter,
+        examples,
+        ways),
+      panel.node));
 
   root.append(hero);
 

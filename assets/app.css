@@ -889,6 +889,20 @@
     padding-block: clamp(26px, 3.4vw, 52px) clamp(22px, 2.8vw, 38px);
     display: grid; gap: clamp(18px, 2.2vw, 26px);
   }
+  /* One column until there is room for the second. The panel is not decoration,
+     so it earns its width rather than filling leftover space. */
+  @media (min-width: 1000px) {
+    .poster__in {
+      grid-template-columns: minmax(0, 1fr) clamp(276px, 24vw, 330px);
+      column-gap: clamp(28px, 3.4vw, 52px);
+      align-items: start;
+    }
+  }
+  .poster__col { display: grid; gap: clamp(14px, 1.8vw, 22px); min-width: 0; }
+  .poster__col .find__count { margin-top: -10px; }
+  /* In two-column mode the title has to be sized against its COLUMN, not the
+     viewport: at 1280 the column is 806px and line 1 needs 11 glyphs. The
+     matching rule sits after the base .poster__title, further down. */
 
   .poster__eyebrow {
     font-family: var(--mono); font-size: 12px; letter-spacing: .04em;
@@ -913,6 +927,17 @@
     font-weight: 700; margin: 0;
   }
   .poster__title em { font-style: normal; color: var(--accent-deep); }
+  /* Two-column range only -- this has to come AFTER the base rule above, which
+     is why it is not next to the grid declaration it belongs with. */
+  @media (min-width: 1000px) {
+    .poster__title { font-size: clamp(2rem, 5.4vw, 5.2rem); }
+  }
+  /* And the tight end of that range, where the column is narrowest: at 1100 the
+     column is 677px and 5.4vw needs 626px of glyphs plus the punctuation, which
+     tipped line 1 over. */
+  @media (min-width: 1000px) and (max-width: 1199px) {
+    .poster__title { font-size: clamp(2rem, 4.9vw, 5.2rem); }
+  }
 
   /* The ways-in row. Quiet on purpose: a rule, a label, three numbers and an
      escape. It gives the hero a bottom edge without adding a second block of
@@ -944,9 +969,9 @@
   .ways__all:hover { color: var(--ink); border-bottom-color: var(--accent); }
 
   /* ── search field ────────────────────────────────────────────────────────
-     Full measure rather than capped at 640px. Under a title that now spans the
-     whole column, a half-width field read as a leftover, and the single strongest
-     action on the page was the smallest object on it. */
+     Full measure of its column rather than capped at 640px. Under a title this
+     size, a half-width field read as a leftover, and the strongest action on the
+     page was the smallest object on it. */
   .find {
     position: relative;
     display: flex; align-items: center; gap: 12px; width: 100%;
@@ -1021,6 +1046,55 @@
     transition: border-color .18s var(--ease), color .18s var(--ease), background-color .18s var(--ease);
   }
   .find__chip:hover { border-color: var(--ink); color: var(--ink); background: var(--paper-2); }
+
+  /* ── the live preview panel ───────────────────────────────────────────────
+     The hero's right column: the same query the field is running, rendered as
+     entries instead of a count. Rows are keyed by id and only NEW rows animate,
+     so refining a query does not strobe the list -- the motion reports a change
+     in the result set rather than decorating it. */
+  .prev {
+    align-self: start;
+    display: grid; border: 1px solid var(--line);
+    background: var(--paper);
+  }
+  .prev__h {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .04em;
+    color: var(--muted); padding: 10px 14px;
+    border-bottom: 1px solid var(--line); background: var(--paper-2);
+  }
+  .prev__h b { color: var(--ink); font-weight: 600; }
+  .prev__l { list-style: none; }
+  .prev__i { border-bottom: 1px solid var(--line-2); }
+  .prev__i:last-child { border-bottom: 0; }
+  .prev__i a {
+    display: grid; gap: 5px; padding: 11px 14px;
+    transition: background-color .18s var(--ease), padding-inline .22s var(--ease);
+  }
+  .prev__i a:hover { background: var(--paper-2); padding-inline: 18px; }
+  .prev__t {
+    font-size: var(--step--1); font-weight: 600; letter-spacing: -.005em;
+    line-height: 1.36;
+  }
+  .prev__m {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 10.5px; color: var(--muted);
+    font-family: var(--mono);
+  }
+  .prev__m .num { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .prev__i .badge { width: 17px; height: 17px; font-size: 10px; flex: none; }
+  .prev__e { padding: 14px; font-size: var(--step--1); color: var(--muted); }
+
+  .prev__i.is-in { animation: prevIn .34s var(--ease-out) backwards; animation-delay: calc(var(--k, 0) * 34ms); }
+  @keyframes prevIn { from { opacity: 0; transform: translateY(6px); } }
+  @media (prefers-reduced-motion: reduce) {
+    .prev__i.is-in { animation: none; }
+  }
+  /* Below the two-column breakpoint the panel stacks under the field, where four
+     rows push the hero past a screen. Two still show that the query is going the
+     right way, which is the job. */
+  @media (max-width: 999px) {
+    .prev__i:nth-child(n+3) { display: none; }
+  }
 
   /* ── scroll-spy indicator ───────────────────────────────────────────────
      The TOC is a list of links; this is the one bar that slides to whichever
