@@ -1417,6 +1417,18 @@
   .idx33__n { font-size: 11px; color: var(--muted); }
   .idx33:hover .idx33__n { color: var(--ink); }
 
+  /* Each chapter's evidence mix. 1px between segments so A/B/C stay legible as
+     separate facts at 4px tall rather than blending into one muddy bar. Widths
+     are set inline from stats.A/B/C over stats.n. */
+  .idx33__bar {
+    grid-column: 1 / -1;
+    display: flex; gap: 1px; height: 4px; margin-top: 6px;
+  }
+  .idx33__seg { display: block; width: var(--w); min-width: 2px; }
+  .idx33__seg[data-g="A"] { background: var(--ev-a); }
+  .idx33__seg[data-g="B"] { background: var(--ev-b); }
+  .idx33__seg[data-g="C"] { background: var(--ev-c); }
+
   /* 33 rows: 3 columns divides evenly at 11, 4 columns leaves one orphan on the
      last row. Pin the wide case to 3 so the grid ends square. */
   @media (min-width: 1100px) {

@@ -422,13 +422,37 @@ const examples = reduceMotion
     el('h2', {}, `按 ${book.chapters.length} 节浏览`),
     el('p', { class: 'band__d' },
       '每节内按性价比从高到低排。')));
+  /* 33 rows of number + title + gloss + count is the flattest thing on the page:
+     every row the same size saying the same kind of thing, which is what makes a
+     generated index read as generated. The bar gives each row its own evidence
+     mix instead, and the spread is real -- chapter 24 (看病) is 12 of 12 grade A
+     and draws one solid blue bar, chapter 13 (紧急情况) is 8 of 41 and draws a
+     bar that is mostly amber. Same three hues the grade badges already use, so
+     this is the evidence role of the palette doing the work it exists for, and
+     the ways row above has already taught the reader what the colours mean.
+
+     stats.A/B/C per chapter sums to 608/410/149/49 across the 33 chapters,
+     which is the book's own published total. */
   const idx = el('div', { class: 'index33' });
   book.chapters.forEach((c, i) => {
+    const st = c.stats;
+    const total = st.n || 1;
+    const segs = [['A', st.A], ['B', st.B], ['C', st.C]]
+      .filter(([, n]) => n > 0)
+      .map(([g, n]) => el('span', {
+        class: 'idx33__seg', data: { g },
+        style: `--w:${(n / total * 100).toFixed(2)}%`,
+      }));
     idx.append(el('a', { class: 'idx33 spot reveal', data: { d: i % 6 }, href: `#/ch/${c.no}` },
       el('span', { class: 'idx33__no num' }, String(c.no).padStart(2, '0')),
       el('span', { class: 'idx33__t' }, c.title),
       el('span', { class: 'idx33__b' }, c.blurb.slice(0, 34) + (c.blurb.length > 34 ? '…' : '')),
-      el('span', { class: 'idx33__n num' }, c.stats.n)));
+      el('span', { class: 'idx33__n num' }, st.n),
+      el('span', {
+        class: 'idx33__bar', role: 'img',
+        'aria-label': `证据 A ${st.A} 条，B ${st.B} 条，C ${st.C} 条`,
+        title: `A ${st.A} · B ${st.B} · C ${st.C}`,
+      }, ...segs)));
   });
   chWrap.append(idx);
   root.append(chWrap);
