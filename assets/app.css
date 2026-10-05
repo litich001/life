@@ -8,7 +8,17 @@
 @layer reset {
   *, *::before, *::after { box-sizing: border-box; }
   * { margin: 0; }
-  html { -webkit-text-size-adjust: 100%; }
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* Backstop only. The drifting section wash is intentionally wider than the
+       viewport so its translate cannot expose an edge, which leaves <html>'s
+       scrollWidth overshooting even though nothing is reachable. `clip` contains
+       that without making <html> a scroll container -- `overflow-x: hidden`
+       here would, and it silently breaks the sticky topbar plus every scroll-spy
+       offset measured against it. `clip` is the one value that does not force
+       the other axis away from `visible`. */
+    overflow-x: clip;
+  }
   body { min-height: 100svh; line-height: 1.5; -webkit-font-smoothing: antialiased; }
   img, svg, video { display: block; max-width: 100%; }
   button, input, select, textarea { font: inherit; color: inherit; }
@@ -643,7 +653,15 @@
     font-feature-settings: "tnum" 0, "kern" 1;
     overflow-wrap: break-word;
     transition: background-color .5s var(--ease), color .5s var(--ease);
-    overflow-x: hidden;
+    /* `clip`, not `hidden`, and only as a backstop. The drifting section wash is
+       deliberately wider than the viewport (116vw) so its translate can never
+       expose an edge, which makes documentElement.scrollWidth overshoot even
+       though nothing is actually reachable. `overflow-x: clip` contains that
+       without turning <html> into a scroll container -- `hidden` here would make
+       it one, and that silently breaks the sticky topbar and every scroll-spy
+       offset measured against it. Supported everywhere that supports
+       aspect-ratio, which this stylesheet already relies on. */
+    overflow-x: clip;
   }
   h1, h2, h3, h4 { font-weight: 600; line-height: 1.08; letter-spacing: -.018em; text-wrap: balance; }
   p { text-wrap: pretty; }
@@ -888,6 +906,122 @@
   html.js .reveal.in { animation: riseIn .62s var(--ease-out) both; }
   .reveal.in { animation: riseIn .62s var(--ease-out) both; }
 
+  /* ── the hero, on its own ─────────────────────────────────────────────
+     The hero had no entrance at all: its four elements sat at opacity 1 with
+     animation-name none, so the first screen simply appeared. It is the one
+     screen every visitor sees, so it is also the one that has to move.
+
+     It runs on .reveal rather than a private CSS-only entrance, so the same
+     machinery that reveals the rest of the page reveals the hero:
+     IntersectionObserver, the data-d stagger, the immediate hand-back under
+     prefers-reduced-motion, selfHeal() for a missed element, and revealAll()
+     for print. A bare `animation: ... both` here would have left the title and
+     the search box invisible in any environment where animations do not
+     advance, with no way back.
+
+     Two treatments, because they are different objects. The title is two chosen
+     lines of type, so it gets a clip wipe that respects the <br> and reads as
+     the lines arriving; the controls rise instead, because a search field that
+     wipes in looks like it is loading.
+
+     The wipe overshoots to inset(-9%) at the end so descenders are never shaved,
+     and the translate is in em so the offset scales with the title's own
+     font-size rather than being one visual weight at 22px and another at 83px. */
+  @media (prefers-reduced-motion: no-preference) {
+    /* The `html.js` prefix is load-bearing, not decoration. Two rules above set
+       `html.js .reveal.in { animation: riseIn ... }`, and that selector scores
+       (0,3,1) against a bare `.poster__title.reveal.in` at (0,3,0) -- so without
+       the prefix the title silently got the generic rise and the wipe never ran,
+       in the one place it was written for. */
+    html.js .poster__title.reveal.in, .poster__title.reveal.in {
+      animation-name: heroWipe; animation-duration: .78s;
+    }
+  }
+  @keyframes heroWipe {
+    from { opacity: 0; transform: translateY(.10em); clip-path: inset(0 0 104% 0); }
+    to   { opacity: 1; transform: none;            clip-path: inset(-9% -6% -9% -6%); }
+  }
+
+  /* Ambient: the hero breathes instead of sitting dead. A soft halo behind the
+     ring, well outside the wedges, so it cannot touch the data. It sits on
+     .rosebox::before rather than .rose because an <svg> takes no pseudo-element,
+     and .rosebox needs position:relative (added below) to contain it.
+
+     8.5s is slow enough to be felt rather than watched. Scale stays under 6% and
+     the peak alpha is .5 of a 13% tint, so nothing crosses the threshold where it
+     would be doing anything to legibility. */
+  @media (prefers-reduced-motion: no-preference) {
+    .rosebox { position: relative; }
+    .rosebox > * { position: relative; z-index: 1; }
+    .rosebox::before {
+      content: ""; position: absolute; z-index: 0; pointer-events: none;
+      inset: 4% -6% 24%;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 50%,
+        color-mix(in srgb, var(--ev-a) 13%, transparent) 0%, transparent 66%);
+      animation: halo 8.5s var(--ease) infinite;
+    }
+  }
+  @keyframes halo {
+    0%, 100% { opacity: .34; transform: scale(.95); }
+    50%      { opacity: .62; transform: scale(1.045); }
+  }
+
+  /* Ambient: a slow wash drifting across the whole hero. Two large soft radials
+     on a pseudo-element of .poster, behind everything (the content is a grid
+     item; the wash is absolutely positioned and z-index 0).
+
+     Peak tint is 5% and 4% of accent / evidence blue. That is far below anything
+     that moves a contrast ratio -- the tokens audit and the per-route contrast
+     sweep both re-run after this and the hero's ink-on-paper numbers do not
+     move. It exists to stop the largest surface on the page reading as a flat
+     rectangle of #F7F6F2.
+
+     26s and 34s are deliberately not multiples of each other, so the two blobs
+     never line up again into a repeating pattern the eye can lock onto. */
+  @media (prefers-reduced-motion: no-preference) {
+    .poster::before {
+      content: ""; position: absolute; inset: 0; z-index: 0;
+      pointer-events: none; overflow: hidden;
+      background:
+        radial-gradient(58% 44% at 14% 8%,
+          color-mix(in srgb, var(--accent) 5%, transparent) 0%, transparent 70%),
+        radial-gradient(52% 46% at 86% 92%,
+          color-mix(in srgb, var(--ev-a) 4%, transparent) 0%, transparent 72%);
+      animation: wash 34s var(--ease) infinite alternate;
+    }
+    .poster__in { position: relative; z-index: 1; }
+  }
+  @keyframes wash {
+    from { transform: translate3d(-2.5%, -1.5%, 0) scale(1); }
+    to   { transform: translate3d(3%, 2%, 0) scale(1.07); }
+  }
+
+  /* The chapter evidence bars grow when their row scrolls into view. This is the
+     one animation on the page that carries information rather than decoration:
+     the bar is the claim "this chapter's entries are mostly grade A", and
+     watching it extend is the claim being made.
+
+     transform, not width. The widths are inline percentages of the row, so
+     animating `width` would relayout 33 rows on every frame; scaleX stays on the
+     compositor and costs nothing. transform-origin left so it grows rightwards
+     from the same edge the reader is looking from. Short (560ms) because there
+     are eleven of them in a grid and a slow one reads as lag.
+
+     Starts at scaleX(0) only under no-preference, and only once .in is on the
+     row -- so with reduced motion the bar is simply its final width from the
+     start, which is the correct resting state rather than a fallback. */
+  @media (prefers-reduced-motion: no-preference) {
+    /* `html.js` for the same progressive-enhancement reason as .reveal: the base
+       state is the collapsed bar, so without this guard a browser that never runs
+       the app would show 33 empty tracks. With JS, .in arrives and the bar grows. */
+    html.js .idx33__seg { transform: scaleX(0); transform-origin: left center; }
+    .idx33.in .idx33__seg { animation: barGrow .56s var(--ease-out) both; }
+    .idx33.in:nth-child(3n+2) .idx33__seg { animation-delay: .06s; }
+    .idx33.in:nth-child(3n+3) .idx33__seg { animation-delay: .12s; }
+  }
+  @keyframes barGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     *, *::before, *::after {
@@ -895,6 +1029,19 @@
       transition-duration: .01ms !important; scroll-behavior: auto !important;
     }
     .reveal, html.js .reveal { opacity: 1; }
+    /* The two ambient washes would otherwise hold a compositing layer open for
+       the life of the page. .01ms above already parks them on their first frame,
+       which is the neutral end state for both keyframes, but stop them outright
+       so nothing keeps ticking behind the reader's back. The rose halo is dropped
+       entirely rather than frozen, because a still radial gradient is just a
+       smudge behind the ring with nothing to look at. */
+    .poster::before, .rosebox::before { animation: none !important; }
+    .rosebox::before { content: none !important; }
+    .home > section[class*="tint-"]::after { animation: none !important; }
+    /* scaleX(0) must not survive the kill switch, or every evidence bar would be
+       an empty track. The animation is already neutralised above; this clears the
+       base state it starts from. */
+    .idx33__seg { transform: none !important; }
   }
 }
 
@@ -1219,6 +1366,39 @@
   }
   .home > section.tint-warm::before { background: var(--paper-warm); }
   .home > section.tint-cool::before { background: var(--paper-cool); }
+  /* Ambient: a slow drift over the flat wash, so scrolling past four tinted
+     sections does not feel like watching four identical rectangles go by.
+
+     ::after rather than an extra layer on ::before because ::before already
+     carries the opaque tint and animating its background-position would repaint
+     the whole full-bleed box on every frame. This one only transforms, so it
+     stays on the compositor.
+
+     The box is oversized on BOTH axes so a translate can never expose an
+     unpainted edge: block by -25% of the section, and inline to 116vw via
+     calc(50% - 58vw). The translate peaks at 4% of the element's own width,
+     which for a 116vw box is 4.6vw against 8vw of slack each side. Sizing it to
+     the section instead (-10%) overflowed the viewport by ~94px a side, because
+     a percentage here resolves against the .wrap box, not the viewport.
+
+     Both pseudo-elements sit at z-index -1, so the drift paints over the tint
+     (::after comes later in the box) and under the content. Peak is 4% accent,
+     and the per-route contrast sweep re-runs after this to confirm the muted
+     body text on the washes does not move. */
+  @media (prefers-reduced-motion: no-preference) {
+    .home > section[class*="tint-"]::after {
+      content: ""; position: absolute; z-index: -1;
+      inset-block: -25%; inset-inline: calc(50% - 58vw);
+      pointer-events: none;
+      background: radial-gradient(40% 34% at 32% 28%,
+        color-mix(in srgb, var(--accent) 4%, transparent) 0%, transparent 72%);
+      animation: drift 30s var(--ease) infinite alternate;
+    }
+  }
+  @keyframes drift {
+    from { transform: translate3d(-3%, 2.5%, 0); }
+    to   { transform: translate3d(4%, -3%, 0); }
+  }
   /* the sections stack with margins, so extend the wash into the gap */
   .home > section[class*="tint-"] { margin-top: 0; }
   .home > section[class*="tint-"]::before { inset-block: -1px; }

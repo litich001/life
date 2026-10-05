@@ -1,4 +1,4 @@
-﻿/* Home, chapter index, chapter reader, long-form reader, methodology. */
+/* Home, chapter index, chapter reader, long-form reader, methodology. */
 import { el, frag, linkify, hi, reveal, countUp, fmt, openSheet, closeSheet, toast, icon, spotlight, scrollSpy, onTeardown } from './ui.js';
 import { itemCard, openRefSheet, isMarked, toggleMark, marks, badge, CJ_LABEL } from './views-explore.js';
 import { runQuery } from './data.js';
@@ -303,7 +303,7 @@ const examples = reduceMotion
     ['B', '有研究，没数字', m.evidence.B],
     ['C', '经验做法', m.evidence.C],
   ];
-  const ways = el('nav', { class: 'ways', 'aria-label': '按证据强度浏览' },
+  const ways = el('nav', { class: 'ways reveal', data: { d: 3 }, 'aria-label': '按证据强度浏览' },
     ...GRADE.map(([k, label, n]) =>
       el('a', { class: 'ways__c', data: { ev: k }, href: `#/explore?ev=${k}`,
         title: `证据等级 ${k}：${label}` },
@@ -317,16 +317,29 @@ const examples = reduceMotion
      amount of content in it makes the page feel composed. Removing the corner
      only works if the statement grows to fill the width, so the title is now
      roughly double its old size and the taxonomy widgets are gone rather than
-     relocated. */
+     relocated.
+
+     The four hero elements carry .reveal with a data-d stagger, which puts them
+     on the same reveal machinery as everything else on the page rather than on a
+     private CSS-only entrance. That matters for two reasons. `reveal()` hands
+     back immediately under prefers-reduced-motion, and selfHeal() adds .in to
+     anything on screen that the observer missed -- so the title and the search
+     box cannot be left invisible by a stalled observer the way a bare
+     `animation: ... both` would leave them. It also means print and
+     revealAll() cover the hero, which they otherwise did not.
+
+     The rose is deliberately NOT given .reveal: it has its own grow-from-centre
+     stagger on .rose__w and a third transform animation on the same subtree would
+     fight it. */
   const hero = el('section', { class: 'poster' },
     el('div', { class: 'wrap poster__in' },
       el('div', { class: 'poster__col' },
-        el('h1', { class: 'poster__title' },
+        el('h1', { class: 'poster__title reveal', data: { d: 0 } },
           '用最少的钱、时间和精力，', el('br'),
           '换回', el('em', {}, '寿命'), '、金钱和自由'),
 
         el('form', {
-          class: 'find', role: 'search',
+          class: 'find reveal', data: { d: 1 }, role: 'search',
           onsubmit: (e) => { e.preventDefault(); if (input.value.trim()) go(input.value.trim()); },
         },
           el('span', { class: 'find__ico', 'aria-hidden': 'true' },
@@ -348,7 +361,7 @@ const examples = reduceMotion
 
   /* ── situations, grouped by what kind of problem it is ───────────── */
   const sitWrap = el('section', { class: 'wrap tint-warm' });
-  sitWrap.append(el('div', { class: 'band' },
+  sitWrap.append(el('div', { class: 'band reveal' },
     el('h2', {}, '按情况'),
     el('p', { class: 'band__d' }, '按遇到的事分了几类')));
 
@@ -372,8 +385,12 @@ const examples = reduceMotion
         name,
         el('span', { class: 'sitgroup__n num' }, `${list.length} 类`)));
     const grid = el('div', { class: 'situations' });
+    /* Staggered by position within the group, capped at 5 so a 19-tile group does
+       not finish two seconds after the first tile. reveal() turns data-d into a
+       55ms-per-step animation-delay. */
+    let si = 0;
     for (const s of list) {
-      grid.append(el('a', { class: 'sit spot', href: s.href },
+      grid.append(el('a', { class: 'sit spot reveal', data: { d: Math.min(si++, 5) }, href: s.href },
         el('span', { class: 'sit__ico' }, icon(s.icon, 19)),
         el('span', { class: 'sit__b' },
           el('span', { class: 'sit__t' }, s.title),
@@ -398,7 +415,7 @@ const examples = reduceMotion
     .sort((a, b) => (a.ch - b.ch) || (a.no - b.no))
     .slice(0, SEVEN);
   const aWrap = el('section', { class: 'wrap tint-cool' });
-  aWrap.append(el('div', { class: 'band' },
+  aWrap.append(el('div', { class: 'band reveal' },
     el('h2', {}, 'A 级条目，每节从最前面看起'),
     el('p', { class: 'band__d' },
       `${m.evidence.A} 条，说得出具体降了多少`),
@@ -418,7 +435,7 @@ const examples = reduceMotion
 
   /* ── chapter index, dense ─────────────────────────────────────────── */
   const chWrap = el('section', { class: 'wrap tint-warm' });
-  chWrap.append(el('div', { class: 'band' },
+  chWrap.append(el('div', { class: 'band reveal' },
     el('h2', {}, `按 ${book.chapters.length} 节浏览`),
     el('p', { class: 'band__d' },
       '每节内按性价比从高到低排。')));
@@ -459,7 +476,7 @@ const examples = reduceMotion
 
   /* ── long-form ─────────────────────────────────────────────────────── */
   const lWrap = el('section', { class: 'wrap tint-cool' });
-  lWrap.append(el('div', { class: 'band' },
+  lWrap.append(el('div', { class: 'band reveal' },
     el('h2', {}, '长文'),
     el('p', { class: 'band__d' }, '每篇含对照表和决策表')));
   const lg = el('div', { class: 'longgrid' });
