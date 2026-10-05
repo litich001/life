@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════════════════
    高性价比人生指南 — Swiss International / index-card poster
    ═══════════════════════════════════════════════════════════════════ */
 
@@ -38,6 +38,33 @@
     --data:       #1B3FD8;
     --data-ink:   #FFFFFF;
     --data-soft:  rgba(27, 63, 216, .10);
+    /* Evidence grade gets three hues rather than three weights of grey. The
+       grade is the most-repeated signal on the site -- badges, chapter bars,
+       the rose, the facet counts -- and colour carries it further than weight
+       does. B is amber: research exists but no number you can quote. C is a
+       desaturated violet: convention, no study behind it. Deliberately NOT
+       red for C, because red here would read as "danger" and the whole point of
+       grade C is that it is unremarkable. */
+    --ev-a:       #1B3FD8;
+    --ev-a-ink:   #FFFFFF;
+    --ev-a-soft:  rgba(27, 63, 216, .12);
+    --ev-b:       #8A4B00;
+    --ev-b-ink:   #FFFFFF;
+    --ev-b-soft:  rgba(196, 122, 12, .18);
+    --ev-c:       #6B5B95;
+    --ev-c-ink:   #FFFFFF;
+    --ev-c-soft:  rgba(107, 91, 149, .12);
+    /* Two surface washes so sections alternate temperature. Colour rhythm
+       without adding hues to the text. */
+    --paper-warm: #F1EEE7;
+    --paper-cool: #EEF1F5;
+    /* The rose's B/C fill. Deliberately not --paper-3, which sits at 1.05:1
+       against the paper and made the outer half of every wedge invisible. */
+    --wedge:      #D6D0C0;
+    /* The five situation groups. Light-theme values below 6:1 on paper; the dark
+       set is much lighter, because the same hues only reached 2.6-3.1:1 on a
+       near-black ground. */
+    --g1: #C2370B; --g2: #8A4B00; --g3: #1F6B4A; --g4: #1B3FD8; --g5: #6B5B95;
     --link:       #1B3FD8;
     --line:       rgba(11, 11, 12, .16);
     --line-2:     rgba(11, 11, 12, .085);
@@ -78,8 +105,21 @@
     --accent-deep: #FF6A3D;
     --accent-ink: #0A0A0B;
     --data:       #8FB0F5;
-    --data-ink:   #0A0A0B;
+    --data-ink:   #0A0A00;
     --data-soft:  rgba(143, 176, 245, .14);
+    --ev-a:       #7FA4F2;
+    --ev-a-ink:   #0A0A0B;
+    --ev-a-soft:  rgba(127, 164, 242, .18);
+    --ev-b:       #E0A14A;
+    --ev-b-ink:   #17110A;
+    --ev-b-soft:  rgba(224, 161, 74, .18);
+    --ev-c:       #B0A0D6;
+    --ev-c-ink:   #100E18;
+    --ev-c-soft:  rgba(176, 160, 214, .16);
+    --paper-warm: #131211;
+    --paper-cool: #11131A;
+    --wedge:      #2A2A2F;
+    --g1: #FF8A5E; --g2: #E0A14A; --g3: #4FB88A; --g4: #7FA4F2; --g5: #B0A0D6;
     --link:       #7C9BFF;
     --line:       rgba(244, 243, 238, .2);
     --line-2:     rgba(244, 243, 238, .11);
@@ -823,9 +863,9 @@
   }
   .chcard__bar { display: flex; height: 3px; gap: 1px; margin-top: 2px; }
   .chcard__bar i { display: block; height: 100%; background: var(--line); }
-  .chcard__bar i[data-e="A"] { background: var(--data); }
-  .chcard__bar i[data-e="B"] { background: var(--muted); }
-  .chcard__bar i[data-e="C"] { background: var(--paper-3); border: 1px solid var(--line); }
+  .chcard__bar i[data-e="A"] { background: var(--ev-a); }
+  .chcard__bar i[data-e="B"] { background: var(--ev-b); }
+  .chcard__bar i[data-e="C"] { background: var(--ev-c); }
 }
 
 /* ── motion ────────────────────────────────────────────────────────── */
@@ -891,7 +931,7 @@
   }
   /* One column until there is room for the second. The panel is not decoration,
      so it earns its width rather than filling leftover space. */
-  @media (min-width: 1000px) {
+  @media (min-width: 900px) {
     .poster__in {
       grid-template-columns: minmax(0, 1fr) clamp(276px, 24vw, 330px);
       column-gap: clamp(28px, 3.4vw, 52px);
@@ -929,13 +969,13 @@
   .poster__title em { font-style: normal; color: var(--accent-deep); }
   /* Two-column range only -- this has to come AFTER the base rule above, which
      is why it is not next to the grid declaration it belongs with. */
-  @media (min-width: 1000px) {
+  @media (min-width: 900px) {
     .poster__title { font-size: clamp(2rem, 5.4vw, 5.2rem); }
   }
   /* And the tight end of that range, where the column is narrowest: at 1100 the
      column is 677px and 5.4vw needs 626px of glyphs plus the punctuation, which
      tipped line 1 over. */
-  @media (min-width: 1000px) and (max-width: 1199px) {
+  @media (min-width: 900px) and (max-width: 1199px) {
     .poster__title { font-size: clamp(2rem, 4.9vw, 5.2rem); }
   }
 
@@ -1092,8 +1132,100 @@
   /* Below the two-column breakpoint the panel stacks under the field, where four
      rows push the hero past a screen. Two still show that the query is going the
      right way, which is the job. */
-  @media (max-width: 999px) {
+  @media (max-width: 899px) {
     .prev__i:nth-child(n+3) { display: none; }
+  }
+
+  /* ── full-bleed surface tints ────────────────────────────────────────────
+     Alternating warm/cool washes down the page. The sections are .wrap boxes, so
+     the wash is a pseudo-element pinned to the viewport edges rather than the
+     content column -- otherwise it would stop at the text and read as a mistake.
+     Colour rhythm without adding a single hue to the type. */
+  .home > section { position: relative; }
+  .home > section[class*="tint-"]::before {
+    content: ""; position: absolute; z-index: -1;
+    inset-block: 0;
+    inset-inline: calc(50% - 50vw);
+    pointer-events: none;
+  }
+  .home > section.tint-warm::before { background: var(--paper-warm); }
+  .home > section.tint-cool::before { background: var(--paper-cool); }
+  /* the sections stack with margins, so extend the wash into the gap */
+  .home > section[class*="tint-"] { margin-top: 0; }
+  .home > section[class*="tint-"]::before { inset-block: -1px; }
+
+  /* situation groups: one hue each, so the five kinds read apart */
+  .sitgroup__dot { background: var(--gh, var(--accent-deep)); }
+
+  /* ── the rose ────────────────────────────────────────────────────────────
+     33 wedges in one ring. Radial length is the entry count; the inner fill is
+     the grade-A share. Colour now does real work here -- blue inner, warm grey
+     outer -- so you read density and evidence quality without a legend. */
+  .rosebox { margin: 0; display: grid; gap: 10px; }
+  /* Below the two-column breakpoint the ring has no column to sit in. Stacked at
+     width:100% a square SVG became a 900x900 block and the hero hit 181% of the
+     viewport; capped to 210px it still pushed three widths past 80%, because a
+     single-column hero there is already ~67%. So it is dropped rather than
+     shrunk into something unreadable -- the 33-section index directly below
+     carries the same information, and a ring 150px across says nothing. */
+  @media (max-width: 899px) {
+    .rosebox { display: none; }
+  }
+  /* aspect-ratio has to be stated. `overflow: visible` on an <svg> makes Chrome
+     treat it as non-replaced, which drops the intrinsic ratio the viewBox would
+     otherwise give it -- with only `height: auto` the whole ring collapsed to
+     about 30px tall. */
+  .rose { display: block; width: 100%; height: auto; aspect-ratio: 1 / 1; overflow: visible; }
+
+  .rose__cap {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted);
+    padding-bottom: 7px; border-bottom: 1px solid var(--line);
+  }
+  .rose__key { margin-inline-start: auto; display: flex; align-items: center; gap: 5px; letter-spacing: .04em; }
+  .rose__ka, .rose__kr { width: 11px; height: 3px; flex: none; }
+  .rose__ka { background: var(--ev-a); }
+  .rose__kr { background: var(--wedge); border: 1px solid var(--line); }
+
+  .rose__ring { fill: none; stroke: var(--line-2); stroke-width: .6; }
+  /* The B/C remainder has to be VISIBLE while still receding. --paper-3 was
+     1.05:1 against the paper, i.e. the outer half of every wedge was invisible
+     and the legend swatch matched nothing. These land at 1.42 / 1.39: dark
+     enough to read as a fill, light enough that the blue still leads. */
+  .rose__rest { fill: var(--wedge); }
+  .rose__a { fill: var(--ev-a); }
+
+  /* Wedges grow outward from the centre, which is the same direction as the
+     data: a long wedge is a dense chapter. Staggered so the ring assembles
+     clockwise rather than appearing all at once. transform-origin is the
+     chart's centre, so this stays on the compositor. */
+  .rose__w {
+    transform-box: view-box; transform-origin: 150px 150px;
+    cursor: pointer;
+    animation: roseGrow .5s var(--ease-out) backwards;
+    animation-delay: calc(var(--i, 0) * 13ms);
+  }
+  @keyframes roseGrow { from { transform: scale(.18); opacity: 0; } }
+  .rose__w:hover .rose__rest, .rose__w.is-on .rose__rest { fill: var(--ev-b); }
+  .rose__w:hover .rose__a, .rose__w.is-on .rose__a { fill: var(--ev-b); }
+  .rose__w:focus-visible { outline: 2px solid var(--accent-deep); outline-offset: 1px; }
+
+  .rose__n {
+    font-family: var(--mono); font-size: 21px; font-weight: 600;
+    fill: var(--ink); letter-spacing: -.02em;
+  }
+  .rose__u { font-family: var(--mono); font-size: 9.5px; fill: var(--muted); letter-spacing: .08em; }
+
+  .rose__out {
+    display: grid; gap: 1px; min-height: 2.6em; align-content: start;
+    border-top: 1px solid var(--line); padding-top: 8px;
+  }
+  .rose__out b { font-size: 12.5px; font-weight: 600; line-height: 1.3; }
+  .rose__out span { font-size: 10.5px; color: var(--muted); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rose__w { animation: none; }
   }
 
   /* ── scroll-spy indicator ───────────────────────────────────────────────
@@ -1159,7 +1291,7 @@
     font-size: var(--step-1); font-weight: 600; letter-spacing: -.01em;
     padding-bottom: 9px; margin-bottom: 12px; border-bottom: 1px solid var(--ink);
   }
-  .sitgroup__dot { width: 9px; height: 9px; background: var(--accent-deep); flex: none; }
+  .sitgroup__dot { width: 9px; height: 9px; background: var(--gh, var(--accent-deep)); flex: none; }
   .sitgroup__n { margin-inline-start: auto; font-size: 11.5px; color: var(--muted); font-weight: 400; }
 
   .situations {
@@ -1302,7 +1434,7 @@
   .pagehead__tools { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--line); }
 
   /* split page head (chapter reader) */
-  @media (min-width: 1000px) {
+  @media (min-width: 900px) {
     .pagehead--split {
       display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
       gap: clamp(28px, 4vw, 72px); align-items: start;
@@ -1338,7 +1470,7 @@
   .chip--free { border-color: color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent-deep); }
   .chip--cj { background: var(--paper-2); }
   .chip--est { border-style: dashed; }
-  .chip--a { border-color: var(--data); color: var(--data); background: var(--data-soft); }
+  .chip--a { border-color: var(--ev-a); color: var(--ev-a); background: var(--ev-a-soft); }
   .chip--b { color: var(--ink-2); }
   .chip--c { opacity: .8; }
   .tag {
@@ -1353,9 +1485,9 @@
     font: 600 12px/1 var(--mono); border: 1px solid var(--ink); color: var(--ink);
     background: transparent;
   }
-  .badge[data-ev="A"] { background: var(--data); color: var(--data-ink); }
-  .badge[data-ev="B"] { border-color: var(--muted); color: var(--muted); }
-  .badge[data-ev="C"] { border-style: dotted; color: var(--muted); }
+  .badge[data-ev="A"] { background: var(--ev-a); color: var(--ev-a-ink); border-color: var(--ev-a); }
+  .badge[data-ev="B"] { background: var(--ev-b-soft); color: var(--ev-b); border-color: var(--ev-b); }
+  .badge[data-ev="C"] { background: var(--ev-c-soft); color: var(--ev-c); border-color: var(--ev-c); }
   .badge--big { width: 40px; height: 40px; font-size: 20px; margin-bottom: 12px; }
 
   /* term (glossary inline) */

@@ -1,5 +1,5 @@
 ﻿/* Home, chapter index, chapter reader, long-form reader, methodology. */
-import { el, frag, linkify, hi, reveal, fmt, openSheet, closeSheet, toast, icon, spotlight, scrollSpy, onTeardown } from './ui.js';
+import { el, frag, linkify, hi, reveal, countUp, fmt, openSheet, closeSheet, toast, icon, spotlight, scrollSpy, onTeardown } from './ui.js';
 import { itemCard, openRefSheet, isMarked, toggleMark, marks, badge, CJ_LABEL } from './views-explore.js';
 import { runQuery } from './data.js';
 
@@ -33,70 +33,147 @@ const PROMPTS = [
   '孩子上学要注意什么',
 ];
 
-/* ── the live preview panel ─────────────────────────────────────────────
- * The hero's right column, and the reason the hero was dead.
+/* ── the rose ───────────────────────────────────────────────────────────
+ * The hero's right column: the whole book as one ring.
  *
- * It used to hold an evidence ledger, then a dot-matrix wordmark, then a bar
- * chart of the corpus. All three were decoration: the hero spent a third of its
- * width describing a search box and showing nothing when you used it. This panel
- * is the other half of that box -- the same query, rendered. Type 押金 and five
- * real entries appear; clear it and it goes back to showing what is in here.
+ * Four things have been tried here -- an evidence ledger, a dot-matrix wordmark,
+ * a bar chart, a text list of live results -- and the list was right about the
+ * data and wrong about the form. This is the same chapter data drawn as 33
+ * wedges: radial length is how many entries a chapter has, and the inner portion
+ * is filled for the share of it that is grade A. So you read two things at a
+ * glance without a legend: which sections of life are dense, and where the
+ * evidence runs out.
  *
- * So the motion on this page is not decoration either. Every transition in it
- * is caused by the reader doing something.
+ * Only chapter counts and evidence grade, which is the one axis the book
+ * publishes a tally for (410/149/49, matching evidenceStats exactly). Cost and
+ * value are deliberately absent: this extraction contradicts the book on both
+ * (the text list that occupied this column before it, and the two charts before that, are all noted in the history on this comment).
  *
- * Idle state is five grade-A entries sampled evenly across the whole book, not
- * the first five: the first five are all from chapter 1 and say nothing about
- * the other 32. */
-function previewPanel(book) {
-  /* Four, not five. At five the panel became the tallest thing in the hero and
-     set its height; four is still enough to show whether a query is going the
-     right way, which is the only job this has. */
-  const LIST = 4;
-  const aList = book.items.filter((i) => i.evidence === 'A');
-  const idle = Array.from({ length: LIST },
-    (_, k) => aList[Math.floor(k * aList.length / LIST)]).filter(Boolean);
+ * A caveat worth stating rather than hiding: radius overstates differences,
+ * because a wedge twice as long is four times the area. The exact count is
+ * always in the readout on hover and focus, and the caption says what length
+ * means, so nothing is left to the distorted channel alone.
+ */
+function rose(book) {
+  const chs = book.chapters;
+  const N = chs.length;
+  const max = Math.max(...chs.map((c) => c.stats.n));
+  const STEP = 360 / N;
+  const GAP = STEP * 0.16;        // breathing room, so 33 wedges stay countable
+  const R0 = 52, R1 = 138, CX = 150, CY = 150;
+  const TAU = Math.PI / 180;
 
-  const head = el('p', { class: 'prev__h' });
-  const list = el('ol', { class: 'prev__l' });
-  const empty = el('p', { class: 'prev__e', hidden: true }, '没有匹配的条目，换个词试试。');
-  let shown = [];
+  const pt = (a, r) => [CX + r * Math.cos(a * TAU), CY + r * Math.sin(a * TAU)];
+  const sector = (a0, a1, ri, ro) => {
+    const [x0, y0] = pt(a0, ro), [x1, y1] = pt(a1, ro);
+    const [x2, y2] = pt(a1, ri), [x3, y3] = pt(a0, ri);
+    const big = (a1 - a0) > 180 ? 1 : 0;
+    return `M${x0.toFixed(2)} ${y0.toFixed(2)}`
+      + `A${ro} ${ro} 0 ${big} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`
+      + `L${x2.toFixed(2)} ${y2.toFixed(2)}`
+      + `A${ri} ${ri} 0 ${big} 0 ${x3.toFixed(2)} ${y3.toFixed(2)}Z`;
+  };
 
-  function draw(q) {
-    const raw = String(q || '').trim();
-    /* runQuery parses the raw string itself and hands the terms back, which is
-       what hi() needs. Parsing separately here would mean guessing at the
-       lowercase/quote handling and getting the highlight out of step with the
-       search that produced it.
-       Its hits are { it, sc } wrappers, not the items themselves. */
-    const r = raw
-      ? runQuery(book, { q: raw, ev: [], ch: [], cj: [], cost: [], mag: [], val: [], flag: [] })
-      : null;
-    const terms = r ? r.terms : [];
-    const hits = r ? r.hits.slice(0, LIST).map((h) => h.it) : idle;
+  const svg = el('svg', {
+    class: 'rose', viewBox: '0 0 300 300', role: 'img',
+    'aria-label': `全书 ${chs.length} 节共 ${book.items.length} 条建议，按条目数画成一圈，长度是条目数，`
+      + `靠内的一段是其中 A 级的比例。用键盘左右键在节之间移动。`,
+  });
 
-    /* only rows that are new animate. A row that survived the keystroke keeps
-       its identity, so refining a query does not strobe the whole panel. */
-    const seen = new Set(shown);
-    list.replaceChildren(...hits.map((it, k) => el('li', {
-      class: 'prev__i' + (seen.has(it.ref) ? '' : ' is-in'),
-      style: `--k:${k}`,
-    }, el('a', { href: it.href },
-      el('span', { class: 'prev__t' }, terms.length ? hi(it.title, terms) : it.title),
-      el('span', { class: 'prev__m' },
-        el('span', { class: 'num' }, it.chTitle),
-        badge(it.evidence))))));
-    shown = hits.map((it) => it.ref);
-
-    const total = r ? r.hits.length : book.items.length;
-    head.replaceChildren(r
-      ? frag('找到 ', el('b', { class: 'num' }, fmt(total)), ' 条', r.relaxed ? '（已放宽为任意词）' : '')
-      : frag(el('b', { class: 'num' }, fmt(book.items.length)), ' 条里挑了几条给你看'));
-    empty.hidden = !!hits.length;
+  /* guide rings at 1/3 and 2/3 of the way out, plus the inner baseline */
+  for (const f of [0, 1 / 3, 2 / 3, 1]) {
+    svg.append(el('circle', {
+      class: 'rose__ring', cx: CX, cy: CY,
+      r: (R0 + (R1 - R0) * f).toFixed(1),
+    }));
   }
 
-  draw('');
-  return { node: el('aside', { class: 'prev' }, head, list, empty), draw };
+  const g = el('g', { class: 'rose__g' });
+  const tips = [];
+  chs.forEach((c, i) => {
+    const n = c.stats.n;
+    const a = c.stats.A || 0;
+    const share = n ? a / n : 0;
+    const ro = R0 + (R1 - R0) * (n / max);
+    const a0 = i * STEP - 90 + GAP / 2;
+    const a1 = (i + 1) * STEP - 90 - GAP / 2;
+
+    /* the B/C remainder, then the A portion drawn on top from the baseline */
+    const rest = el('path', { class: 'rose__rest', d: sector(a0, a1, R0, ro) });
+    const grade = el('path', {
+      class: 'rose__a', d: sector(a0, a1, R0, R0 + (ro - R0) * share),
+    });
+    const g1 = el('g', {
+      class: 'rose__w', tabindex: '0', role: 'link',
+      'aria-label': `第 ${c.no} 节 ${c.title}，${n} 条，A 级 ${a} 条`,
+      style: `--i:${i}`,
+      onclick: () => { location.hash = `#/ch/${c.no}`; },
+    }, rest, grade);
+    const show = () => { read(c.no, c.title, n, a); mark(i, true); };
+    const hide = () => { mark(i, false); };
+    g1.addEventListener('pointerenter', show);
+    g1.addEventListener('pointerleave', hide);
+    g1.addEventListener('focus', show);
+    g1.addEventListener('blur', hide);
+    g.append(g1);
+    tips.push(ro);
+  });
+  svg.append(g);
+
+  /* The one number in the hero, counted up as the ring assembles around it.
+     Rendered at its final value first: countUp starts from 0, so if rAF never
+     fires -- a background tab, some headless setups -- the correct number is
+     already on screen rather than a zero. */
+  const bigN = el('text', {
+    class: 'rose__n', x: CX, y: CY - 2, 'text-anchor': 'middle',
+  }, fmt(book.items.length));
+  svg.append(bigN);
+  svg.append(el('text', {
+    class: 'rose__u', x: CX, y: CY + 16, 'text-anchor': 'middle',
+  }, '条建议'));
+
+  const mark = (i, on) => {
+    const w = g.childNodes[i];
+    if (w) w.classList.toggle('is-on', on);
+  };
+
+  const first = chs[0];
+  const out = el('p', { class: 'rose__out' },
+    el('b', {}, `${String(first.no).padStart(2, '0')} ${first.title}`),
+    el('span', { class: 'num' }, `${first.stats.n} 条 · A 级 ${first.stats.A || 0}`));
+  function read(no, title, n, a) {
+    out.replaceChildren(
+      el('b', {}, `${String(no).padStart(2, '0')} ${title}`),
+      el('span', { class: 'num' }, `${n} 条 · A 级 ${a}`));
+  }
+
+  /* left/right arrows walk the chapters, because 33 tab stops before the rest
+     of the page is a lot of keystrokes to get past */
+  svg.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    const cur = g.querySelector('.is-on') ? [...g.childNodes].indexOf(g.querySelector('.is-on')) : -1;
+    const next = (cur + (e.key === 'ArrowRight' ? 1 : -1) + N) % N;
+    g.childNodes[cur]?.classList.remove('is-on');
+    const w = g.childNodes[next];
+    w.focus();
+    w.dispatchEvent(new PointerEvent('pointerenter'));
+  });
+
+  /* Start the count a beat after the first wedge, so the number lands inside the
+     animation rather than competing with it. requestAnimationFrame because a
+     setTimeout(0) would still fire before the first paint on a cold cache. */
+  requestAnimationFrame(() => {
+    setTimeout(() => countUp(bigN, book.items.length, 900), 120);
+  });
+
+  return el('figure', { class: 'rosebox' },
+    el('figcaption', { class: 'rose__cap' },
+      el('span', {}, `${String(chs.length).padStart(2, '0')} 节`),
+      el('span', { class: 'rose__key' },
+        el('i', { class: 'rose__ka' }), 'A 级',
+        el('i', { class: 'rose__kr' }), 'B / C 级')),
+    svg, out);
 }
 
 /* ── home ───────────────────────────────────────────────────────────── */
@@ -118,13 +195,11 @@ export function viewHome(book, state) {
      cost / benefit / notes, and those now live in detail.json, so the count is
      only trustworthy once that has loaded -- otherwise it under-reports. Recount
      when it lands rather than showing a number we know is too low. */
-  const panel = previewPanel(book);
+  const rose_ = rose(book);
   let lastHits = 0;
 
   const paint = () => {
-    const q = input.value.trim();
-    panel.draw(q);
-    if (!q) { counter.textContent = ''; counter.className = 'find__count'; return; }
+    const q = input.value.trim();    if (!q) { counter.textContent = ''; counter.className = 'find__count'; return; }
     const n = runQuery(book, {
       q, ev: [], ch: [], cj: [], cost: [], mag: [], val: [], flag: [],
     }).hits.length;
@@ -266,12 +341,12 @@ const examples = reduceMotion
         counter,
         examples,
         ways),
-      panel.node));
+      rose_));
 
   root.append(hero);
 
   /* ── situations, grouped by what kind of problem it is ───────────── */
-  const sitWrap = el('section', { class: 'wrap' });
+  const sitWrap = el('section', { class: 'wrap tint-warm' });
   sitWrap.append(el('div', { class: 'band' },
     el('h2', {}, '按情况'),
     el('p', { class: 'band__d' }, `共 ${book.situations.length} 类。点进去就是筛好的条目。`)));
@@ -283,11 +358,21 @@ const examples = reduceMotion
     byGroup.get(s.g).push(s);
   }
 
+  /* One hue per situation group, so the five kinds of problem are told apart at a
+     glance instead of by reading five identical vermilion dots. Assigned in
+     group order, which is the book's own order (急 钱 活 家 心).
+     The value is a var() reference, not a literal, so each group follows the
+     theme -- the light-theme hues only reached 2.6:1 on the dark ground. */
+  const GROUP_HUE = ['var(--g1)', 'var(--g2)', 'var(--g3)', 'var(--g4)', 'var(--g5)'];
+
+  let gi = 0;
   for (const [name, list] of byGroup) {
     if (!list.length) continue;
+    const hue = GROUP_HUE[gi % GROUP_HUE.length];
+    gi += 1;
     const block = el('div', { class: 'sitgroup' },
       el('div', { class: 'sitgroup__t' },
-        el('span', { class: 'sitgroup__dot', 'aria-hidden': 'true' }),
+        el('span', { class: 'sitgroup__dot', 'aria-hidden': 'true', style: `--gh:${hue}` }),
         name,
         el('span', { class: 'sitgroup__n num' }, `${list.length} 类`)));
     const grid = el('div', { class: 'situations' });
@@ -316,7 +401,7 @@ const examples = reduceMotion
     .filter((i) => i.evidence === 'A')
     .sort((a, b) => (a.ch - b.ch) || (a.no - b.no))
     .slice(0, SEVEN);
-  const aWrap = el('section', { class: 'wrap' });
+  const aWrap = el('section', { class: 'wrap tint-cool' });
   aWrap.append(el('div', { class: 'band' },
     el('h2', {}, 'A 级条目，每节从最前面看起'),
     el('p', { class: 'band__d' },
@@ -336,7 +421,7 @@ const examples = reduceMotion
   root.append(aWrap);
 
   /* ── chapter index, dense ─────────────────────────────────────────── */
-  const chWrap = el('section', { class: 'wrap' });
+  const chWrap = el('section', { class: 'wrap tint-warm' });
   chWrap.append(el('div', { class: 'band' },
     el('h2', {}, `按 ${book.chapters.length} 节浏览`),
     el('p', { class: 'band__d' },
@@ -353,7 +438,7 @@ const examples = reduceMotion
   root.append(chWrap);
 
   /* ── long-form ─────────────────────────────────────────────────────── */
-  const lWrap = el('section', { class: 'wrap' });
+  const lWrap = el('section', { class: 'wrap tint-cool' });
   lWrap.append(el('div', { class: 'band' },
     el('h2', {}, '长文'),
     el('p', { class: 'band__d' }, `${book.appendices.length} 篇，含对照表和决策表。`)));

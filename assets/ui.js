@@ -3,11 +3,25 @@
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
+/* SVG elements must be created in the SVG namespace. document.createElement('path')
+   yields an HTMLUnknownElement that carries a class and no geometry, so a chart
+   built with el() renders nothing at all -- silently. Keep the list explicit
+   rather than guessing from a tag name, because plenty of HTML tags are not SVG
+   and vice versa. */
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const SVG_TAGS = new Set([
+  'svg', 'g', 'path', 'circle', 'ellipse', 'rect', 'line', 'polyline', 'polygon',
+  'text', 'tspan', 'defs', 'linearGradient', 'radialGradient', 'stop', 'clipPath',
+  'mask', 'use', 'symbol',
+]);
+
 export function el(tag, props = {}, ...kids) {
-  const n = document.createElement(tag);
+  const n = SVG_TAGS.has(tag)
+    ? document.createElementNS(SVG_NS, tag)
+    : document.createElement(tag);
   for (const [k, v] of Object.entries(props || {})) {
     if (v == null || v === false) continue;
-    if (k === 'class') n.className = v;
+    if (k === 'class') n.setAttribute('class', v);
     else if (k === 'html') n.innerHTML = v;
     else if (k === 'text') n.textContent = v;
     else if (k.startsWith('on')) n.addEventListener(k.slice(2).toLowerCase(), v);
@@ -39,10 +53,34 @@ export const theme = {
     if (t !== 'auto') return t;
     return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   },
+  /* Cross-fade the whole page through a View Transition when the browser has
+     one. Without it a theme switch is an instant, rather violent repaint; with
+     it the swap reads as the page dimming and coming back in the other palette,
+     which is also the one place the second and third hues get to be seen at
+     full strength.
+     Two guards, both needed: startViewTransition rejects with InvalidStateError
+     if called before the first paint or while another is in flight, and this
+     runs on boot as well as on click. So skip it until the page has painted,
+     and fall back to the plain swap if it refuses. */
   set(v) {
-    if (v === 'auto') { document.documentElement.removeAttribute('data-theme'); }
-    else document.documentElement.dataset.theme = v;
-    localStorage.setItem(THEME_KEY, v);
+    const apply = () => {
+      if (v === 'auto') { document.documentElement.removeAttribute('data-theme'); }
+      else document.documentElement.dataset.theme = v;
+      localStorage.setItem(THEME_KEY, v);
+    };
+    let painted = false;
+    requestAnimationFrame(() => { painted = true; });
+    if (!painted || matchMedia('(prefers-reduced-motion: reduce)').matches
+      || typeof document.startViewTransition !== 'function') {
+      apply();
+      return;
+    }
+    try {
+      const t = document.startViewTransition(apply);
+      if (t && typeof t.catch === 'function') t.catch(() => {});
+    } catch {
+      apply();
+    }
   },
 };
 
