@@ -1,4 +1,4 @@
-﻿/* ═══════════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════
    高性价比人生指南 — Swiss International / index-card poster
    ═══════════════════════════════════════════════════════════════════ */
 
@@ -38,22 +38,33 @@
     --paper:      #F7F6F2;
     --paper-2:    #EFEEE8;
     --paper-3:    #E6E4DC;
-    /* ── the palette, in four roles and no more ──────────────────────────
-       Four roles, and nothing on the site is allowed a hue outside them. The
-       list grew to nine last round because a five-colour set was added for the
-       situation groups on top of three already in use for evidence -- blue
-       alone ended up declared four times (--data, --ev-a, --link, --g4). Those
-       five are gone; the groups are told apart by their labels, which they
-       already had.
+    /* ── the palette: neutrals + TWO hues, and nothing else ────────────────
+       Measured across the rendered home page, the site was painting five
+       chromatic colours plus a warm grey: vermilion (127 uses), blue (52), amber
+       (24), violet (22) and --wedge #D6D0C0. Amber and violet were almost
+       entirely in the lower bands -- 23 of 24 amber and 21 of 22 violet sat in
+       the situations section, from the per-chapter evidence bars. That is what
+       read as "a new colour appearing halfway down the page".
 
-       1  neutrals   ink / ink-2 / muted on paper / paper-2 / paper-3
-       2  accent     vermilion. One job: this needs attention NOW. Emergency
-                     block, active state, focus ring, the word 寿命 in the title.
-       3  evidence   blue / amber / violet. One job: how well evidenced. Grade
-                     A can quote a number, B has research but no quotable
-                     figure, C is convention. Never red for C -- red would read
-                     as danger, and C is meant to be unremarkable.
-       4  mark       yellow. One job: the text you just searched for. */
+       So the evidence scale stops being a hue scale. A is the only grade that
+       gets a hue; B and C are steps of the neutral ink instead. One hue means
+       "measured", and the walk from blue through dark grey to light grey still
+       reads as strong / medium / weak without asking anyone to learn two more
+       colours. It is also how published data graphics normally do it.
+
+       1  neutrals   paper / paper-2 / paper-3 and ink / ink-2 / muted, plus
+                     --wedge. Every one of these is a true grey or a near-grey.
+       2  accent     vermilion. One job: this needs attention NOW. Active state,
+                     focus ring, the 寿命 in the title, the group dot, and the
+                     search-term highlight (as a tint of itself, so highlighting
+                     costs no new hue either).
+       3  evidence   blue for grade A, then ink-2 for B and a mid grey for C.
+                     Never red for C -- red reads as danger, and C is meant to
+                     be unremarkable.
+
+       Two hues against a limit of four. The two spare slots are deliberately
+       left empty rather than filled: the last two rounds both spent their
+       budget on colour that had to be explained. */
     --accent:     #E4320B;
     --accent-deep: #BE2A06;
     --accent-ink: #FFFFFF;
@@ -61,29 +72,39 @@
     --ev-a:       #1B3FD8;
     --ev-a-ink:   #FFFFFF;
     --ev-a-soft:  rgba(27, 63, 216, .12);
-    --ev-b:       #8A4B00;
+    /* B and C are the ink ladder, not hues. B is dark enough to outrank C
+       against the paper in both themes, which is the whole point of the step. */
+    --ev-b:       #3A3A3D;
     --ev-b-ink:   #FFFFFF;
-    --ev-b-soft:  rgba(196, 122, 12, .18);
-    --ev-c:       #6B5B95;
-    --ev-c-ink:   #FFFFFF;
-    --ev-c-soft:  rgba(107, 91, 149, .12);
+    --ev-b-soft:  rgba(58, 58, 61, .12);
+    --ev-c:       #8E8D87;
+    --ev-c-ink:   #0B0B0C;
+    --ev-c-soft:  rgba(142, 141, 135, .20);
 
     /* Links are the same blue as grade A on purpose: both mean "go and look at
-       the evidence", and a link hue on top of an evidence hue would be a sixth
+       the evidence", and a link hue on top of an evidence hue would be a third
        thing to learn. */
     --link:       #1B3FD8;
     --line:       rgba(11, 11, 12, .16);
     --line-2:     rgba(11, 11, 12, .085);
     --line-3:     rgba(11, 11, 12, .05);
-    --mark:       #FFE24A;
+    /* The search-term highlight used to be its own yellow, which was a fifth
+       chromatic colour by the same accounting. It is now the accent mixed into
+       the paper, so it still reads as a highlighter -- ink on it is ~14:1 -- and
+       the ink it sits on does not have to change to keep passing. */
+    --mark:       color-mix(in srgb, var(--accent) 20%, var(--paper));
 
-    /* Surface washes, not hues: two temperatures so the page has rhythm. They
-       cost no contrast budget because no text changes colour on them. */
-    --paper-warm: #F1EEE7;
-    --paper-cool: #EEF1F5;
-    /* The rose's B/C fill. Not --paper-3, which is 1.05:1 on the paper and made
-       the outer half of every wedge invisible. */
-    --wedge:      #D6D0C0;
+    /* ── the alternating surface washes are gone ──────────────────────────
+       --paper-warm #F1EEE7 and --paper-cool #EEF1F5 are deleted. They were not
+       hues in the token sense, but they were a second and third background tone
+       that appeared only in the lower half of the page, which is precisely the
+       "a new colour shows up down there" effect. Every section is now the same
+       --paper; the bands are separated by whitespace and a hairline rule
+       instead, and the drifting ::after carries the rhythm. */
+    /* The rose's B/C remainder. A true neutral, not the old warm #D6D0C0 which
+       put a fifth cast into the hero. Not --paper-3, which sits at 1.05:1 on the
+       paper and made the outer half of every wedge invisible. */
+    --wedge:      #CBCBCB;
 
     --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
             "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC",
@@ -123,36 +144,38 @@
     --accent:     #FF5A2B;
     --accent-deep: #FF6A3D;
     --accent-ink: #0A0A0B;
+    /* Same two hues as the light theme, stepped for a near-black ground: blue lifts
+       to #7FA4F2, and the B/C ladder becomes light-on-dark rather than
+       dark-on-light -- B #C9C8C1 outranks C #8E8D87 against the paper here, which
+       keeps the strong/medium/weak reading identical in both themes. */
     --ev-a:       #7FA4F2;
     --ev-a-ink:   #0A0A0B;
     --ev-a-soft:  rgba(127, 164, 242, .18);
-    --ev-b:       #E0A14A;
-    --ev-b-ink:   #17110A;
-    --ev-b-soft:  rgba(224, 161, 74, .18);
-    --ev-c:       #B0A0D6;
-    --ev-c-ink:   #100E18;
-    --ev-c-soft:  rgba(176, 160, 214, .16);
-    --paper-warm: #131211;
-    --paper-cool: #11131A;
+    --ev-b:       #C9C8C1;
+    --ev-b-ink:   #0A0A0B;
+    --ev-b-soft:  rgba(201, 200, 193, .16);
+    --ev-c:       #8E8D87;
+    --ev-c-ink:   #0A0A0B;
+    --ev-c-soft:  rgba(142, 141, 135, .18);
     --wedge:      #2A2A2F;
-    --link:       #7C9BFF;
+    --link:       #7FA4F2;
     --line:       rgba(244, 243, 238, .2);
     --line-2:     rgba(244, 243, 238, .11);
     --line-3:     rgba(244, 243, 238, .06);
-    --mark:       #6B5B00;
+    --mark:       color-mix(in srgb, var(--accent) 26%, var(--paper));
   }
 
   @media (prefers-color-scheme: dark) {
     html:not([data-theme="light"]) {
       --ink: #F4F3EE; --ink-2: #C9C8C1; --muted: #8E8D87;
       --paper: #0A0A0B; --paper-2: #131316; --paper-3: #1C1C20;
-      --accent: #FF5A2B; --accent-deep: #FF6A3D; --accent-ink: #0A0A0B; --link: #7C9BFF;
+      --accent: #FF5A2B; --accent-deep: #FF6A3D; --accent-ink: #0A0A0B; --link: #7FA4F2;
       --ev-a: #7FA4F2; --ev-a-ink: #0A0A0B; --ev-a-soft: rgba(127,164,242,.18);
-      --ev-b: #E0A14A; --ev-b-ink: #17110A; --ev-b-soft: rgba(224,161,74,.18);
-      --ev-c: #B0A0D6; --ev-c-ink: #100E18; --ev-c-soft: rgba(176,160,214,.16);
-      --paper-warm: #131211; --paper-cool: #11131A; --wedge: #2A2A2F;
+      --ev-b: #C9C8C1; --ev-b-ink: #0A0A0B; --ev-b-soft: rgba(201,200,193,.16);
+      --ev-c: #8E8D87; --ev-c-ink: #0A0A0B; --ev-c-soft: rgba(142,141,135,.18);
+      --wedge: #2A2A2F;
       --line: rgba(244,243,238,.2); --line-2: rgba(244,243,238,.11); --line-3: rgba(244,243,238,.06);
-      --mark: #6B5B00;
+      --mark: color-mix(in srgb, var(--accent) 26%, var(--paper));
     }
   }
 }
@@ -997,6 +1020,76 @@
     to   { transform: translate3d(3%, 2%, 0) scale(1.07); }
   }
 
+  /* Ambient, per band. With the tinted section backgrounds gone, this is what
+     gives the lower half of the page any motion at all -- one slow drift per
+     band, so scrolling never crosses a dead rectangle.
+
+     The box is oversized on BOTH axes so a translate cannot expose an unpainted
+     edge: block by -25% of the section, inline to 116vw via calc(50% - 58vw).
+     The translate peaks at 4% of the element's own width, which for a 116vw box
+     is 4.6vw against 8vw of slack each side. The 116vw width is also why <html>
+     needs overflow-x: clip.
+
+     Alternate bands drift in opposite directions and at periods that are not
+     multiples of each other (30s / 37s), so nothing on the page ever lines up
+     into a single repeating rhythm. */
+  @media (prefers-reduced-motion: no-preference) {
+    .home > section[class*="tint-"]::after {
+      content: ""; position: absolute; z-index: -1;
+      inset-block: -25%; inset-inline: calc(50% - 58vw);
+      pointer-events: none;
+      background: radial-gradient(42% 36% at 32% 28%,
+        color-mix(in srgb, var(--accent) 4%, transparent) 0%, transparent 72%);
+      animation: drift 30s var(--ease) infinite alternate;
+    }
+    .home > section.tint-cool::after {
+      background: radial-gradient(42% 36% at 68% 72%,
+        color-mix(in srgb, var(--ev-a) 3%, transparent) 0%, transparent 72%);
+      animation-duration: 37s; animation-direction: alternate-reverse;
+    }
+  }
+  @keyframes drift {
+    from { transform: translate3d(-3%, 2.5%, 0); }
+    to   { transform: translate3d(4%, -3%, 0); }
+  }
+
+  /* ── the rose moves on its own ───────────────────────────────────────
+     The hero's right-hand graphic had an entrance and a breathing halo, but the
+     graphic itself never moved, which is the thing actually being looked at.
+
+     Two layers, because they carry different weights:
+
+       .rose__g           180s per revolution, clockwise. The 33 wedges. Slow
+                          enough to be felt rather than tracked -- 2 degrees a
+                          second -- and PAUSED on hover and on focus-within, so
+                          the one thing the reader may want to compare stops
+                          moving the moment they reach for it. A rotating chart
+                          you cannot stop is a chart you cannot read.
+
+       outermost ring      74s counter-clockwise, and dashed. The guide rings are
+                          plain circles, and a plain circle looks identical
+                          rotated, so spinning one of those would cost a compositing
+                          layer and change nothing on screen. Dashing it is what
+                          makes the rotation visible; it also makes the ring read
+                          as an instrument bezel rather than as a data series.
+
+     transform-box: view-box with a 50%/50% origin is what rotates both about
+     (150,150) -- the ring's centre in user units -- without hardcoding it. */
+  @media (prefers-reduced-motion: no-preference) {
+    .rose__g, .rose__ring:last-of-type { transform-box: view-box; transform-origin: 50% 50%; }
+    .rose__g { animation: roseSpin 180s linear infinite; }
+    .rose__ring:last-of-type {
+      stroke-dasharray: 2 7;
+      animation: roseSpinBack 74s linear infinite;
+    }
+    .rosebox:hover .rose__g, .rosebox:focus-within .rose__g,
+    .rosebox:hover .rose__ring:last-of-type, .rosebox:focus-within .rose__ring:last-of-type {
+      animation-play-state: paused;
+    }
+  }
+  @keyframes roseSpin    { to { transform: rotate(360deg); } }
+  @keyframes roseSpinBack{ to { transform: rotate(-360deg); } }
+
   /* The chapter evidence bars grow when their row scrolls into view. This is the
      one animation on the page that carries information rather than decoration:
      the bar is the claim "this chapter's entries are mostly grade A", and
@@ -1038,6 +1131,7 @@
     .poster::before, .rosebox::before { animation: none !important; }
     .rosebox::before { content: none !important; }
     .home > section[class*="tint-"]::after { animation: none !important; }
+    .rose__g, .rose__ring:last-of-type { animation: none !important; }
     /* scaleX(0) must not survive the kill switch, or every evidence bar would be
        an empty track. The animation is already neutralised above; this clears the
        base state it starts from. */
@@ -1352,53 +1446,19 @@
     .prev__i:nth-child(n+3) { display: none; }
   }
 
-  /* ── full-bleed surface tints ────────────────────────────────────────────
-     Alternating warm/cool washes down the page. The sections are .wrap boxes, so
-     the wash is a pseudo-element pinned to the viewport edges rather than the
-     content column -- otherwise it would stop at the text and read as a mistake.
-     Colour rhythm without adding a single hue to the type. */
+  /* ── band separation ────────────────────────────────────────────────────
+     There are no tinted section backgrounds any more. --paper-warm and
+     --paper-cool are deleted, because two extra background tones that only
+     appeared in the lower half of the page are exactly the "a new colour shows
+     up down there" effect. Every band is --paper.
+
+     The rhythm they used to carry is now carried by a hairline rule at the top
+     of each band plus the drifting ::after below. The rule is drawn in on
+     scroll by animation-timeline: view(), which degrades to a plain always-there
+     border in browsers without scroll-driven animations. */
   .home > section { position: relative; }
-  .home > section[class*="tint-"]::before {
-    content: ""; position: absolute; z-index: -1;
-    inset-block: 0;
-    inset-inline: calc(50% - 50vw);
-    pointer-events: none;
-  }
-  .home > section.tint-warm::before { background: var(--paper-warm); }
-  .home > section.tint-cool::before { background: var(--paper-cool); }
-  /* Ambient: a slow drift over the flat wash, so scrolling past four tinted
-     sections does not feel like watching four identical rectangles go by.
-
-     ::after rather than an extra layer on ::before because ::before already
-     carries the opaque tint and animating its background-position would repaint
-     the whole full-bleed box on every frame. This one only transforms, so it
-     stays on the compositor.
-
-     The box is oversized on BOTH axes so a translate can never expose an
-     unpainted edge: block by -25% of the section, and inline to 116vw via
-     calc(50% - 58vw). The translate peaks at 4% of the element's own width,
-     which for a 116vw box is 4.6vw against 8vw of slack each side. Sizing it to
-     the section instead (-10%) overflowed the viewport by ~94px a side, because
-     a percentage here resolves against the .wrap box, not the viewport.
-
-     Both pseudo-elements sit at z-index -1, so the drift paints over the tint
-     (::after comes later in the box) and under the content. Peak is 4% accent,
-     and the per-route contrast sweep re-runs after this to confirm the muted
-     body text on the washes does not move. */
-  @media (prefers-reduced-motion: no-preference) {
-    .home > section[class*="tint-"]::after {
-      content: ""; position: absolute; z-index: -1;
-      inset-block: -25%; inset-inline: calc(50% - 58vw);
-      pointer-events: none;
-      background: radial-gradient(40% 34% at 32% 28%,
-        color-mix(in srgb, var(--accent) 4%, transparent) 0%, transparent 72%);
-      animation: drift 30s var(--ease) infinite alternate;
-    }
-  }
-  @keyframes drift {
-    from { transform: translate3d(-3%, 2.5%, 0); }
-    to   { transform: translate3d(4%, -3%, 0); }
-  }
+  .home > section[class*="tint-"] { border-top: 1px solid var(--line-2); }
+  .home > section[class*="tint-"]:first-of-type { border-top: 0; }
   /* the sections stack with margins, so extend the wash into the gap */
   .home > section[class*="tint-"] { margin-top: 0; }
   .home > section[class*="tint-"]::before { inset-block: -1px; }
