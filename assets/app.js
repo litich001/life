@@ -77,10 +77,26 @@ function route(opts = {}) {
 
   const y = opts.keepScroll ? scrollY : 0;
   if (current) scrollMemory.set(current, scrollY);
-  main.replaceChildren(view);
-  current = key;
-  syncNav(parts[0] || 'home');
-  afterRender(parts, y);
+  const commit = () => {
+    main.replaceChildren(view);
+    current = key;
+    syncNav(parts[0] || 'home');
+    afterRender(parts, y);
+  };
+
+  const canTransition = current && !opts.keepScroll
+    && !matchMedia('(prefers-reduced-motion: reduce)').matches
+    && typeof document.startViewTransition === 'function';
+  if (canTransition) {
+    try {
+      const transition = document.startViewTransition(commit);
+      transition.finished?.catch(() => {});
+    } catch {
+      commit();
+    }
+  } else {
+    commit();
+  }
 }
 
 /* Where each route was left. Browsers restore scroll on their own history
@@ -139,6 +155,7 @@ function updateProgress() {
   const h = document.documentElement.scrollHeight - innerHeight;
   const p = h > 0 ? Math.min(1, scrollY / h) : 0;
   $('#progress').firstElementChild.style.width = (p * 100).toFixed(2) + '%';
+  $('#topbar')?.classList.toggle('topbar--lifted', scrollY > 18);
 }
 
 addEventListener('scroll', updateProgress, { passive: true });
@@ -258,11 +275,9 @@ document.documentElement.classList.add('js');
     book = await loadBook();
   } catch (err) {
     main.replaceChildren(el('div', { class: 'wrap boot boot--err' },
-      el('h1', {}, '数据没载入成功'),
-      el('p', {}, '这个站点需要 data/book.json。如果你是在本地打开文件，浏览器不允许网页读本地文件，'
-        + '请用一个静态服务器，例如：'),
-      el('pre', {}, 'python -m http.server 8000'),
-      el('p', {}, '然后打开 http://localhost:8000/')));
+      el('h1', {}, '内容暂时没有载入'),
+      el('p', {}, '请检查网络后刷新页面，或先阅读原版 PDF。'),
+      el('a', { class: 'btn btn--primary', href: 'assets/documents/HowToLiveBetter.pdf' }, '阅读原版 PDF')));
     qa.ready = false;
     qa.failed = true;
     return;
@@ -288,5 +303,4 @@ function fillFooter() {
     `${m.chapters} 节 · ${fmt(m.items)} 条<br>`
     + `A ${m.evidence.A} / B ${m.evidence.B} / C ${m.evidence.C}`;
   $('#footRepo').href = m.sourceRepo;
-  $('#footHash').textContent = location.host || 'localhost';
 }

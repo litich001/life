@@ -33,7 +33,7 @@
 - **原文**：可在线分页预览或下载最新版 PDF；五篇专题原文按人生选择、安全应急、创业合规、健康作息分类。
 - **定义**：四种资源、受益人分档、证据分级、性价比怎么算、术语表（正文里带虚线的词都能点开看解释）。
 - **标记**：右上角书签图标可以标记「我打算做」的条目，存在本地浏览器里。
-- **作者**：明确区分原文作者 eternity4719 与网站整理者李哲，说明内容来源、整理边界、版本差异与 CC BY 4.0 授权。
+- **作者**：原文作者为 eternity4719，网站由李哲整理与制作。
 
 ## 键盘
 
@@ -47,7 +47,7 @@
 
 ## AI 爬虫流量
 
-Cloudflare Web Analytics 会主动排除机器人，所以 AI 爬虫在那里看不到。
+普通内容请求和 AI 爬虫请求分别写入 Cloudflare Analytics Engine，避免把两类访问混在一起。
 `functions/_middleware.js` 单独识别了 28 个已知的 AI 爬虫（GPTBot、ClaudeBot、
 OAI-SearchBot、PerplexityBot、Google-Extended、Bytespider、CCBot……），
 把它们写进 Analytics Engine 的 `life_ai_traffic` 数据集，并区分「训练」和「搜索」两类用途。
@@ -68,13 +68,19 @@ OAI-SearchBot、PerplexityBot、Google-Extended、Bytespider、CCBot……），
 - `-Group path` 会一直显示 `/`，因为这是个 hash 路由的单页应用，
   `#/about` 和 `#/ch/13` 对服务器来说是同一个 URL。想看哪个页面被抓得多，
   暂时得靠 Referer。
-- 每命中一次会写**两个**数据点：一个记厂商/地区/路径，一个记爬虫名和用途。
-  所以 `-Group vendor` 的总数会等于 `-Group token` 的两倍，`-Group day` 是总数，
-  其余都是真实命中数。
+- 每命中一次会按两种布局各写一个数据点：一份记厂商/地区/路径，另一份记爬虫名和用途。
+  查询脚本会按布局过滤，因此各分组统计的是请求命中数，不会重复相加。
 
-要看**人类**流量，另外在 Cloudflare 后台给 `life` 项目开一下 Web Analytics
-（Pages → `life` → Metrics and logs → Web Analytics）——这个只能在网页后台点，
-API 和 wrangler 都改不了。
+查询 Cloudflare 记录的内容访问量：
+
+```powershell
+.\tools\cloudflare_traffic.ps1
+.\tools\cloudflare_traffic.ps1 -Days 30 -Group day
+```
+
+`other` 表示未命中已知 AI 爬虫特征的请求，不能直接等同于绝对真人。若要查看浏览器端的独立访客、页面性能等 RUM 指标，可另外在 Cloudflare 后台给 `life` 项目开启 Web Analytics
+（Pages → `life` → Metrics and logs → Web Analytics）。当前 Wrangler 登录令牌没有 Account Settings 权限，
+最直接的方式是在 Cloudflare 后台一键开启。
 
 ## 数据来源
 
@@ -87,7 +93,7 @@ API 和 wrangler 都改不了。
 
 ## 技术
 
-纯静态，无框架、无构建步骤、无追踪、无后端（AI 爬虫统计只记录 User-Agent，不做用户画像）。
+前端使用原生 HTML、CSS 与 JavaScript；Cloudflare Pages Function 只记录内容请求分类和 AI 爬虫 User-Agent，不保存用户画像。
 
 ```
 index.html

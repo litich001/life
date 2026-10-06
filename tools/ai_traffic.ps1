@@ -29,7 +29,7 @@ $layouts = @{
   path    = @{ col = 'blob3';             other = 'double1 = 1' }
   token   = @{ col = 'blob1';             other = 'double1 = 2' }
   kind    = @{ col = 'blob2';             other = 'double1 = 2' }
-  day     = @{ col = 'toDate(timestamp)'; other = '' }
+  day     = @{ col = 'toDate(timestamp)'; other = 'double1 = 1' }
 }
 $layout = $layouts[$Group]
 
@@ -77,3 +77,4 @@ foreach ($row in $r.data) {
 }
 ''
 "合计 $total 次 · 近 $Days 天 · 抓取于 $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
+"说明：这里按 User-Agent 分类；它能证明请求命中，不能单独证明爬虫身份、收录或引用。"

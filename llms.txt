@@ -1,0 +1,27 @@
+# 高性价比人生指南
+
+> 用最少的钱、时间和精力，换回寿命、金钱和自由。
+
+《高性价比人生指南》的作者是 eternity4719。本站由李哲整理与制作，提供中文搜索、分类、证据等级筛选、专题原文与 PDF 在线阅读。
+
+## 主要内容
+
+- 首页与交互阅读：https://life-28v.pages.dev/
+- 原版 PDF：https://life-28v.pages.dev/assets/documents/HowToLiveBetter.pdf
+- 608 条建议的结构化索引：https://life-28v.pages.dev/data/book.json
+- 建议正文与来源：https://life-28v.pages.dev/data/detail.json
+- 原作者项目：https://github.com/eternity4719/HowToLiveBetter
+- 原作者在线版：https://eternity4719.github.io/HowToLiveBetter/
+
+## 内容说明
+
+- 站内搜索当前收录 608 条建议，分为 33 个章节。
+- 原版 PDF 当前收录 667 条建议，共 414 页。
+- 每条建议区分证据等级、成本、收益和适用情境。
+- A 级表示有具体数字可查；B 级表示有研究支持但证据有限；C 级表示经验做法或公认惯例。
+- 若结构化索引与 PDF 存在版本差异，以原版 PDF 和原作者项目为准。
+
+## 作者与整理者
+
+- 原文作者：eternity4719
+- 整理与制作：李哲，https://www.lizhe.work/

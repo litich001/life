@@ -75,8 +75,20 @@ export const onRequest = async (context) => {
       const ua = request.headers.get('user-agent') || '';
       const hit = classify(ua);
 
-      if (hit && env.AI_TRAFFIC) {
+      if (env.AI_TRAFFIC) {
         const country = request.cf?.country || '??';
+        /* Layout C records every meaningful document request. "other" is
+           intentionally not called "human": a normal-looking User-Agent may
+           still be automated. This gives total content requests and a clean AI
+           subset without pretending User-Agent classification proves identity. */
+        env.AI_TRAFFIC.writeDataPoint({
+          blobs: [hit ? 'ai' : 'other', country, new URL(request.url).pathname],
+          doubles: [3],
+          indexes: ['content-request'],
+        });
+
+        if (!hit) return next();
+
         /* Two points per hit so each question is a single GROUP BY:
              A  double1=1  blob1=vendor blob2=country blob3=path
              B  double1=2  blob1=token  blob2=kind

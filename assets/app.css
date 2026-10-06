@@ -20,6 +20,7 @@
     overflow-x: clip;
   }
   body { min-height: 100svh; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  main { view-transition-name: content; }
   img, svg, video { display: block; max-width: 100%; }
   button, input, select, textarea { font: inherit; color: inherit; }
   button { background: none; border: 0; cursor: pointer; }
@@ -27,6 +28,21 @@
   ul, ol { list-style: none; padding: 0; }
   table { border-collapse: collapse; width: 100%; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 1px; }
+}
+
+/* Route changes keep the fixed shell steady while the reading surface moves.
+   This is progressive enhancement: browsers without View Transitions use the
+   existing instant swap, and reduced-motion users get no travel animation. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(content) { animation: routeOut .18s ease both; }
+  ::view-transition-new(content) { animation: routeIn .46s var(--ease-out) both; }
+  @keyframes routeOut { to { opacity: 0; transform: translateY(-7px) scale(.997); } }
+  @keyframes routeIn { from { opacity: 0; transform: translateY(13px) scale(.995); filter: blur(3px); } }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(content), ::view-transition-new(content) { animation: none; }
+  .pdfviewer__stage canvas { transition: none; }
 }
 
 /* ── tokens ────────────────────────────────────────────────────────── */
@@ -648,7 +664,12 @@
     display: grid; justify-items: center; min-height: 560px; max-height: min(76svh, 900px);
     overflow: auto; padding: 16px; background: #2a2a2c;
   }
-  .pdfviewer__stage canvas { display: block; max-width: 100%; height: auto; background: white; box-shadow: 0 10px 34px rgba(0, 0, 0, .24); }
+  .pdfviewer__stage canvas {
+    display: block; max-width: 100%; height: auto; background: white;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, .24);
+    transition: opacity .24s var(--ease), transform .42s var(--ease-out), box-shadow .42s var(--ease);
+  }
+  .pdfviewer__stage canvas.is-turning { opacity: .42; transform: translateY(5px) scale(.992); box-shadow: 0 5px 18px rgba(0, 0, 0, .16); }
   .pdfviewer__status { padding: 9px 14px; color: var(--muted); font-size: 12px; text-align: center; border-top: 1px solid var(--line); }
 
   .originals__intro { margin-bottom: 24px; }
@@ -815,6 +836,12 @@
     background: color-mix(in srgb, var(--paper) 86%, transparent);
     backdrop-filter: saturate(1.6) blur(14px);
     border-bottom: 1px solid var(--line-2);
+    transition: box-shadow .3s var(--ease), background-color .3s var(--ease), border-color .3s var(--ease);
+  }
+  .topbar--lifted {
+    background: color-mix(in srgb, var(--paper) 94%, transparent);
+    border-bottom-color: var(--line);
+    box-shadow: 0 12px 34px -26px color-mix(in srgb, var(--ink) 46%, transparent);
   }
   .topbar__in {
     max-width: var(--maxw); margin-inline: auto; padding: 0 var(--gut);
@@ -850,6 +877,9 @@
     transition: border-color .2s, color .2s, background-color .2s;
   }
   .iconbtn:hover { border-color: var(--ink); color: var(--ink); background: var(--paper-2); }
+  .iconbtn svg { transition: transform .38s var(--ease-spring); }
+  .iconbtn:hover svg { transform: scale(1.08); }
+  #themeBtn:hover svg { transform: rotate(16deg) scale(1.08); }
   .iconbtn b {
     position: absolute; top: -6px; right: -6px; min-width: 17px; height: 17px; padding: 0 4px;
     display: grid; place-items: center; border-radius: 9px; background: var(--accent-deep);
@@ -878,6 +908,23 @@
     border-top: 1px solid var(--line-2);
     font-family: var(--mono); font-size: 11.5px; letter-spacing: .04em; color: var(--muted);
   }
+  .foot__bar a {
+    color: var(--ink); border-bottom: 1px solid var(--line);
+    transition: color .2s var(--ease), border-color .2s var(--ease);
+  }
+  .foot__bar a:hover { color: var(--accent-deep); border-color: var(--accent); }
+
+  .seo-fallback {
+    width: min(860px, calc(100% - 2 * var(--gut))); margin-inline: auto;
+    padding-block: clamp(56px, 9vw, 120px);
+  }
+  .seo-fallback header { margin-bottom: clamp(46px, 7vw, 84px); }
+  .seo-fallback h1 { font-size: var(--step-5); line-height: .98; letter-spacing: -.055em; margin-block: 14px 22px; }
+  .seo-fallback header > p:last-child { max-width: 58ch; color: var(--ink-2); font-size: var(--step-1); line-height: 1.75; }
+  .seo-fallback section { border-top: 1px solid var(--line); }
+  .seo-fallback h2 { font-size: var(--step-2); margin-bottom: 12px; }
+  .seo-fallback section p { color: var(--ink-2); line-height: 1.75; margin-bottom: 10px; }
+  .seo-fallback a { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
 
   /* Section rhythm. Excludes .poster on purpose: the hero carries its own
      padding-block on .poster__in, and inheriting this on top of it added 180px

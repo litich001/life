@@ -19,7 +19,7 @@ export function mountPdfViewer(root, src) {
 
   const sync = () => {
     current.textContent = String(pageNo);
-    total.textContent = pdf ? String(pdf.numPages) : '—';
+    total.textContent = pdf ? String(pdf.numPages) : '…';
     prev.disabled = !pdf || pageNo <= 1;
     next.disabled = !pdf || pageNo >= pdf.numPages;
   };
@@ -27,6 +27,7 @@ export function mountPdfViewer(root, src) {
   const render = async () => {
     if (!pdf || destroyed) return;
     status.textContent = `正在加载第 ${pageNo} 页…`;
+    canvas.classList.add('is-turning');
     renderTask?.cancel();
     const page = await pdf.getPage(pageNo);
     if (destroyed) return;
@@ -50,9 +51,13 @@ export function mountPdfViewer(root, src) {
     });
     try {
       await renderTask.promise;
-      if (!destroyed) status.textContent = `第 ${pageNo} 页，共 ${pdf.numPages} 页`;
+      if (!destroyed) {
+        status.textContent = `第 ${pageNo} 页，共 ${pdf.numPages} 页`;
+        requestAnimationFrame(() => canvas.classList.remove('is-turning'));
+      }
     } catch (error) {
       if (error?.name !== 'RenderingCancelledException' && !destroyed) {
+        canvas.classList.remove('is-turning');
         status.textContent = '这一页暂时无法显示，请使用“新窗口打开”阅读。';
       }
     }

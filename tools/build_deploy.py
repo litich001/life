@@ -21,6 +21,9 @@ INCLUDE = [
     ("index.html", "index.html"),
     ("README.md", "README.md"),
     ("robots.txt", "robots.txt"),
+    ("sitemap.xml", "sitemap.xml"),
+    ("llms.txt", "llms.txt"),
+    ("_headers", "_headers"),
     (".nojekyll", ".nojekyll"),
     ("wrangler.toml", "wrangler.toml"),
 ]
@@ -57,6 +60,10 @@ def asset_version(assets: list[Path]) -> str:
 
 REQUIRED = [
     "index.html",
+    "robots.txt",
+    "sitemap.xml",
+    "llms.txt",
+    "_headers",
     "assets/app.css",
     "assets/app.js",
     "assets/data.js",

@@ -786,7 +786,7 @@ export function viewLongIndex(book) {
     el('div', { class: 'pdfviewer__bar' },
       el('button', { type: 'button', data: { pdfPrev: '' }, 'aria-label': '上一页' }, '上一页'),
       el('span', { class: 'pdfviewer__pages num' },
-        '第 ', el('b', { data: { pdfPage: '' } }, '1'), ' / ', el('span', { data: { pdfTotal: '' } }, '—'), ' 页'),
+        '第 ', el('b', { data: { pdfPage: '' } }, '1'), ' / ', el('span', { data: { pdfTotal: '' } }, '…'), ' 页'),
       el('button', { type: 'button', data: { pdfNext: '' }, 'aria-label': '下一页' }, '下一页')),
     el('div', { class: 'pdfviewer__stage' },
       el('canvas', { 'aria-label': 'PDF 当前页' })),
@@ -797,9 +797,9 @@ export function viewLongIndex(book) {
       el('div', {},
         el('span', { class: 'u-label' }, '完整原书'),
         el('h2', { id: 'pdfTitle' }, '《高性价比人生指南》PDF'),
-        el('p', {}, `${PDF_DOC.items} 条建议 · ${PDF_DOC.pages} 页 · 生成于 ${PDF_DOC.generated}`),
+        el('p', {}, `${PDF_DOC.items} 条建议 · ${PDF_DOC.pages} 页 · 更新于 ${PDF_DOC.generated}`),
         el('p', { class: 'pdfdoc__note' },
-          `PDF 对应原作者提交 ${PDF_DOC.commit}；本站搜索数据是较早的 608 条快照。阅读最新内容以 PDF 为准。`)),
+          `站内搜索收录 608 条建议，原版 PDF 已更新至 ${PDF_DOC.items} 条。需要查看新增内容时，以 PDF 为准。`)),
       el('div', { class: 'pdfdoc__actions' },
         el('a', { class: 'btn', href: PDF_DOC.src, target: '_blank', rel: 'noopener' }, '新窗口打开'),
         el('a', { class: 'btn btn--ghost', href: PDF_DOC.src, download: 'HowToLiveBetter.pdf' }, '下载 PDF'))),
@@ -909,7 +909,7 @@ function tableBlock(t, n) {
   const tb = el('table', { class: 'dtable' });
   if (t.header) {
     tb.append(el('thead', {}, el('tr', {}, ...t.header.map((h, i) =>
-      el('th', { scope: 'col', class: i === 0 ? 'rowh' : '' }, h || '—')))));
+      el('th', { scope: 'col', class: i === 0 ? 'rowh' : '' }, h || '未注明')))));
   }
   tb.append(el('tbody', {}, ...t.rows.map((r) =>
     el('tr', {}, ...r.map((c, i) => el('td', { class: i === 0 ? 'rowh' : '' }, c))))));
@@ -989,7 +989,7 @@ const AUTHOR = {
   en: 'Li Zhe',
   role: 'GEO 专家 · AI 营销实践者 · 品牌增长顾问',
   bio: '在市场一线工作 11 年，做过品牌、产品、内容与活动；现在持续研究 AI 搜索、智能体和内容生产，并把方法做成天行 GEO 与 Creator OS。',
-  principle: '机器负责跑流程，人负责判断、事实边界与最终表达。这个网站所做的，是把一份持续更新的开放原书整理成更容易搜索、筛选和阅读的界面。',
+  principle: '把复杂问题拆成可以判断的小步骤，先看证据，再做适合自己的选择。',
   focus: ['品牌与产品 GTM', '内容与证据工程', 'GEO 与 AI 搜索', 'AI 内容工作流'],
 
   links: [
@@ -1013,45 +1013,29 @@ export function viewAbout(book) {
     el('div', { class: 'about__id' },
       el('span', { class: 'about__mark', 'aria-hidden': 'true' }, 'LZ'),
       el('div', {},
-        el('span', { class: 'u-label' }, '网站整理与制作'),
+        el('span', { class: 'u-label' }, '整理与制作'),
         el('h1', {}, AUTHOR.name, el('em', {}, AUTHOR.en)))),
     el('div', {},
       el('p', { class: 'about__role' }, AUTHOR.role),
       el('p', { class: 'about__intro' }, AUTHOR.bio))));
 
-  /* Authorship and adaptation are two different roles. Keep both visible. */
+  /* Keep authorship factual and concise. */
   root.append(el('section', { class: 'about__sec' },
-    sectionHead('一', '谁写了原文，谁做了网站'),
+    sectionHead('一', '作者与整理者'),
     el('div', { class: 'author-roles' },
       el('article', { class: 'author-role' },
         el('span', { class: 'u-label' }, '原文作者'),
         el('h2', {}, 'eternity4719'),
-        el('p', {}, '《高性价比人生指南》的原始内容作者与开源项目维护者。原项目持续更新正文、来源、PDF、EPUB 与在线搜索页；作者以 GitHub 用户名署名，本站不补写其未公开的个人履历。'),
+        el('p', {}, '《高性价比人生指南》的作者，GitHub 用户名为 eternity4719。原项目持续更新正文、来源、PDF 与 EPUB。'),
         el('a', { class: 'piece__read', href: 'https://github.com/eternity4719/HowToLiveBetter', target: '_blank', rel: 'noopener' }, '查看原项目')),
       el('article', { class: 'author-role' },
-        el('span', { class: 'u-label' }, '网站整理与制作'),
+        el('span', { class: 'u-label' }, '整理与制作'),
         el('h2', {}, '李哲'),
-        el('p', {}, '将原书的章节、证据等级、成本、收益与来源整理成可搜索、可筛选的阅读网站，并负责页面结构、交互与上线维护。'),
+        el('p', {}, '将原书整理成更容易搜索、筛选和阅读的形式，帮助读者从眼前的问题进入，而不必从头翻完整本书。'),
         el('a', { class: 'piece__read', href: 'https://www.lizhe.work/', target: '_blank', rel: 'noopener' }, '查看个人站')))));
 
   root.append(el('section', { class: 'about__sec' },
-    sectionHead('二', '整理原则'),
-    el('div', { class: 'credit' },
-      el('div', { class: 'credit__row' },
-        el('span', { class: 'credit__k' }, '结构化快照'),
-        el('span', { class: 'credit__v' }, `${book.items.length} 条建议、${book.chapters.length} 个章节、${book.appendices.length} 篇专题原文`)),
-      el('div', { class: 'credit__row' },
-        el('span', { class: 'credit__k' }, '最新 PDF'),
-        el('span', { class: 'credit__v' }, `${PDF_DOC.items} 条建议、${PDF_DOC.pages} 页，生成于 ${PDF_DOC.generated}`)),
-      el('div', { class: 'credit__row' },
-        el('span', { class: 'credit__k' }, '编辑边界'),
-        el('span', { class: 'credit__v' }, '只做搜索、筛选、分类与排版，不改写原文结论；两个快照不一致时，以最新 PDF 和原项目为准。')),
-      el('div', { class: 'credit__row' },
-        el('span', { class: 'credit__k' }, '授权'),
-        el('a', { class: 'credit__v credit__v--link', href: 'https://creativecommons.org/licenses/by/4.0/deed.zh', target: '_blank', rel: 'noopener nofollow' }, 'CC BY 4.0')))));
-
-  root.append(el('section', { class: 'about__sec' },
-    sectionHead('三', '李哲在做什么'),
+    sectionHead('二', '李哲在做什么'),
     el('div', { class: 'author-profile' },
       el('div', {},
         el('p', { class: 'author-profile__lead' }, AUTHOR.bio),
@@ -1060,7 +1044,7 @@ export function viewAbout(book) {
         ...AUTHOR.focus.map((x) => el('li', {}, x))))));
 
   root.append(el('section', { class: 'about__sec' },
-    sectionHead('四', '继续了解'),
+    sectionHead('三', '继续了解'),
     el('div', { class: 'about__cards' },
       ...AUTHOR.links.map(([t, href, d, ic], i) =>
         el('a', { class: 'about__card spot reveal', data: { d: i }, href, target: '_blank', rel: 'noopener' },
