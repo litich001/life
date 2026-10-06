@@ -1,5 +1,5 @@
 ﻿User-agent: *
 Allow: /
 
-Sitemap: https://www.lizhe.work/life/sitemap.xml
+Sitemap: https://lizhe.work/life/sitemap.xml
 

@@ -9,7 +9,7 @@
 ## 在线地址
 
 - **GitHub Pages（主）**：<https://litich001.github.io/life/>
-- 正式入口：<https://www.lizhe.work/life/>
+- 正式入口：<https://lizhe.work/life/>
 - Cloudflare Pages（源站镜像）：<https://life-28v.pages.dev/>
 
 两个地址内容相同。想更短的网址，可以在 Cloudflare 上给 `life` 项目挂自定义域名，
