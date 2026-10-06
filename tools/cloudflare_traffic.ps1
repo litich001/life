@@ -1,8 +1,8 @@
-# Cloudflare 内容访问量查询
+# Query content requests written by the Pages Function to Analytics Engine.
+# "other" means the request did not match a known AI crawler signature.
+# It must not be interpreted as a verified human visitor.
 #
-# 统计来自 Pages Function 写入 Cloudflare Analytics Engine 的内容请求。
-# "other" 表示未命中已知 AI 爬虫特征的请求，不能等同于绝对真人。
-#
+# Examples:
 #   .\tools\cloudflare_traffic.ps1
 #   .\tools\cloudflare_traffic.ps1 -Days 30 -Group day
 #   .\tools\cloudflare_traffic.ps1 -Group country
@@ -24,11 +24,17 @@ $columns = @{
 
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch { }
 
-$cfg = "$env:APPDATA\xdg.config\.wrangler\config\default.toml"
-if (-not (Test-Path $cfg)) { throw "找不到 Wrangler 凭据，请先登录 Cloudflare。" }
+$configPath = "$env:APPDATA\xdg.config\.wrangler\config\default.toml"
+if (-not (Test-Path $configPath)) {
+  throw 'Wrangler credentials were not found. Run wrangler login first.'
+}
 
-$token = ([regex]::Match((Get-Content $cfg -Raw), 'oauth_token\s*=\s*"([^"]+)"')).Groups[1].Value
-if (-not $token) { throw "Wrangler 凭据中没有可用的访问令牌。" }
+$configText = Get-Content $configPath -Raw
+$tokenMatch = [regex]::Match($configText, 'oauth_token\s*=\s*"([^"]+)"')
+$token = $tokenMatch.Groups[1].Value
+if (-not $token) {
+  throw 'No usable OAuth token was found in the Wrangler credentials.'
+}
 
 $column = $columns[$Group]
 $sql = @"
@@ -40,14 +46,15 @@ ORDER BY requests DESC
 LIMIT $Limit
 "@
 
-$account = '1f7db8889923eb171722453103a61e65'
-$uri = "https://api.cloudflare.com/client/v4/accounts/$account/analytics_engine/sql"
+$accountId = '1f7db8889923eb171722453103a61e65'
+$uri = "https://api.cloudflare.com/client/v4/accounts/$accountId/analytics_engine/sql"
 $response = Invoke-RestMethod -Method Post -Uri $uri `
   -Headers @{ Authorization = "Bearer $token" } `
   -ContentType 'text/plain' -Body $sql -TimeoutSec 45
 
 if (-not $response.data -or $response.data.Count -eq 0) {
-  Write-Host "近 $Days 天还没有内容访问记录。部署后首次访问可能需要等待几分钟。" -ForegroundColor Yellow
+  Write-Host "No content-request records were found in the last $Days day(s)." -ForegroundColor Yellow
+  Write-Host 'Analytics Engine ingestion can take a few minutes after the first request.'
   exit 0
 }
 
@@ -59,4 +66,4 @@ foreach ($row in $response.data) {
   "{0,-28} {1,10}  {2}" -f $row.k, $row.requests, $percent
 }
 ''
-"合计 $total 次内容请求 · 近 $Days 天 · 查询于 $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
+"Total: $total content request(s) in the last $Days day(s). Queried at $(Get-Date -Format 'yyyy-MM-dd HH:mm')."

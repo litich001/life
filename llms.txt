@@ -6,10 +6,10 @@
 
 ## 主要内容
 
-- 首页与交互阅读：https://life-28v.pages.dev/
-- 原版 PDF：https://life-28v.pages.dev/assets/documents/HowToLiveBetter.pdf
-- 608 条建议的结构化索引：https://life-28v.pages.dev/data/book.json
-- 建议正文与来源：https://life-28v.pages.dev/data/detail.json
+- 首页与交互阅读：https://www.lizhe.work/life/
+- 原版 PDF：https://www.lizhe.work/life/assets/documents/HowToLiveBetter.pdf
+- 608 条建议的结构化索引：https://www.lizhe.work/life/data/book.json
+- 建议正文与来源：https://www.lizhe.work/life/data/detail.json
 - 原作者项目：https://github.com/eternity4719/HowToLiveBetter
 - 原作者在线版：https://eternity4719.github.io/HowToLiveBetter/
 
