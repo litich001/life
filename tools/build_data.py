@@ -229,9 +229,11 @@ while i < min(I_GLOSS + 40, I_BODY):
     i += 1
 note('how_to_read=%d' % len(how_to_read))
 
-# 术语表 — terms are fixed by the book; definitions run to the next term
+# 术语表 - terms are fixed by the book; definitions run to the next term.
+# Stop at “各节简介”, not the first body chapter. Otherwise the final glossary
+# row absorbs every chapter summary between those two anchors.
 glossary, spans, i = [], [], I_GLOSS + 1
-while i < I_BODY:
+while i < I_SECTIONS:
     s = PL[i].strip()
     if s and s not in ('术语', '意思', '各节简介'):
         spans.append((i, s))
@@ -245,8 +247,28 @@ for term in refdata.GLOSSARY_TERMS:
         if spans[k][1] in refdata.GLOSSARY_TERMS:
             break
         defn.append(spans[k][1])
-    glossary.append({'t': term, 'd': ''.join(defn)})
+    definition = ''.join(defn)
+    definition = re.sub(r'=== PAGE \d+ ===', '', definition).strip()
+    definition = refdata.GLOSSARY_DEFINITION_FIXES.get(term, definition)
+    glossary.append({'t': term, 'd': definition})
 note('glossary=%d/%d' % (len(glossary), len(refdata.GLOSSARY_TERMS)))
+
+glossary_group_of = {
+    term: group
+    for group, terms in refdata.GLOSSARY_GROUPS
+    for term in terms
+}
+for entry in glossary:
+    entry['g'] = glossary_group_of[entry['t']]
+
+bad_glossary = [
+    entry['t'] for entry in glossary
+    if not entry['d']
+    or len(entry['d']) > 300
+    or re.search(r'=== PAGE|各节简介|1\. 不要早死', entry['d'])
+]
+if bad_glossary:
+    raise ValueError('invalid glossary definitions: ' + ', '.join(bad_glossary))
 
 # ───────────────────────────────────────────────────────── appendices
 def page_of(idx):

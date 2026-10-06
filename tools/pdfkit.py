@@ -1,8 +1,10 @@
 """Shared PDF extraction layer: page lines + geometry-aware table detection."""
+import os
 import re
 import pymupdf
 
-PDF = r'E:\文档\xwechat_files\wxid_a5dytlz0vwuj21_9691\temp\RWTemp\2026-10\9e20f478899dc29eb19741386f9343c8\高性价比人生指南-用最少得钱、时间和精力换回寿命、金钱和自由 github(1).pdf'
+HERE = os.path.dirname(os.path.abspath(__file__))
+PDF = os.path.join(os.path.dirname(HERE), 'assets', 'documents', 'HowToLiveBetter.pdf')
 
 PAGE_RE = re.compile(r'^=== PAGE (\d+) ===$')
 

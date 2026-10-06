@@ -965,10 +965,28 @@ export function viewMethod(book) {
     el('ul', { class: 'bullets' }, ...book.howToRead.map((t) => el('li', {}, t)))));
 
   /* glossary */
-  root.append(el('section', {}, sectionHead('六', '术语表', '正文里带虚线的词都可以点开看解释'),
-    el('div', { class: 'glossary' }, ...book.glossary.map((g) =>
-      el('div', { class: 'gl' },
-        el('dt', {}, g.t), el('dd', {}, g.d))))));
+  const glossaryGroups = [];
+  for (const entry of book.glossary) {
+    const name = entry.g || '其他';
+    let group = glossaryGroups.find((item) => item.name === name);
+    if (!group) {
+      group = { name, entries: [] };
+      glossaryGroups.push(group);
+    }
+    group.entries.push(entry);
+  }
+  const glossaryGroupOrder = ['数据怎么读', '研究怎么做', '健康与医学', '急救与安全', '法律、金融与合规'];
+  glossaryGroups.sort((a, b) => glossaryGroupOrder.indexOf(a.name) - glossaryGroupOrder.indexOf(b.name));
+  const glossarySections = glossaryGroups.map((group) => {
+    const terms = group.entries.map((entry) => el('div', { class: 'gl' },
+      el('dt', {}, entry.t), el('dd', {}, entry.d)));
+    return el('section', { class: 'glossary-group', 'aria-labelledby': `glossary-${group.name}` },
+      el('h3', { id: `glossary-${group.name}`, class: 'glossary-group__title' }, group.name),
+      el('dl', { class: 'glossary' }, ...terms));
+  });
+  root.append(el('section', {},
+    sectionHead('六', '术语表', '按主题分类，正文里的虚线词可以点开看解释'),
+    el('div', { class: 'glossary-groups' }, ...glossarySections)));
 
   /* changelog */
   if (book.changelog?.length) {
