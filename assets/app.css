@@ -982,7 +982,7 @@
       border-radius: 50%;
       background: radial-gradient(circle at 50% 50%,
         color-mix(in srgb, var(--ev-a) 13%, transparent) 0%, transparent 66%);
-      animation: halo 8.5s var(--ease) infinite;
+      animation: halo 4.2s var(--ease) infinite;
     }
   }
   @keyframes halo {
@@ -1011,16 +1011,19 @@
           color-mix(in srgb, var(--accent) 5%, transparent) 0%, transparent 70%),
         radial-gradient(52% 46% at 86% 92%,
           color-mix(in srgb, var(--ev-a) 4%, transparent) 0%, transparent 72%);
-      animation: wash 34s var(--ease) infinite alternate;
+      animation: wash 15s var(--ease) infinite alternate;
     }
     .poster__in { position: relative; z-index: 1; }
   }
-  @keyframes wash {
-    from { transform: translate3d(-2.5%, -1.5%, 0) scale(1); }
-    to   { transform: translate3d(3%, 2%, 0) scale(1.07); }
-  }
+  /* Every ambient period below was originally 2-6x longer and read as a still
+     image. 180s per revolution is 2 degrees a second: in a five-second visit you
+     see 10 degrees and conclude nothing is moving, which is exactly what
+     happened. A thing that is supposed to look alive has to be visibly alive
+     within the two or three seconds somebody actually looks at it, so the rose
+     turns once every 32s (11 deg/s -- fast enough to catch in peripheral vision,
+     slow enough not to be a spinner) and its bezel once every 14s.
 
-  /* Ambient, per band. With the tinted section backgrounds gone, this is what
+     Ambient, per band. With the tinted section backgrounds gone, this is what
      gives the lower half of the page any motion at all -- one slow drift per
      band, so scrolling never crosses a dead rectangle.
 
@@ -1031,7 +1034,7 @@
      needs overflow-x: clip.
 
      Alternate bands drift in opposite directions and at periods that are not
-     multiples of each other (30s / 37s), so nothing on the page ever lines up
+     multiples of each other (12s / 16s), so nothing on the page ever lines up
      into a single repeating rhythm. */
   @media (prefers-reduced-motion: no-preference) {
     .home > section[class*="tint-"]::after {
@@ -1040,12 +1043,12 @@
       pointer-events: none;
       background: radial-gradient(42% 36% at 32% 28%,
         color-mix(in srgb, var(--accent) 4%, transparent) 0%, transparent 72%);
-      animation: drift 30s var(--ease) infinite alternate;
+      animation: drift 12s var(--ease) infinite alternate;
     }
     .home > section.tint-cool::after {
       background: radial-gradient(42% 36% at 68% 72%,
         color-mix(in srgb, var(--ev-a) 3%, transparent) 0%, transparent 72%);
-      animation-duration: 37s; animation-direction: alternate-reverse;
+      animation-duration: 16s; animation-direction: alternate-reverse;
     }
   }
   @keyframes drift {
@@ -1059,14 +1062,13 @@
 
      Two layers, because they carry different weights:
 
-       .rose__g           180s per revolution, clockwise. The 33 wedges. Slow
-                          enough to be felt rather than tracked -- 2 degrees a
-                          second -- and PAUSED on hover and on focus-within, so
-                          the one thing the reader may want to compare stops
-                          moving the moment they reach for it. A rotating chart
-                          you cannot stop is a chart you cannot read.
+       .rose__g           32s per revolution, clockwise. The 33 wedges. PAUSED on
+                          hover and on focus-within, so the one thing the reader
+                          may want to compare stops moving the moment they reach
+                          for it. A rotating chart you cannot stop is a chart you
+                          cannot read.
 
-       outermost ring      74s counter-clockwise, and dashed. The guide rings are
+       outermost ring      14s counter-clockwise, and dashed. The guide rings are
                           plain circles, and a plain circle looks identical
                           rotated, so spinning one of those would cost a compositing
                           layer and change nothing on screen. Dashing it is what
@@ -1077,10 +1079,10 @@
      (150,150) -- the ring's centre in user units -- without hardcoding it. */
   @media (prefers-reduced-motion: no-preference) {
     .rose__g, .rose__ring:last-of-type { transform-box: view-box; transform-origin: 50% 50%; }
-    .rose__g { animation: roseSpin 180s linear infinite; }
+    .rose__g { animation: roseSpin 32s linear infinite; }
     .rose__ring:last-of-type {
       stroke-dasharray: 2 7;
-      animation: roseSpinBack 74s linear infinite;
+      animation: roseSpinBack 14s linear infinite;
     }
     .rosebox:hover .rose__g, .rosebox:focus-within .rose__g,
     .rosebox:hover .rose__ring:last-of-type, .rosebox:focus-within .rose__ring:last-of-type {
@@ -1089,6 +1091,14 @@
   }
   @keyframes roseSpin    { to { transform: rotate(360deg); } }
   @keyframes roseSpinBack{ to { transform: rotate(-360deg); } }
+  /* An earlier edit overwrote the @keyframes wash block while adding the rose
+     rules and left the name declared but undefined, which computes as
+     animation-name: wash with transform: none -- the hero wash silently did
+     nothing. Declared here with the rest so that cannot recur. */
+  @keyframes wash {
+    from { transform: translate3d(-2.5%, -1.5%, 0) scale(1); }
+    to   { transform: translate3d(3%, 2%, 0) scale(1.07); }
+  }
 
   /* The chapter evidence bars grow when their row scrolls into view. This is the
      one animation on the page that carries information rather than decoration:
