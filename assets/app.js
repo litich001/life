@@ -112,12 +112,12 @@ function titleFor(parts) {
   }
   if (parts[0] === 'long') {
     const a = book.appendices.find((x) => x.id === parts[1]);
-    return a ? `${a.title} · ${base}` : base;
+    return a ? `${a.title} · ${base}` : `原文 · ${base}`;
   }
-  if (parts[0] === 'explore') return state.q ? `${state.q} · 检索 · ${base}` : `检索 608 条 · ${base}`;
+  if (parts[0] === 'explore') return state.q ? `${state.q} · 搜索 · ${base}` : `搜索 608 条 · ${base}`;
   if (parts[0] === 'chapters') return `33 节 · ${base}`;
-  if (parts[0] === 'method') return `口径 · ${base}`;
-  if (parts[0] === 'about') return `关于 · ${base}`;
+  if (parts[0] === 'method') return `定义 · ${base}`;
+  if (parts[0] === 'about') return `作者 · ${base}`;
   return base;
 }
 
@@ -197,7 +197,7 @@ addEventListener('keydown', (e) => {
   }
   const map = { h: '#/', e: '#/explore', c: '#/chapters', l: '#/long', m: '#/method', a: '#/about' };
   if (map[e.key]) { location.hash = map[e.key]; }
-  if (e.key === '?') toast('快捷键：⌘K 或 / 检索 · h 首页 · e 检索 · c 章节 · l 长文 · m 口径 · a 关于');
+  if (e.key === '?') toast('快捷键：⌘K 或 / 搜索 · h 首页 · e 搜索 · c 章节 · l 原文 · m 定义 · a 作者');
 });
 
 /* ── theme ──────────────────────────────────────────────────────────── */

@@ -2,6 +2,7 @@
 import { el, frag, linkify, hi, reveal, countUp, fmt, openSheet, closeSheet, toast, icon, spotlight, scrollSpy, onTeardown } from './ui.js';
 import { itemCard, openRefSheet, isMarked, toggleMark, marks, badge, CJ_LABEL } from './views-explore.js';
 import { runQuery } from './data.js';
+import { mountPdfViewer } from './pdf-viewer.js';
 
 const CN = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 const cn = (n) => (n <= 10 ? CN[n] : n < 20 ? '十' + CN[n - 10] : CN[Math.floor(n / 10)] + '十' + (n % 10 ? CN[n % 10] : ''));
@@ -18,6 +19,54 @@ const EXAMPLES = ['押金', '加班费', '噪声', '离婚', '租房', '体检',
 /* How many of the free-and-high-value items the home page lists before it makes
    you ask for the rest. */
 const SEVEN = 7;
+
+const PDF_DOC = {
+  src: 'assets/documents/HowToLiveBetter.pdf?v=20261006-20718ee',
+  generated: '2026-10-06 11:03（北京时间）',
+  commit: '20718ee',
+  pages: 414,
+  items: 667,
+};
+
+const ORIGINAL_META = {
+  marriage: {
+    group: '人生选择', label: '关系与家庭',
+    summary: '把婚姻里混在一起的情绪、家务、收入和家庭压力拆开，逐项看清能算与不能算的部分。',
+    sections: ['问题拆分', '研究证据', '五笔账', '决策边界'],
+  },
+  kit: {
+    group: '安全与应急', label: '家庭准备',
+    summary: '按用途整理家庭应急物品，说明买什么、放哪里、多久检查一次。',
+    sections: ['消防', '急救', '停电停水', '定期检查'],
+  },
+  bystander: {
+    group: '安全与应急', label: '公共急救',
+    summary: '把走开、报警和现场施救三条路径的收益、风险与法律边界放在一起比较。',
+    sections: ['现场判断', '三条路径', '法律风险', '行动边界'],
+  },
+  licenses: {
+    group: '创业与合规', label: '平台合规',
+    summary: '用对照表区分不同平台业务需要的许可，并给出服务器选择的判断顺序。',
+    sections: ['业务分类', '许可对照', '服务器选择', '常见误区'],
+  },
+  circadian: {
+    group: '健康与作息', label: '生物钟与夜班',
+    summary: '从身体如何计时讲到夜班错位的实验证据，再把可尝试的进食与光照策略、证据边界分开。',
+    sections: ['机制', '错位证据', '进食策略', '光照策略', '未知边界'],
+  },
+};
+
+const ORIGINAL_GROUPS = ['人生选择', '安全与应急', '创业与合规', '健康与作息'];
+
+function longMeta(a) {
+  return ORIGINAL_META[a.id] || {
+    group: '专题原文', label: '专题', summary: a.lead || '', sections: [],
+  };
+}
+
+function isLongHeading(a, b) {
+  return b.t === 'h3' && !(a.id === 'circadian' && /^\d{6,}/.test(b.x));
+}
 
 /* Longer prompts that cycle through the hero field when it is empty. A single
    static placeholder only ever advertises one thing; cycling shows the range.
@@ -474,14 +523,17 @@ const examples = reduceMotion
   chWrap.append(idx);
   root.append(chWrap);
 
-  /* ── long-form ─────────────────────────────────────────────────────── */
+  /* ── original text ────────────────────────────────────────────────── */
   const lWrap = el('section', { class: 'wrap tint-cool' });
   lWrap.append(el('div', { class: 'band reveal' },
-    el('h2', {}, '长文'),
-    el('p', { class: 'band__d' }, '每篇含对照表和决策表')));
+    el('h2', {}, '原文'),
+    el('p', { class: 'band__d' }, 'PDF 原书与 5 篇分类专题')));
   const lg = el('div', { class: 'longgrid' });
+  lg.append(el('a', { class: 'lg lg--pdf spot reveal', data: { d: 0 }, href: '#/long' },
+    el('span', { class: 'lg__ico' }, icon('book', 17)),
+    el('span', { class: 'lg__t' }, 'PDF 原书在线预览')));
   book.appendices.forEach((a, i) => {
-    lg.append(el('a', { class: 'lg spot reveal', data: { d: i }, href: `#/long/${a.id}` },
+    lg.append(el('a', { class: 'lg spot reveal', data: { d: i + 1 }, href: `#/long/${a.id}` },
       el('span', { class: 'lg__ico' }, icon('book', 17)),
       el('span', { class: 'lg__t' }, a.title)));
   });
@@ -525,10 +577,10 @@ export function viewChapters(book) {
   const count = el('p', { class: 'chindex__count', 'aria-live': 'polite' });
   const grid = el('div', { class: 'chgrid' });
 
-  /* every distinct 口径 present on a chapter, so the filter only offers real ones */
+  /* every distinct benefit direction present on a chapter, so the filter only offers real ones */
   const allCj = [...new Set(book.chapters.flatMap((c) => c.cj))];
   const cjBar = el('div', { class: 'chfilter' },
-    el('span', { class: 'chfilter__l' }, '口径'),
+    el('span', { class: 'chfilter__l' }, '收益方向'),
     ...allCj.map((k) => el('button', {
       class: 'chfilter__c', type: 'button', 'aria-pressed': 'false',
       onclick: (e) => {
@@ -653,7 +705,7 @@ export function viewChapter(book, no, jumpTo) {
     el('div', { class: 'pagehead__full' },
       c.intro ? el('p', { class: 'pagehead__intro' }, linkify(c.intro, book)) : null,
       el('div', { class: 'pagehead__tools' },
-        el('a', { class: 'btn btn--ghost', href: `#/explore?ch=${c.no}` }, `在检索里只看这一节`),
+        el('a', { class: 'btn btn--ghost', href: `#/explore?ch=${c.no}` }, `在搜索里只看这一节`),
         navPrevNext(book, c.no)))));
 
   /* A chapter is 18-21 screens tall. Without a way in and a sense of position you
@@ -717,52 +769,66 @@ function navPrevNext(book, no) {
     next ? el('a', { href: `#/ch/${next.no}` }, next.title, ' →') : el('span'));
 }
 
-/* ── long-form reader ───────────────────────────────────────────────── */
+/* ── original text reader ───────────────────────────────────────────── */
 export function viewLongIndex(book) {
   const root = el('div', { class: 'wrap longidx' });
 
   root.append(el('nav', { class: 'crumbs', 'aria-label': '面包屑' },
     el('a', { href: '#/' }, '首页'), el('i', {}, '/'),
-    el('span', {}, '长文')));
+    el('span', {}, '原文')));
 
   root.append(el('div', { class: 'pagehead' },
-    el('span', { class: 'u-label' }, '5 篇'),
-    el('h1', {}, '长文'),
-    el('p', {}, '默认收起，点开看全文')));
+    el('span', { class: 'u-label' }, 'PDF 原书 · 5 篇专题'),
+    el('h1', {}, '原文'),
+    el('p', {}, '先读完整 PDF，也可以按主题进入专题原文。')));
 
-  for (const a of book.appendices) {
-    const h3 = a.blocks.filter((b) => b.t === 'h3').length;
-    const tables = a.blocks.filter((b) => b.t === 'table').length;
-    const paras = a.blocks.filter((b) => b.t === 'p' || b.t === 'li');
-    const chars = paras.reduce((n, p) => n + (p.x || '').length, 0);
+  const pdfViewer = el('div', { class: 'pdfviewer', role: 'region', 'aria-label': 'PDF 分页预览' },
+    el('div', { class: 'pdfviewer__bar' },
+      el('button', { type: 'button', data: { pdfPrev: '' }, 'aria-label': '上一页' }, '上一页'),
+      el('span', { class: 'pdfviewer__pages num' },
+        '第 ', el('b', { data: { pdfPage: '' } }, '1'), ' / ', el('span', { data: { pdfTotal: '' } }, '—'), ' 页'),
+      el('button', { type: 'button', data: { pdfNext: '' }, 'aria-label': '下一页' }, '下一页')),
+    el('div', { class: 'pdfviewer__stage' },
+      el('canvas', { 'aria-label': 'PDF 当前页' })),
+    el('p', { class: 'pdfviewer__status', data: { pdfStatus: '' }, role: 'status', 'aria-live': 'polite' }, '正在加载 PDF…'));
 
-    /* The first paragraph is the summary; the rest stays folded until asked. */
-    const first = paras[0] ? paras[0].x : '';
-    const body = el('div', { class: 'piece__body', hidden: true },
-      ...paras.slice(1).map((p) => el('p', {}, linkify(p.x, book))));
+  root.append(el('section', { class: 'pdfdoc', 'aria-labelledby': 'pdfTitle' },
+    el('div', { class: 'pdfdoc__head' },
+      el('div', {},
+        el('span', { class: 'u-label' }, '完整原书'),
+        el('h2', { id: 'pdfTitle' }, '《高性价比人生指南》PDF'),
+        el('p', {}, `${PDF_DOC.items} 条建议 · ${PDF_DOC.pages} 页 · 生成于 ${PDF_DOC.generated}`),
+        el('p', { class: 'pdfdoc__note' },
+          `PDF 对应原作者提交 ${PDF_DOC.commit}；本站搜索数据是较早的 608 条快照。阅读最新内容以 PDF 为准。`)),
+      el('div', { class: 'pdfdoc__actions' },
+        el('a', { class: 'btn', href: PDF_DOC.src, target: '_blank', rel: 'noopener' }, '新窗口打开'),
+        el('a', { class: 'btn btn--ghost', href: PDF_DOC.src, download: 'HowToLiveBetter.pdf' }, '下载 PDF'))),
+    pdfViewer));
+  onTeardown(mountPdfViewer(pdfViewer, PDF_DOC.src));
 
-    const toggle = el('button', {
-      class: 'piece__more', type: 'button', 'aria-expanded': 'false',
-      onclick: (e) => {
-        const b = e.currentTarget;
-        const open = b.getAttribute('aria-expanded') === 'true';
-        b.setAttribute('aria-expanded', String(!open));
-        body.hidden = open;
-        b.textContent = open ? '展开全文' : '收起';
-      },
-    }, '展开全文');
+  root.append(el('div', { class: 'originals__intro' },
+    sectionHead('专题原文', '按主题阅读', '不再把所有长内容堆在一个列表里'),
+    el('p', {}, '五篇专题按问题类型分成四组；每篇先给出结构，再进入完整正文。')));
 
-    root.append(el('article', { class: 'piece' },
-      el('div', { class: 'piece__top' },
-        el('h2', {}, el('a', { href: `#/long/${a.id}` }, a.title)),
-        el('span', { class: 'piece__meta num' },
-          `${paras.length} 段 · ${h3} 节${tables ? ` · ${tables} 张表` : ''}`)),
-      el('p', { class: 'piece__lead' }, linkify(a.lead || first.slice(0, 110), book)),
-      el('p', { class: 'piece__first' }, linkify(first, book)),
-      body,
-      el('div', { class: 'piece__act' },
-        toggle,
-        el('a', { class: 'piece__read', href: `#/long/${a.id}` }, '单独阅读'))));
+  for (const group of ORIGINAL_GROUPS) {
+    const list = book.appendices.filter((a) => longMeta(a).group === group);
+    if (!list.length) continue;
+    root.append(el('section', { class: 'originals__group' },
+      el('h2', { class: 'originals__group-title' }, group),
+      el('div', { class: 'originals__grid' }, ...list.map((a, i) => {
+        const meta = longMeta(a);
+        const heads = a.blocks.filter((b) => isLongHeading(a, b)).length;
+        const tables = a.blocks.filter((b) => b.t === 'table').length;
+        return el('article', { class: 'original-card reveal', data: { d: i } },
+          el('div', { class: 'original-card__meta' },
+            el('span', { class: 'u-label' }, meta.label),
+            el('span', { class: 'num' }, `${heads} 节${tables ? ` · ${tables} 张表` : ''}`)),
+          el('h3', {}, el('a', { href: `#/long/${a.id}` }, a.title)),
+          el('p', {}, meta.summary),
+          el('div', { class: 'original-card__tags', 'aria-label': '文章结构' },
+            ...meta.sections.map((x) => el('span', {}, x))),
+          el('a', { class: 'piece__read', href: `#/long/${a.id}` }, '阅读原文'));
+      }))));
   }
 
   reveal(root);
@@ -776,13 +842,14 @@ export function viewLong(book, id) {
   if (!a) return viewLongIndex(book);
 
   const root = el('div', { class: 'wrap long' });
+  const meta = longMeta(a);
 
   root.append(el('nav', { class: 'crumbs', 'aria-label': '面包屑' },
     el('a', { href: '#/' }, '首页'), el('i', {}, '/'),
-    el('a', { href: '#/long' }, '长文'), el('i', {}, '/'),
+    el('a', { href: '#/long' }, '原文'), el('i', {}, '/'),
     el('span', {}, a.title.slice(0, 14) + '…')));
 
-  const tocLinks = a.blocks.filter((b) => b.t === 'h3').map((b) =>
+  const tocLinks = a.blocks.filter((b) => isLongHeading(a, b)).map((b) =>
     el('a', { href: '#', onclick: (e) => { e.preventDefault(); jumpToBlock(b.x); } }, b.x));
 
   /* No wrapper element around the links. Below 1080px .toc becomes a
@@ -799,12 +866,20 @@ export function viewLong(book, id) {
       }, ...book.appendices.map((x) => el('option', { value: x.id, selected: x.id === a.id }, x.title)))));
 
   const body = el('article', { class: 'prose' });
+  body.append(el('div', { class: 'prose__meta' },
+    el('span', { class: 'u-label' }, meta.group),
+    ...meta.sections.map((x) => el('span', {}, x))));
   body.append(el('h1', {}, a.title));
-  if (a.lead) body.append(el('p', { class: 'lead' }, a.lead));
+  body.append(el('p', { class: 'lead' }, meta.summary));
+  if (a.lead && a.lead !== meta.summary) body.append(el('p', { class: 'prose__source-lead' }, a.lead));
   let tblN = 0;
   const heads = [];
   for (const b of a.blocks) {
     if (b.t === 'p') { body.append(el('p', {}, linkify(b.x, book))); continue; }
+    if (a.id === 'circadian' && b.t === 'h3' && /^\d{6,}/.test(b.x)) {
+      body.lastElementChild?.append(document.createTextNode(b.x));
+      continue;
+    }
     if (b.t === 'h3') { const h = el('h2', {}, b.x); heads.push(h); body.append(h); continue; }
     if (b.t === 'h4') { body.append(el('h3', {}, b.x)); continue; }
     if (b.t === 'li') { body.append(el('p', { class: 'li' }, linkify(b.x, book))); continue; }
@@ -842,16 +917,16 @@ function tableBlock(t, n) {
   return wrap;
 }
 
-/* ── methodology ────────────────────────────────────────────────────── */
+/* ── definitions ───────────────────────────────────────────────────── */
 export function viewMethod(book) {
   const root = el('div', { class: 'wrap method' });
   const M = book.method;
 
   root.append(el('nav', { class: 'crumbs', 'aria-label': '面包屑' },
-    el('a', { href: '#/' }, '首页'), el('i', {}, '/'), el('span', {}, '口径')));
+    el('a', { href: '#/' }, '首页'), el('i', {}, '/'), el('span', {}, '定义')));
   root.append(el('div', { class: 'pagehead' },
-    el('span', { class: 'u-label' }, '怎么读'),
-    el('h1', {}, '这些条目是怎么算账的'),
+    el('span', { class: 'u-label' }, '怎么定义'),
+    el('h1', {}, '本站如何定义和计算这些条目'),
     el('p', {}, '每一条建议都回答两个问题：要花掉什么（钱 / 时间 / 精力 / 毅力），能换回什么（总死亡率变化 / 特定死因下降 / 时间与精力节省 / 金钱节省 / 保障与人身自由）。条目按性价比排，不按类别排。')));
 
   /* resources */
@@ -904,18 +979,18 @@ export function viewMethod(book) {
   return root;
 }
 
-/* ── about ──────────────────────────────────────────────────────────── */
+/* ── authorship ─────────────────────────────────────────────────────── */
 
-/* Kept deliberately small. This page used to carry the whole CV -- employers,
-   dates, awards, a list of 60 organisations, phone number and email -- all of
-   which is one click away on the personal site and none of which a reader of
-   608 life-hacks needs. What stays: who made this, and where to go next.
-   Name, role and the five links are all from https://www.lizhe.work/ -- nothing
-   here is invented. */
+/* Keep the attribution boundary explicit: eternity4719 wrote the source book;
+   Li Zhe designed and maintains this searchable reading experience. The short
+   profile below is limited to claims published on https://www.lizhe.work/. */
 const AUTHOR = {
   name: '李哲',
   en: 'Li Zhe',
-  role: 'GEO · AI 营销',
+  role: 'GEO 专家 · AI 营销实践者 · 品牌增长顾问',
+  bio: '在市场一线工作 11 年，做过品牌、产品、内容与活动；现在持续研究 AI 搜索、智能体和内容生产，并把方法做成天行 GEO 与 Creator OS。',
+  principle: '机器负责跑流程，人负责判断、事实边界与最终表达。这个网站所做的，是把一份持续更新的开放原书整理成更容易搜索、筛选和阅读的界面。',
+  focus: ['品牌与产品 GTM', '内容与证据工程', 'GEO 与 AI 搜索', 'AI 内容工作流'],
 
   links: [
     ['个人站', 'https://www.lizhe.work/', '完整履历、作品与近况', 'person'],
@@ -932,43 +1007,60 @@ export function viewAbout(book) {
   const root = el('div', { class: 'wrap about' });
 
   root.append(el('nav', { class: 'crumbs', 'aria-label': '面包屑' },
-    el('a', { href: '#/' }, '首页'), el('i', {}, '/'), el('span', {}, '关于')));
+    el('a', { href: '#/' }, '首页'), el('i', {}, '/'), el('span', {}, '作者')));
 
   root.append(el('header', { class: 'about__hero about__hero--tight' },
     el('div', { class: 'about__id' },
       el('span', { class: 'about__mark', 'aria-hidden': 'true' }, 'LZ'),
-      el('h1', {}, AUTHOR.name, el('em', {}, AUTHOR.en))),
-    el('p', { class: 'about__role' }, AUTHOR.role)));
+      el('div', {},
+        el('span', { class: 'u-label' }, '网站整理与制作'),
+        el('h1', {}, AUTHOR.name, el('em', {}, AUTHOR.en)))),
+    el('div', {},
+      el('p', { class: 'about__role' }, AUTHOR.role),
+      el('p', { class: 'about__intro' }, AUTHOR.bio))));
 
-  /* Provenance in one block: who wrote it, where it lives, under what licence.
-     CC BY 4.0 requires the credit, so this cannot be trimmed away. */
+  /* Authorship and adaptation are two different roles. Keep both visible. */
   root.append(el('section', { class: 'about__sec' },
-    sectionHead('一', '内容与出处'),
+    sectionHead('一', '谁写了原文，谁做了网站'),
+    el('div', { class: 'author-roles' },
+      el('article', { class: 'author-role' },
+        el('span', { class: 'u-label' }, '原文作者'),
+        el('h2', {}, 'eternity4719'),
+        el('p', {}, '《高性价比人生指南》的原始内容作者与开源项目维护者。原项目持续更新正文、来源、PDF、EPUB 与在线搜索页；作者以 GitHub 用户名署名，本站不补写其未公开的个人履历。'),
+        el('a', { class: 'piece__read', href: 'https://github.com/eternity4719/HowToLiveBetter', target: '_blank', rel: 'noopener' }, '查看原项目')),
+      el('article', { class: 'author-role' },
+        el('span', { class: 'u-label' }, '网站整理与制作'),
+        el('h2', {}, '李哲'),
+        el('p', {}, '将原书的章节、证据等级、成本、收益与来源整理成可搜索、可筛选的阅读网站，并负责页面结构、交互与上线维护。'),
+        el('a', { class: 'piece__read', href: 'https://www.lizhe.work/', target: '_blank', rel: 'noopener' }, '查看个人站')))));
+
+  root.append(el('section', { class: 'about__sec' },
+    sectionHead('二', '整理原则'),
     el('div', { class: 'credit' },
       el('div', { class: 'credit__row' },
-        el('span', { class: 'credit__k' }, '内容作者'),
-        el('a', { class: 'credit__v credit__v--link', href: 'https://github.com/eternity4719', target: '_blank', rel: 'noopener' },
-          'eternity4719')),
+        el('span', { class: 'credit__k' }, '结构化快照'),
+        el('span', { class: 'credit__v' }, `${book.items.length} 条建议、${book.chapters.length} 个章节、${book.appendices.length} 篇专题原文`)),
       el('div', { class: 'credit__row' },
-        el('span', { class: 'credit__k' }, '项目'),
-        el('a', { class: 'credit__v credit__v--link', href: 'https://github.com/eternity4719/HowToLiveBetter', target: '_blank', rel: 'noopener' },
-          'github.com/eternity4719/HowToLiveBetter')),
+        el('span', { class: 'credit__k' }, '最新 PDF'),
+        el('span', { class: 'credit__v' }, `${PDF_DOC.items} 条建议、${PDF_DOC.pages} 页，生成于 ${PDF_DOC.generated}`)),
       el('div', { class: 'credit__row' },
-        el('span', { class: 'credit__k' }, '在线阅读'),
-        el('a', { class: 'credit__v credit__v--link', href: 'https://eternity4719.github.io/HowToLiveBetter/', target: '_blank', rel: 'noopener' },
-          'eternity4719.github.io/HowToLiveBetter')),
+        el('span', { class: 'credit__k' }, '编辑边界'),
+        el('span', { class: 'credit__v' }, '只做搜索、筛选、分类与排版，不改写原文结论；两个快照不一致时，以最新 PDF 和原项目为准。')),
       el('div', { class: 'credit__row' },
         el('span', { class: 'credit__k' }, '授权'),
-        el('a', { class: 'credit__v credit__v--link', href: 'https://creativecommons.org/licenses/by/4.0/deed.zh', target: '_blank', rel: 'noopener nofollow' },
-          'CC BY 4.0')),
-      el('div', { class: 'credit__row' },
-        el('span', { class: 'credit__k' }, '本站'),
-        el('span', { class: 'credit__v' },
-          `${book.items.length} 条建议、${book.chapters.length} 个章节、${book.appendices.length} 篇长文`,
-          el('em', {}, '只做检索、筛选与排版，不改写结论。'))))));
+        el('a', { class: 'credit__v credit__v--link', href: 'https://creativecommons.org/licenses/by/4.0/deed.zh', target: '_blank', rel: 'noopener nofollow' }, 'CC BY 4.0')))));
 
   root.append(el('section', { class: 'about__sec' },
-    sectionHead('二', '相关站点'),
+    sectionHead('三', '李哲在做什么'),
+    el('div', { class: 'author-profile' },
+      el('div', {},
+        el('p', { class: 'author-profile__lead' }, AUTHOR.bio),
+        el('p', {}, AUTHOR.principle)),
+      el('ul', { class: 'author-profile__focus' },
+        ...AUTHOR.focus.map((x) => el('li', {}, x))))));
+
+  root.append(el('section', { class: 'about__sec' },
+    sectionHead('四', '继续了解'),
     el('div', { class: 'about__cards' },
       ...AUTHOR.links.map(([t, href, d, ic], i) =>
         el('a', { class: 'about__card spot reveal', data: { d: i }, href, target: '_blank', rel: 'noopener' },

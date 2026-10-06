@@ -27,6 +27,9 @@ INCLUDE = [
 INCLUDE_GLOBS = [
     ("assets", "*.js"),
     ("assets", "*.css"),
+    ("assets/documents", "*.pdf"),
+    ("assets/vendor/pdfjs", "*.mjs"),
+    ("assets/vendor/pdfjs", "LICENSE"),
     ("data", "*.json"),
     ("functions", "*.js"),
 ]
@@ -61,6 +64,10 @@ REQUIRED = [
     "assets/palette.js",
     "assets/views-explore.js",
     "assets/views-pages.js",
+    "assets/pdf-viewer.js",
+    "assets/documents/HowToLiveBetter.pdf",
+    "assets/vendor/pdfjs/pdf.mjs",
+    "assets/vendor/pdfjs/pdf.worker.mjs",
     "data/book.json",
     "data/detail.json",
     "functions/_middleware.js",

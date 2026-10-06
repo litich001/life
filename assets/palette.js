@@ -15,11 +15,11 @@ let rows = [];
 
 const PAGES = [
   { g: '页面', t: '首页', h: '从这里开始', href: '#/' },
-  { g: '页面', t: '检索', h: '按关键词和条件筛', href: '#/explore' },
+  { g: '页面', t: '搜索', h: '按关键词和条件筛', href: '#/explore' },
   { g: '页面', t: '章节', h: '按节读', href: '#/chapters' },
-  { g: '页面', t: '长文', h: '把一件事讲到底', href: '#/long' },
-  { g: '页面', t: '口径', h: '这些条目怎么算账', href: '#/method' },
-  { g: '页面', t: '关于', h: '作者与出处', href: '#/about' },
+  { g: '页面', t: '原文', h: 'PDF 原书与专题原文', href: '#/long' },
+  { g: '页面', t: '定义', h: '这些条目怎么算账', href: '#/method' },
+  { g: '页面', t: '作者', h: '原文作者与网站整理者', href: '#/about' },
 ];
 
 /* ── shell ──────────────────────────────────────────────────────────── */
@@ -30,13 +30,13 @@ function build() {
   const input = el('input', {
     class: 'pal__input', type: 'search', autocomplete: 'off', spellcheck: 'false',
     placeholder: '搜一件事，或输入章节、页面…',
-    'aria-label': '全站检索', role: 'combobox', 'aria-expanded': 'true',
+    'aria-label': '全站搜索', role: 'combobox', 'aria-expanded': 'true',
     'aria-controls': 'palList', 'aria-autocomplete': 'list',
   });
 
   const list = el('div', { class: 'pal__list', id: 'palList', role: 'listbox' });
 
-  const panel = el('div', { class: 'pal__panel', role: 'dialog', 'aria-modal': 'true', 'aria-label': '检索' },
+  const panel = el('div', { class: 'pal__panel', role: 'dialog', 'aria-modal': 'true', 'aria-label': '搜索' },
     el('div', { class: 'pal__head' },
       el('span', { class: 'pal__ico', 'aria-hidden': 'true' }, '⌘'),
       input,
@@ -108,7 +108,7 @@ function collect(q) {
     }
 
     for (const a of book.appendices) {
-      if (hit(a.title, a.lead)) out.push({ g: '长文', t: a.title, h: a.lead.slice(0, 30), href: `#/long/${a.id}` });
+      if (hit(a.title, a.lead)) out.push({ g: '原文', t: a.title, h: a.lead.slice(0, 30), href: `#/long/${a.id}` });
     }
   }
 
