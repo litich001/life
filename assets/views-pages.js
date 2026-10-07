@@ -22,11 +22,9 @@ const SEVEN = 7;
 
 const VIEW_MODULE_URL = new URL(import.meta.url);
 const VIEW_MODULE_VERSION = VIEW_MODULE_URL.searchParams.get('v');
+const PDF_ASSET_ORIGIN = 'https://life-28v.pages.dev';
 const PDF_DOC = {
-  src: new URL(
-    `./documents/HowToLiveBetter.pdf${VIEW_MODULE_VERSION ? `?v=${encodeURIComponent(VIEW_MODULE_VERSION)}` : ''}`,
-    VIEW_MODULE_URL,
-  ).href,
+  src: `${PDF_ASSET_ORIGIN}/assets/documents/HowToLiveBetter.pdf${VIEW_MODULE_VERSION ? `?v=${encodeURIComponent(VIEW_MODULE_VERSION)}` : ''}`,
   generated: '2026-10-06 11:03（北京时间）',
   commit: '20718ee',
   pages: 414,
