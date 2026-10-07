@@ -44,6 +44,10 @@ INCLUDE_GLOBS = [
 # stay in cache.
 CACHE_BUST = re.compile(rb'((?:href|src)=")((?:assets|data)/[^"?]+)(\?[^"]*)?(")')
 
+MODULE_IMPORT = re.compile(
+    rb'((?:from\s+|import\s*)[\'\"])(\./[^\'\"?]+\.(?:m?js))(\?[^\'\"]*)?([\'\"])'
+)
+
 
 def asset_version(assets: list[Path]) -> str:
     """Short hash over the *content* of every deployable asset.
@@ -130,6 +134,18 @@ def main() -> int:
         return out
 
     index.write_bytes(stamp(html))
+
+    # A query on app.js does not propagate to its ES module imports. Stamp the
+    # copied module graph too so a new entry point cannot load an older cached
+    # data.js, view module, or PDF.js build.
+    for module in (OUT / "assets").glob("*.js"):
+        raw = module.read_bytes()
+        versioned = MODULE_IMPORT.sub(
+            lambda match: match.group(1) + match.group(2) + b'?v=' + version.encode() + match.group(4),
+            raw,
+        )
+        if versioned != raw:
+            module.write_bytes(versioned)
 
     if stamp_root:
         root_index = ROOT / "index.html"

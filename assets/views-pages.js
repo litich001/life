@@ -20,8 +20,13 @@ const EXAMPLES = ['押金', '加班费', '噪声', '离婚', '租房', '体检',
    you ask for the rest. */
 const SEVEN = 7;
 
+const VIEW_MODULE_URL = new URL(import.meta.url);
+const VIEW_MODULE_VERSION = VIEW_MODULE_URL.searchParams.get('v');
 const PDF_DOC = {
-  src: 'assets/documents/HowToLiveBetter.pdf?v=20261006-20718ee',
+  src: new URL(
+    `./documents/HowToLiveBetter.pdf${VIEW_MODULE_VERSION ? `?v=${encodeURIComponent(VIEW_MODULE_VERSION)}` : ''}`,
+    VIEW_MODULE_URL,
+  ).href,
   generated: '2026-10-06 11:03（北京时间）',
   commit: '20718ee',
   pages: 414,
@@ -923,10 +928,10 @@ export function viewMethod(book) {
   const M = book.method;
 
   root.append(el('nav', { class: 'crumbs', 'aria-label': '面包屑' },
-    el('a', { href: '#/' }, '首页'), el('i', {}, '/'), el('span', {}, '定义')));
+    el('a', { href: '#/' }, '首页'), el('i', {}, '/'), el('span', {}, '人生定义')));
   root.append(el('div', { class: 'pagehead' },
-    el('span', { class: 'u-label' }, '怎么定义'),
-    el('h1', {}, '本站如何定义和计算这些条目'),
+    el('span', { class: 'u-label' }, '人生定义'),
+    el('h1', {}, '高性价比人生的定义与计算方式'),
     el('p', {}, '每一条建议都回答两个问题：要花掉什么（钱 / 时间 / 精力 / 毅力），能换回什么（总死亡率变化 / 特定死因下降 / 时间与精力节省 / 金钱节省 / 保障与人身自由）。条目按性价比排，不按类别排。')));
 
   /* resources */

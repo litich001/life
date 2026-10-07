@@ -1,7 +1,14 @@
 /* Data layer: load the book, flatten it, build the search index. */
 
-export const DATA_URL = 'data/book.json';
-const DETAIL_URL = 'data/detail.json';
+const MODULE_URL = new URL(import.meta.url);
+const MODULE_VERSION = MODULE_URL.searchParams.get('v');
+const dataUrl = (name) => new URL(
+  `../data/${name}${MODULE_VERSION ? `?v=${encodeURIComponent(MODULE_VERSION)}` : ''}`,
+  MODULE_URL,
+).href;
+
+export const DATA_URL = dataUrl('book.json');
+const DETAIL_URL = dataUrl('detail.json');
 
 const CN_NUM = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 
@@ -13,7 +20,7 @@ export function loadDetail() {
 }
 
 export async function loadBook() {
-  const res = await fetch(DATA_URL, { cache: 'force-cache' });
+  const res = await fetch(DATA_URL, { cache: 'no-cache' });
   if (!res.ok) throw new Error('book.json ' + res.status);
   const book = await res.json();
   return shape(book);

@@ -14,6 +14,7 @@ export function mountPdfViewer(root, src) {
   let pageNo = 1;
   let renderTask = null;
   let loadingTask = null;
+  let downloadController = null;
   let destroyed = false;
   let resizeTimer = null;
 
@@ -79,13 +80,54 @@ export function mountPdfViewer(root, src) {
   });
   observer.observe(root);
 
-  loadingTask = getDocument({ url: src });
-  loadingTask.promise.then((doc) => {
+  const loadPdf = async () => {
+    downloadController = new AbortController();
+    status.textContent = '正在连接 PDF…';
+    const response = await fetch(src, {
+      cache: 'no-cache',
+      signal: downloadController.signal,
+    });
+    if (!response.ok) throw new Error(`PDF request failed: ${response.status}`);
+
+    const totalBytes = Number(response.headers.get('content-length')) || 0;
+    let bytes;
+    if (response.body?.getReader) {
+      const reader = response.body.getReader();
+      const chunks = [];
+      let received = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.byteLength;
+        if (!destroyed) {
+          const progress = totalBytes ? `${Math.round(received / totalBytes * 100)}%` : `${(received / 1048576).toFixed(1)} MB`;
+          status.textContent = `正在下载 PDF：${progress}`;
+        }
+      }
+      bytes = new Uint8Array(received);
+      let offset = 0;
+      for (const chunk of chunks) {
+        bytes.set(chunk, offset);
+        offset += chunk.byteLength;
+      }
+    } else {
+      bytes = new Uint8Array(await response.arrayBuffer());
+    }
+    if (destroyed) return null;
+    status.textContent = '下载完成，正在打开 PDF…';
+    loadingTask = getDocument({ data: bytes });
+    return loadingTask.promise;
+  };
+
+  loadPdf().then((doc) => {
+    if (!doc) return;
     if (destroyed) { doc.destroy(); return; }
     pdf = doc;
     sync();
     render();
   }).catch((error) => {
+    if (error?.name === 'AbortError' || destroyed) return;
     console.error('PDF preview failed', error);
     if (!destroyed) status.textContent = 'PDF 预览加载失败，请使用“新窗口打开”或“下载 PDF”。';
   });
@@ -96,6 +138,7 @@ export function mountPdfViewer(root, src) {
     clearTimeout(resizeTimer);
     observer.disconnect();
     renderTask?.cancel();
+    downloadController?.abort();
     loadingTask?.destroy();
     pdf?.destroy();
   };

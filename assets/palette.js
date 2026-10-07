@@ -18,7 +18,7 @@ const PAGES = [
   { g: '页面', t: '搜索', h: '按关键词和条件筛', href: '#/explore' },
   { g: '页面', t: '章节', h: '按节读', href: '#/chapters' },
   { g: '页面', t: '原文', h: 'PDF 原书与专题原文', href: '#/long' },
-  { g: '页面', t: '定义', h: '这些条目怎么算账', href: '#/method' },
+  { g: '页面', t: '人生定义', h: '这些条目怎么算账', href: '#/method' },
   { g: '页面', t: '作者', h: 'eternity4719 与李哲', href: '#/about' },
 ];
 
