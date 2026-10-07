@@ -52,7 +52,7 @@ export function itemCard(book, it, opts = {}) {
     el('span', { class: 'card__cj' }, it.cj.map((c) => CJ_LABEL[c] || c).join(' / ')),
     el('span', {
       class: 'card__val', tabindex: '0',
-      title: '收益量级与性价比由本站按人生定义页公布的界线，从「收益」和「成本」两栏自动套用，属估算',
+      title: '收益量级与性价比由本站按定义页公布的界线，从「收益」和「成本」两栏自动套用，属估算',
     }, it.mag === '大' ? '收益大' : it.mag === '中' ? '收益中' : '收益小', ' · ', it.value),
   );
 
@@ -315,8 +315,8 @@ export function viewExplore(book, state, rerender) {
       facetGroup('章节', state.ch, counts.ch, book.chapters.map((c) => [c.no, String(c.no)]),
         (v) => `${v}. ${book.chTitle.get(+v)}`, 'ch'),
       el('div', { class: 'rail__note' },
-      el('p', {}, '收益量级与性价比是套用人生定义页界线得到的估算。'),
-      el('p', {}, el('a', { href: '#/method' }, '人生定义 →')))),
+      el('p', {}, '收益量级与性价比是套用定义页界线得到的估算。'),
+      el('p', {}, el('a', { href: '#/method' }, '定义 →')))),
   );
   // A search term alone must not push the results below the fold: the panel only
 // starts open when the reader has actually picked facets.

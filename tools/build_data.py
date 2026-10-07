@@ -306,6 +306,10 @@ H4 = re.compile(r'^（[一二三四五六七八九十]+）')
 LI = re.compile(r'^[•·]\s*(\S.*)$')
 OLI = re.compile(r'^(\d{1,2})\.\s+(\S.*)$')
 END_PUNCT = '。！？：；」』）】'
+# The heading predicate lives in heading_rules.py so this extractor and
+# tools/fix_headings.py cannot disagree about what counts as a heading. The rule,
+# and the citation debris it exists to reject, are documented over there.
+from heading_rules import looks_like_heading  # noqa: E402
 
 
 def lines_to_blocks(lines):
@@ -313,7 +317,9 @@ def lines_to_blocks(lines):
 
     A line like "一、回电话和被问话。你打 120 或者 110，号码都会留下。…"
     is a bold lead-in inside a paragraph, not a heading, so headings are
-    only recognised when the line is short.
+    only recognised when the line is short AND reads like a title. The bare
+    length test this replaced promoted an NCT registration number, a journal
+    reference and a URL tail to headings.
     """
     blocks = []
     for raw in lines:
@@ -330,7 +336,7 @@ def lines_to_blocks(lines):
         if H4.match(s) and len(s) <= 40:
             blocks.append({'t': 'h4', 'x': s})
             continue
-        if len(s) <= 26 and not s.endswith(tuple(END_PUNCT)):
+        if looks_like_heading(s):
             blocks.append({'t': 'h3', 'x': s})
             continue
         if blocks and blocks[-1]['t'] == 'p' and blocks[-1]['x'][-1] not in END_PUNCT:

@@ -2207,6 +2207,16 @@
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
   .toc a:hover { color: var(--ink); border-color: var(--accent); padding-left: 16px; }
+  /* Two tiers. A sub-heading is indented one step, lighter, and has no left rule
+     of its own, so a reader can tell "part of the previous section" from "a
+     section" without reading the numbers. Both tiers are focusable links; the
+     indent is the only difference, so :focus-visible still works on the sub. */
+  .toc .toc__sub {
+    padding-left: 26px; font-size: calc(var(--step--1) * .95); color: var(--muted);
+    border-left-color: transparent;
+    -webkit-line-clamp: 1;
+  }
+  .toc .toc__sub:hover { padding-left: 30px; }
   .toc__sel { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line-2); display: grid; gap: 8px; }
   .toc__sel .select { width: 100%; min-width: 0; }
 
@@ -2220,6 +2230,10 @@
     padding-top: 18px; border-top: 1px solid var(--line); scroll-margin-top: 96px;
   }
   .prose h3 { font-size: var(--step-1); margin-top: 26px; margin-bottom: 10px; }
+  /* A second-tier heading: clearly a step below the numbered h2 sections but
+     still a heading, so it keeps real weight rather than being styled down into
+     a bold paragraph. */
+  .prose .prose__sub { font-size: var(--step-0); font-weight: 600; margin-top: 22px; margin-bottom: 8px; color: var(--ink); letter-spacing: -.012em; }
   .prose p { margin-bottom: 16px; line-height: 1.78; color: var(--ink-2); overflow-wrap: anywhere; }
   .prose p.li { padding-left: 20px; position: relative; }
   .prose p.li::before { content: ""; position: absolute; left: 0; top: .72em; width: 6px; height: 1.5px; background: var(--accent); }

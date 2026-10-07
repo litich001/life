@@ -132,7 +132,7 @@ function titleFor(parts) {
   }
   if (parts[0] === 'explore') return state.q ? `${state.q} · 搜索 · ${base}` : `搜索 608 条 · ${base}`;
   if (parts[0] === 'chapters') return `33 节 · ${base}`;
-  if (parts[0] === 'method') return `人生定义 · ${base}`;
+  if (parts[0] === 'method') return `定义 · ${base}`;
   if (parts[0] === 'about') return `作者 · ${base}`;
   return base;
 }
@@ -214,7 +214,7 @@ addEventListener('keydown', (e) => {
   }
   const map = { h: '#/', e: '#/explore', c: '#/chapters', l: '#/long', m: '#/method', a: '#/about' };
   if (map[e.key]) { location.hash = map[e.key]; }
-  if (e.key === '?') toast('快捷键：⌘K 或 / 搜索 · h 首页 · e 搜索 · c 章节 · l 原文 · m 人生定义 · a 作者');
+  if (e.key === '?') toast('快捷键：⌘K 或 / 搜索 · h 首页 · e 搜索 · c 章节 · l 原文 · m 定义 · a 作者');
 });
 
 /* ── theme ──────────────────────────────────────────────────────────── */

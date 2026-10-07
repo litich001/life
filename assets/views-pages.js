@@ -67,8 +67,33 @@ function longMeta(a) {
   };
 }
 
-function isLongHeading(a, b) {
-  return b.t === 'h3' && !(a.id === 'circadian' && /^\d{6,}/.test(b.x));
+/* Heading tiers come from the data now. tools/fix_headings.py computes
+   headingLevels: [blockIndex, level], where level 1 is a numbered top-level
+   section (一、二、…) and level 2 is an unnumbered sub-heading inside one. A piece
+   that never uses numbering -- bystander -- has every heading at level 1, so it
+   stays flat instead of indenting under nothing.
+
+   Before this, every h3 went into one flat table of contents and rendered as the
+   same level, so circadian read as fourteen siblings and the two tiers of the
+   argument were indistinguishable. The old isLongHeading() also carried a regex
+   that hid a citation fragment promoted to a heading by a too-loose extractor;
+   the extractor and the predicate are both fixed, so the hack is gone. */
+function headingLevels(a) {
+  if (Array.isArray(a.headingLevels) && a.headingLevels.length) {
+    return new Map(a.headingLevels.map(([i, lv]) => [i, lv]));
+  }
+  /* Data with no headingLevels (an older book.json): fall back to the same rule
+     rather than showing nothing. */
+  const m = new Map();
+  let seenTop = false;
+  const numbered = a.blocks.some((b) => b.t === 'h3' && /^[一二三四五六七八九十]+、/.test(b.x || ''));
+  a.blocks.forEach((b, i) => {
+    if (b.t !== 'h3') return;
+    if (!numbered || /^[一二三四五六七八九十]+、/.test(b.x || '')) { m.set(i, 1); seenTop = true; }
+    else if (seenTop) m.set(i, 2);
+    else { m.set(i, 1); seenTop = true; }
+  });
+  return m;
 }
 
 /* Longer prompts that cycle through the hero field when it is empty. A single
@@ -820,7 +845,7 @@ export function viewLongIndex(book) {
       el('h2', { class: 'originals__group-title' }, group),
       el('div', { class: 'originals__grid' }, ...list.map((a, i) => {
         const meta = longMeta(a);
-        const heads = a.blocks.filter((b) => isLongHeading(a, b)).length;
+        const heads = headingLevels(a).size;
         const tables = a.blocks.filter((b) => b.t === 'table').length;
         return el('article', { class: 'original-card reveal', data: { d: i } },
           el('div', { class: 'original-card__meta' },
@@ -852,8 +877,21 @@ export function viewLong(book, id) {
     el('a', { href: '#/long' }, '原文'), el('i', {}, '/'),
     el('span', {}, a.title.slice(0, 14) + '…')));
 
-  const tocLinks = a.blocks.filter((b) => isLongHeading(a, b)).map((b) =>
-    el('a', { href: '#', onclick: (e) => { e.preventDefault(); jumpToBlock(b.x); } }, b.x));
+  const levels = headingLevels(a);
+
+  /* One TOC entry per heading, sub-headings indented and marked so the two tiers
+     are distinguishable at a glance rather than being one flat run of siblings.
+     jumpToBlock keys on the text, so an indented entry jumps exactly the same. */
+  const tocLinks = [];
+  a.blocks.forEach((b, i) => {
+    if (b.t !== 'h3') return;
+    const lv = levels.get(i) || 1;
+    tocLinks.push(el('a', {
+      class: lv === 2 ? 'toc__sub' : 'toc__top',
+      href: '#',
+      onclick: (e) => { e.preventDefault(); jumpToBlock(b.x); },
+    }, b.x));
+  });
 
   /* No wrapper element around the links. Below 1080px .toc becomes a
      grid-auto-flow: column scroller, and a single wrapper child collapses all
@@ -877,20 +915,24 @@ export function viewLong(book, id) {
   if (a.lead && a.lead !== meta.summary) body.append(el('p', { class: 'prose__source-lead' }, a.lead));
   let tblN = 0;
   const heads = [];
-  for (const b of a.blocks) {
-    if (b.t === 'p') { body.append(el('p', {}, linkify(b.x, book))); continue; }
-    if (a.id === 'circadian' && b.t === 'h3' && /^\d{6,}/.test(b.x)) {
-      body.lastElementChild?.append(document.createTextNode(b.x));
-      continue;
+  a.blocks.forEach((b, i) => {
+    if (b.t === 'p') { body.append(el('p', {}, linkify(b.x, book))); return; }
+    if (b.t === 'h3') {
+      /* level 1 -> the h2 the article's numbered sections use; level 2 -> h3,
+         one step down, so the outline a screen reader announces matches the
+         argument's actual shape. */
+      const lv = levels.get(i) || 1;
+      const h = lv === 2 ? el('h3', { class: 'prose__sub' }, b.x)
+        : el('h2', {}, b.x);
+      heads.push(h); body.append(h); return;
     }
-    if (b.t === 'h3') { const h = el('h2', {}, b.x); heads.push(h); body.append(h); continue; }
-    if (b.t === 'h4') { body.append(el('h3', {}, b.x)); continue; }
-    if (b.t === 'li') { body.append(el('p', { class: 'li' }, linkify(b.x, book))); continue; }
+    if (b.t === 'h4') { body.append(el('h4', { class: 'prose__sub' }, b.x)); return; }
+    if (b.t === 'li') { body.append(el('p', { class: 'li' }, linkify(b.x, book))); return; }
     if (b.t === 'table') {
       tblN++;
       body.append(tableBlock(b.x, tblN));
     }
-  }
+  });
   /* Mark the heading being read and slide the bar to it. scrollSpy runs now and
      returns its own teardown -- wrapping it in another arrow would defer the
      call until teardown time, which is exactly backwards. */
@@ -926,9 +968,9 @@ export function viewMethod(book) {
   const M = book.method;
 
   root.append(el('nav', { class: 'crumbs', 'aria-label': '面包屑' },
-    el('a', { href: '#/' }, '首页'), el('i', {}, '/'), el('span', {}, '人生定义')));
+    el('a', { href: '#/' }, '首页'), el('i', {}, '/'), el('span', {}, '定义')));
   root.append(el('div', { class: 'pagehead' },
-    el('span', { class: 'u-label' }, '人生定义'),
+    el('span', { class: 'u-label' }, '定义'),
     el('h1', {}, '高性价比人生的定义与计算方式'),
     el('p', {}, '每一条建议都回答两个问题：要花掉什么（钱 / 时间 / 精力 / 毅力），能换回什么（总死亡率变化 / 特定死因下降 / 时间与精力节省 / 金钱节省 / 保障与人身自由）。条目按性价比排，不按类别排。')));
 
@@ -1024,6 +1066,34 @@ const AUTHOR = {
   icp: '京ICP备2026050119号-2',
 };
 
+/* What the site itself claims about itself. This is the one place a reader can
+   check the work rather than take it on trust, so it is deliberately specific
+   about the limits -- the two 估算 rows are the same disclosure that appears on
+   /explore, kept here so the author page is not read as an endorsement of
+   numbers the site derived. */
+const CRAFT = [
+  ['内容从哪来',
+    '正文、条目与来源全部来自原书 PDF，由脚本抽取成结构化数据，没有人工改写任何一条建议。'
+    + '五篇专题按问题类型分成四组：人生选择、安全与应急、创业与合规、健康与作息。'],
+  ['哪些数字可以核对',
+    '条目总数、章节数、以及 A/B/C 三级的条数都能和原书自己公布的统计对上，'
+    + '对上了才敢展示。每一节标注的条数与 A 级条数，都是从该节的原始条目直接汇总出来的。'],
+  ['哪些数字只是估算',
+    '「收益量级」和「性价比」两栏不在此列。原书没有逐条给出这两个标签，'
+    + '本站按定义页公布的界线，从每条的收益与成本自动套用，属于估算，只用于排序，不能当作结论。'],
+  ['分级是怎么来的',
+    'A 级是有具体数字可查、出处为荟萃分析、大型队列或随机试验；B 级有研究支持但说不出确切数字；'
+    + 'C 级是经验做法或公认惯例。同一色系里越深表示证据越硬。'],
+  ['怎么更新',
+    '原书更新后重跑一次抽取脚本即可，全站内容由同一份数据生成，'
+    + '不存在「网页改了但数据没改」的情况。页面底部与原项目均标注了当前版本。'],
+];
+
+const CRAFT_GROUPS = [
+  ['内容与来源', ['内容从哪来', '怎么更新']],
+  ['数字与可信度', ['哪些数字可以核对', '哪些数字只是估算', '分级是怎么来的']],
+];
+
 export function viewAbout(book) {
   const root = el('div', { class: 'wrap about' });
 
@@ -1064,8 +1134,26 @@ export function viewAbout(book) {
       el('ul', { class: 'author-profile__focus' },
         ...AUTHOR.focus.map((x) => el('li', {}, x))))));
 
+  /* 三 本站怎么做的. Grouped rather than one flat list of five, so the claim and
+     the caveat land in different places on the page: 内容与来源 first, then
+     数字与可信度, where the two 估算 rows sit together and read as a pair. */
   root.append(el('section', { class: 'about__sec' },
-    sectionHead('三', '继续了解'),
+    sectionHead('三', '本站怎么做的', '做了什么，以及哪些地方不能当真'),
+    el('div', { class: 'glossary-groups' }, ...CRAFT_GROUPS.map(([gname, keys]) => {
+      const terms = keys.map((k) => {
+        const row = CRAFT.find((x) => x[0] === k);
+        return el('div', { class: 'gl' }, el('dt', {}, row[0]), el('dd', {}, row[1]));
+      });
+      return el('section', { class: 'glossary-group' },
+        el('h3', { class: 'glossary-group__title' }, gname),
+        el('dl', { class: 'glossary' }, ...terms));
+    })),
+    el('p', { class: 'note' },
+      '发现条目有错漏、或想指出某一条的来源不可靠，'
+      + '都可以在原项目仓库提issue；本站的整理与呈现问题则在上方「继续了解」里找我。')));
+
+  root.append(el('section', { class: 'about__sec' },
+    sectionHead('四', '继续了解'),
     el('div', { class: 'about__cards' },
       ...AUTHOR.links.map(([t, href, d, ic], i) =>
         el('a', { class: 'about__card spot reveal', data: { d: i }, href, target: '_blank', rel: 'noopener' },
