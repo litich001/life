@@ -4,8 +4,8 @@ Local deploys were doing this by hand with a pile of Copy-Item calls, which is
 exactly the kind of thing that silently drifts. Doing it in one script means CI
 and a local `wrangler pages deploy` publish identical bytes.
 
-Only what needs serving is copied: the site itself, the two data files, and the
-Pages Function. Build tooling stays out of the bundle.
+Only what needs serving is copied: the site itself, the full source PDF, the two
+data files, and the Pages Function. Build tooling stays out of the bundle.
 """
 import hashlib
 import re
@@ -31,8 +31,7 @@ INCLUDE_GLOBS = [
     ("assets", "*.js"),
     ("assets", "*.css"),
     ("assets/documents", "*.pdf"),
-    ("assets/vendor/pdfjs", "*.mjs"),
-    ("assets/vendor/pdfjs", "LICENSE"),
+    ("assets/documents/pages", "*.webp"),
     ("data", "*.json"),
     ("functions", "*.js"),
 ]
@@ -75,12 +74,9 @@ REQUIRED = [
     "assets/palette.js",
     "assets/views-explore.js",
     "assets/views-pages.js",
-    "assets/pdf-viewer.js",
     "assets/documents/HowToLiveBetter.pdf",
-    "assets/documents/preview-001.pdf",
-    "assets/documents/preview-021.pdf",
-    "assets/vendor/pdfjs/pdf.mjs",
-    "assets/vendor/pdfjs/pdf.worker.mjs",
+    "assets/documents/pages/page-001.webp",
+    "assets/documents/pages/page-414.webp",
     "data/book.json",
     "data/detail.json",
     "functions/_middleware.js",

@@ -2,7 +2,6 @@
 import { el, frag, linkify, hi, reveal, countUp, fmt, openSheet, closeSheet, toast, icon, spotlight, scrollSpy, onTeardown } from './ui.js';
 import { itemCard, openRefSheet, isMarked, toggleMark, marks, badge, CJ_LABEL } from './views-explore.js';
 import { runQuery } from './data.js';
-import { mountPdfViewer } from './pdf-viewer.js';
 
 const CN = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 const cn = (n) => (n <= 10 ? CN[n] : n < 20 ? '十' + CN[n - 10] : CN[Math.floor(n / 10)] + '十' + (n % 10 ? CN[n % 10] : ''));
@@ -28,13 +27,34 @@ const pdfAsset = (name) => new URL(
 ).href;
 const PDF_DOC = {
   src: pdfAsset('HowToLiveBetter.pdf'),
-  chunkUrl: (n) => pdfAsset(`preview-${String(n).padStart(3, '0')}.pdf`),
-  chunkPages: 20,
   generated: '2026-10-06 11:03（北京时间）',
   commit: '20718ee',
   pages: 414,
   items: 667,
 };
+const pdfPageAsset = (number) => pdfAsset(`pages/page-${String(number).padStart(3, '0')}.webp`);
+
+function mountPdfPages(root) {
+  const scroller = root.querySelector('.pdfviewer__pages');
+  const pending = [...root.querySelectorAll('img[data-pdf-src]')];
+  const load = (image) => {
+    image.src = image.dataset.pdfSrc;
+    delete image.dataset.pdfSrc;
+  };
+  if (!('IntersectionObserver' in window)) {
+    pending.forEach(load);
+    return () => {};
+  }
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      load(entry.target);
+      observer.unobserve(entry.target);
+    });
+  }, { root: scroller, rootMargin: '160% 0px' });
+  pending.forEach((image) => observer.observe(image));
+  return () => observer.disconnect();
+}
 
 const ORIGINAL_META = {
   marriage: {
@@ -815,17 +835,36 @@ export function viewLongIndex(book) {
     el('h1', {}, '原文'),
     el('p', {}, '先读完整 PDF，也可以按主题进入专题原文。')));
 
-  const pdfViewer = el('div', { class: 'pdfviewer', role: 'region', 'aria-label': 'PDF 分页预览' },
+  const pdfViewer = el('div', { class: 'pdfviewer', role: 'region', 'aria-label': 'PDF 在线阅读器' },
     el('div', { class: 'pdfviewer__bar' },
-      el('button', { type: 'button', data: { pdfPrev: '' }, 'aria-label': '上一页' }, '上一页'),
-      el('span', { class: 'pdfviewer__pages num' },
-        '第 ', el('b', { data: { pdfPage: '' } }, '1'), ' / ', el('span', { data: { pdfTotal: '' } }, '…'), ' 页'),
-      el('button', { type: 'button', data: { pdfNext: '' }, 'aria-label': '下一页' }, '下一页')),
-    el('div', { class: 'pdfviewer__stage' },
-      el('canvas', { 'aria-label': 'PDF 当前页' })),
-    el('div', { class: 'pdfviewer__load', 'aria-hidden': 'true' },
-      el('i', { data: { pdfProgress: '' } })),
-    el('p', { class: 'pdfviewer__status', data: { pdfStatus: '' }, role: 'status', 'aria-live': 'polite' }, '正在加载第 1–20 页…'));
+      el('span', { class: 'pdfviewer__signal', 'aria-hidden': 'true' }),
+      el('strong', {}, '网页 PDF 阅读器'),
+      el('span', {}, `完整 ${PDF_DOC.pages} 页 · 向下滚动阅读`)),
+    el('div', { class: 'pdfviewer__pages' },
+      ...Array.from({ length: PDF_DOC.pages }, (_, index) => {
+        const number = index + 1;
+        const imageProps = {
+          alt: `《高性价比人生指南》第 ${number} 页`,
+          decoding: 'async',
+          width: '803',
+          height: '1136',
+        };
+        if (number <= 2) {
+          imageProps.src = pdfPageAsset(number);
+          imageProps.fetchpriority = number === 1 ? 'high' : 'auto';
+        } else {
+          imageProps.data = { pdfSrc: pdfPageAsset(number) };
+          imageProps.loading = 'lazy';
+        }
+        return el('figure', { class: 'pdfviewer__page' },
+          el('img', imageProps),
+          el('figcaption', { class: 'num' }, `PAGE ${String(number).padStart(3, '0')} / ${PDF_DOC.pages}`));
+      })),
+    el('div', { class: 'pdfviewer__fallback' },
+      el('p', {}, '需要搜索、目录或离线保存？'),
+      el('a', { class: 'btn', href: PDF_DOC.src, target: '_blank', rel: 'noopener' }, '直接打开完整 PDF'),
+      el('a', { class: 'btn btn--ghost', href: PDF_DOC.src, download: 'HowToLiveBetter.pdf' }, '下载后阅读')));
+  onTeardown(mountPdfPages(pdfViewer));
 
   root.append(el('section', { class: 'pdfdoc', 'aria-labelledby': 'pdfTitle' },
     el('div', { class: 'pdfdoc__head' },
@@ -839,7 +878,6 @@ export function viewLongIndex(book) {
         el('a', { class: 'btn', href: PDF_DOC.src, target: '_blank', rel: 'noopener' }, '新窗口打开'),
         el('a', { class: 'btn btn--ghost', href: PDF_DOC.src, download: 'HowToLiveBetter.pdf' }, '下载 PDF'))),
     pdfViewer));
-  onTeardown(mountPdfViewer(pdfViewer, PDF_DOC));
 
   root.append(el('div', { class: 'originals__intro' },
     sectionHead('专题原文', '按主题阅读', '不再把所有长内容堆在一个列表里'),
