@@ -655,8 +655,10 @@
   .pdfviewer__bar button {
     min-height: 34px; padding: 6px 12px; border: 1px solid var(--line);
     color: var(--ink); background: var(--paper); font-size: var(--step--1);
+    transition: border-color .18s var(--ease), transform .22s var(--ease-out), background-color .18s var(--ease);
   }
-  .pdfviewer__bar button:hover:not(:disabled) { border-color: var(--ink); }
+  .pdfviewer__bar button:hover:not(:disabled) { border-color: var(--ink); transform: translateY(-1px); }
+  .pdfviewer__bar button:active:not(:disabled) { transform: translateY(1px) scale(.985); }
   .pdfviewer__bar button:disabled { opacity: .38; cursor: not-allowed; }
   .pdfviewer__pages { min-width: 110px; text-align: center; font-size: 12px; color: var(--muted); }
   .pdfviewer__pages b { color: var(--ink); font-weight: 600; }
@@ -670,7 +672,10 @@
     transition: opacity .24s var(--ease), transform .42s var(--ease-out), box-shadow .42s var(--ease);
   }
   .pdfviewer__stage canvas.is-turning { opacity: .42; transform: translateY(5px) scale(.992); box-shadow: 0 5px 18px rgba(0, 0, 0, .16); }
-  .pdfviewer__status { padding: 9px 14px; color: var(--muted); font-size: 12px; text-align: center; border-top: 1px solid var(--line); }
+  .pdfviewer__load { height: 2px; overflow: hidden; background: var(--line); }
+  .pdfviewer__load i { display: block; width: 100%; height: 100%; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .22s var(--ease-out); }
+  .pdfviewer__status { padding: 9px 14px; color: var(--muted); font-size: 12px; text-align: center; }
+  .pdfviewer:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
   .originals__intro { margin-bottom: 24px; }
   .originals__intro > p { max-width: 64ch; color: var(--muted); line-height: 1.66; }
@@ -683,7 +688,19 @@
     display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
     gap: 1px; background: var(--line); border: 1px solid var(--line); border-top: 0;
   }
-  .original-card { background: var(--paper); padding: clamp(20px, 3vw, 30px); display: grid; align-content: start; gap: 13px; }
+  .original-card {
+    background: var(--paper); padding: clamp(20px, 3vw, 30px); display: grid;
+    align-content: start; gap: 13px; position: relative; overflow: hidden;
+    transition: transform .3s var(--ease-out), background-color .24s var(--ease), box-shadow .3s var(--ease);
+  }
+  .original-card::after {
+    content: ""; position: absolute; inset: auto 0 0; height: 2px;
+    background: var(--accent); transform: scaleX(0); transform-origin: left;
+    transition: transform .34s var(--ease-out);
+  }
+  .original-card:hover { transform: translateY(-3px); background: var(--paper-2); box-shadow: var(--lift); z-index: 1; }
+  .original-card:hover::after, .original-card:focus-within::after { transform: scaleX(1); }
+  .original-card:active { transform: translateY(-1px) scale(.995); }
   .original-card__meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .original-card__meta .num { color: var(--muted); font-size: 11.5px; }
   .original-card h3 { font-size: var(--step-2); line-height: 1.24; letter-spacing: -.022em; }

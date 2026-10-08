@@ -22,9 +22,14 @@ const SEVEN = 7;
 
 const VIEW_MODULE_URL = new URL(import.meta.url);
 const VIEW_MODULE_VERSION = VIEW_MODULE_URL.searchParams.get('v');
-const PDF_ASSET_ORIGIN = 'https://life-28v.pages.dev';
+const pdfAsset = (name) => new URL(
+  `./documents/${name}${VIEW_MODULE_VERSION ? `?v=${encodeURIComponent(VIEW_MODULE_VERSION)}` : ''}`,
+  VIEW_MODULE_URL,
+).href;
 const PDF_DOC = {
-  src: `${PDF_ASSET_ORIGIN}/assets/documents/HowToLiveBetter.pdf${VIEW_MODULE_VERSION ? `?v=${encodeURIComponent(VIEW_MODULE_VERSION)}` : ''}`,
+  src: pdfAsset('HowToLiveBetter.pdf'),
+  chunkUrl: (n) => pdfAsset(`preview-${String(n).padStart(3, '0')}.pdf`),
+  chunkPages: 20,
   generated: '2026-10-06 11:03（北京时间）',
   commit: '20718ee',
   pages: 414,
@@ -818,7 +823,9 @@ export function viewLongIndex(book) {
       el('button', { type: 'button', data: { pdfNext: '' }, 'aria-label': '下一页' }, '下一页')),
     el('div', { class: 'pdfviewer__stage' },
       el('canvas', { 'aria-label': 'PDF 当前页' })),
-    el('p', { class: 'pdfviewer__status', data: { pdfStatus: '' }, role: 'status', 'aria-live': 'polite' }, '正在加载 PDF…'));
+    el('div', { class: 'pdfviewer__load', 'aria-hidden': 'true' },
+      el('i', { data: { pdfProgress: '' } })),
+    el('p', { class: 'pdfviewer__status', data: { pdfStatus: '' }, role: 'status', 'aria-live': 'polite' }, '正在加载第 1–20 页…'));
 
   root.append(el('section', { class: 'pdfdoc', 'aria-labelledby': 'pdfTitle' },
     el('div', { class: 'pdfdoc__head' },
@@ -832,7 +839,7 @@ export function viewLongIndex(book) {
         el('a', { class: 'btn', href: PDF_DOC.src, target: '_blank', rel: 'noopener' }, '新窗口打开'),
         el('a', { class: 'btn btn--ghost', href: PDF_DOC.src, download: 'HowToLiveBetter.pdf' }, '下载 PDF'))),
     pdfViewer));
-  onTeardown(mountPdfViewer(pdfViewer, PDF_DOC.src));
+  onTeardown(mountPdfViewer(pdfViewer, PDF_DOC));
 
   root.append(el('div', { class: 'originals__intro' },
     sectionHead('专题原文', '按主题阅读', '不再把所有长内容堆在一个列表里'),

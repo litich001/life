@@ -77,6 +77,8 @@ REQUIRED = [
     "assets/views-pages.js",
     "assets/pdf-viewer.js",
     "assets/documents/HowToLiveBetter.pdf",
+    "assets/documents/preview-001.pdf",
+    "assets/documents/preview-021.pdf",
     "assets/vendor/pdfjs/pdf.mjs",
     "assets/vendor/pdfjs/pdf.worker.mjs",
     "data/book.json",
