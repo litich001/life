@@ -37,7 +37,7 @@
   ::view-transition-old(content) { animation: routeOut .18s ease both; }
   ::view-transition-new(content) { animation: routeIn .46s var(--ease-out) both; }
   @keyframes routeOut { to { opacity: 0; transform: translateY(-7px) scale(.997); } }
-  @keyframes routeIn { from { opacity: 0; transform: translateY(13px) scale(.995); filter: blur(3px); } }
+  @keyframes routeIn { from { opacity: 0; transform: translateY(13px) scale(.995); } }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1136,7 +1136,7 @@
       border-radius: 50%;
       background: radial-gradient(circle at 50% 50%,
         color-mix(in srgb, var(--ev-a) 13%, transparent) 0%, transparent 66%);
-      animation: halo 4.2s var(--ease) infinite;
+      animation: halo 4.2s var(--ease) 2;
     }
   }
   @keyframes halo {
@@ -1165,7 +1165,7 @@
           color-mix(in srgb, var(--accent) 5%, transparent) 0%, transparent 70%),
         radial-gradient(52% 46% at 86% 92%,
           color-mix(in srgb, var(--ev-a) 4%, transparent) 0%, transparent 72%);
-      animation: wash 15s var(--ease) infinite alternate;
+      animation: wash 15s var(--ease) 2 alternate;
     }
     .poster__in { position: relative; z-index: 1; }
   }
@@ -1197,7 +1197,7 @@
       pointer-events: none;
       background: radial-gradient(42% 36% at 32% 28%,
         color-mix(in srgb, var(--accent) 4%, transparent) 0%, transparent 72%);
-      animation: drift 12s var(--ease) infinite alternate;
+      animation: drift 12s var(--ease) 2 alternate;
     }
     .home > section.tint-cool::after {
       background: radial-gradient(42% 36% at 68% 72%,
@@ -1233,10 +1233,10 @@
      (150,150) -- the ring's centre in user units -- without hardcoding it. */
   @media (prefers-reduced-motion: no-preference) {
     .rose__g, .rose__ring:last-of-type { transform-box: view-box; transform-origin: 50% 50%; }
-    .rose__g { animation: roseSpin 32s linear infinite; }
+    .rose__g { animation: roseSpin 32s linear 1; }
     .rose__ring:last-of-type {
       stroke-dasharray: 2 7;
-      animation: roseSpinBack 14s linear infinite;
+      animation: roseSpinBack 14s linear 2;
     }
     .rosebox:hover .rose__g, .rosebox:focus-within .rose__g,
     .rosebox:hover .rose__ring:last-of-type, .rosebox:focus-within .rose__ring:last-of-type {
